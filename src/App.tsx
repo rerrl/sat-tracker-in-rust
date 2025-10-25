@@ -13,11 +13,20 @@ function App() {
         event_type: "Buy",
         memo: "Test purchase from React",
       });
+      
+      // Log the returned event
       console.log("Created event:", event);
-
+      console.log("Event ID:", event.id);
+      console.log("Event created at:", event.created_at);
+      console.log("Event type:", event.event_type);
+      console.log("Amount in sats:", event.amount_sats);
+      
       // Refresh the events list
       const allEvents = await TauriService.getBalanceChangeEvents();
       setEvents(allEvents);
+      
+      // Also log the full events list
+      console.log("All events after creation:", allEvents);
     } catch (error) {
       console.error("Error creating event:", error);
     }
