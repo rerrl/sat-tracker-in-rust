@@ -4,8 +4,13 @@ version = "0.1.0"
 description = "A Tauri App"
 authors = ["you"]
 edition = "2021"
+default-run = "sat-tracker-in-rust"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "seed"
+path = "scripts/seed.rs"
 
 [lib]
 # The `_lib` suffix may seem redundant but it is necessary
@@ -27,4 +32,5 @@ chrono = { version = "0.4", features = ["serde"] }
 sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "sqlite", "chrono", "uuid"] }
 tokio = { version = "1", features = ["full"] }
 dirs = "5.0"
+rand = "0.8"
 
