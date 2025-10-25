@@ -1,49 +1,78 @@
 import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
+import { TauriService, BalanceChangeEvent } from "./services/tauriService";
 import "./App.css";
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const [events, setEvents] = useState<BalanceChangeEvent[]>([]);
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
+  async function createTestEvent() {
+    try {
+      const event = await TauriService.createBalanceChangeEvent({
+        amount_sats: 100000,
+        value_cents: 5000,
+        event_type: "Buy",
+        memo: "Test purchase from React",
+      });
+      console.log("Created event:", event);
+
+      // Refresh the events list
+      const allEvents = await TauriService.getBalanceChangeEvents();
+      setEvents(allEvents);
+    } catch (error) {
+      console.error("Error creating event:", error);
+    }
+  }
+
+  async function loadEvents() {
+    try {
+      const allEvents = await TauriService.getBalanceChangeEvents();
+      setEvents(allEvents);
+    } catch (error) {
+      console.error("Error loading events:", error);
+    }
   }
 
   return (
     <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+      <h1>Sat Tracker In Rust</h1>
 
-      <div className="row">
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      <div>
+        <h2>Balance Change Events</h2>
+        <button onClick={createTestEvent}>Create Test Event</button>
+        <button onClick={loadEvents}>Load Events</button>
+
+        <div>
+          <h3>Events ({events.length}):</h3>
+          {events.map((event) => (
+            <div
+              key={event.id}
+              style={{
+                border: "1px solid #ccc",
+                margin: "10px",
+                padding: "10px",
+              }}
+            >
+              <p>
+                <strong>Type:</strong> {event.event_type}
+              </p>
+              <p>
+                <strong>Amount:</strong> {event.amount_sats} sats
+              </p>
+              <p>
+                <strong>Value:</strong>{" "}
+                {event.value_cents ? `${event.value_cents} cents` : "N/A"}
+              </p>
+              <p>
+                <strong>Memo:</strong> {event.memo || "None"}
+              </p>
+              <p>
+                <strong>Created:</strong>{" "}
+                {new Date(event.created_at).toLocaleString()}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
     </main>
   );
 }
