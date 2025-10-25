@@ -58,3 +58,13 @@ pub struct CreateBalanceChangeEventRequest {
     pub event_type: BalanceChangeType,
     pub memo: Option<String>,
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PaginatedBalanceChangeEvents {
+    pub events: Vec<BalanceChangeEvent>,
+    pub total_count: i64,
+    pub page: u32,
+    pub page_size: u32,
+    pub total_pages: u32,
+    pub has_more: bool,
+}

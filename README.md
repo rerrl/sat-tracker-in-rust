@@ -17,8 +17,12 @@ yarn start:dev
 
 
 
-- work on the UI (consider we want to be able to calculate total dca, gain from trades, etc)
-- now that we have a ui and refined data model, lets do some csv importing. (importing the same data from multiple csvs should not duplicate data)
+- TODO: work on the UI (consider we want to be able to calculate total dca, gain from trades, etc)
+    -  think of all the possible metrics we want to show and then lets decide what we want to show. Refine db schema to accommodate
+    -  load in data to show (paginated, 50 at a time, infinite scroll)
+    -  edit ability (delete, change amounts, change memo, etc)
+    
+- TODO:now that we have a ui and refined data model, lets do some csv importing. (importing the same data from multiple csvs should not duplicate data)
 
 
 

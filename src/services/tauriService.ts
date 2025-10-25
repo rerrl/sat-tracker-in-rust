@@ -17,6 +17,15 @@ export interface CreateBalanceChangeEventRequest {
   memo: string | null;
 }
 
+export interface PaginatedBalanceChangeEvents {
+  events: BalanceChangeEvent[];
+  total_count: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  has_more: boolean;
+}
+
 export class TauriService {
   // Create a new balance change event
   static async createBalanceChangeEvent(
@@ -25,9 +34,15 @@ export class TauriService {
     return await invoke("create_balance_change_event", { request });
   }
 
-  // Get all balance change events
-  static async getBalanceChangeEvents(): Promise<BalanceChangeEvent[]> {
-    return await invoke("get_balance_change_events");
+  // Get paginated balance change events with simple parameters
+  static async getBalanceChangeEvents(
+    page: number = 0,
+    pageSize: number = 10
+  ): Promise<PaginatedBalanceChangeEvents> {
+    return await invoke("get_balance_change_events", { 
+      page, 
+      pageSize 
+    });
   }
 }
 
