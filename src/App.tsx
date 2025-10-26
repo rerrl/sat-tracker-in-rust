@@ -105,11 +105,107 @@ function App() {
 
       {/* Main Content - Two Columns */}
       <div className="flex h-[calc(100vh-73px)]"> {/* Subtract header height */}
-        {/* Left Column - Empty for now (40%) */}
-        <div className="w-2/5 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <div className="p-6">
-            <div className="text-gray-500 dark:text-gray-400 text-center">
-              Left column content coming soon...
+        {/* Left Column - Portfolio Metrics (40%) */}
+        <div className="w-2/5 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex flex-col">
+          <div className="p-6 pb-4 flex-shrink-0">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Portfolio Metrics
+            </h2>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
+            <div className="grid grid-cols-2 gap-3">
+              {/* Bitcoin Price */}
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                <div className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  Bitcoin Price
+                </div>
+                <div className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">
+                  $97,234
+                </div>
+                <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                  +2.4% (24h)
+                </div>
+              </div>
+
+              {/* Portfolio Value USD */}
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                <div className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  Portfolio Value
+                </div>
+                <div className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">
+                  $12,847.32
+                </div>
+              </div>
+
+              {/* Total Sats */}
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                <div className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  Total Sats
+                </div>
+                <div className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">
+                  13,214,567
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  0.13214567 BTC
+                </div>
+              </div>
+
+              {/* Average Cost Per Bitcoin */}
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                <div className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  Avg Cost Per BTC
+                </div>
+                <div className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">
+                  $89,456
+                </div>
+              </div>
+
+              {/* Total Invested */}
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                <div className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  Total Invested
+                </div>
+                <div className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">
+                  $11,823.45
+                </div>
+              </div>
+
+              {/* Total Return $ */}
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                <div className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  Total Return
+                </div>
+                <div className="text-lg font-bold text-green-600 dark:text-green-400 mt-1">
+                  +$1,023.87
+                </div>
+                <div className="text-xs text-green-600 dark:text-green-400 mt-1">
+                  +8.66%
+                </div>
+              </div>
+
+              {/* Profit/Loss Per Sat */}
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                <div className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  P&L Per Sat
+                </div>
+                <div className="text-lg font-bold text-green-600 dark:text-green-400 mt-1">
+                  +$0.000077
+                </div>
+              </div>
+
+              {/* Days Since First Purchase */}
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
+                <div className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
+                  Days Hodling
+                </div>
+                <div className="text-lg font-bold text-gray-900 dark:text-gray-100 mt-1">
+                  247
+                </div>
+                <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  Since first purchase
+                </div>
+              </div>
             </div>
           </div>
         </div>
