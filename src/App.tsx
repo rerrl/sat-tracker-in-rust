@@ -109,7 +109,12 @@ function App() {
       {/* Title Header */}
       <div className="bg-[#2A2633] border-b border-[rgba(247,243,227,0.2)] px-6 py-4">
         <h1 className="text-2xl font-bold text-[#F7F3E3]">
-          Sat Tracker
+          Sat Tracker{" "}
+          <span className="text-sm font-normal">
+            by{" "}
+            <span className="text-[#E16036]">dprogram</span>
+            <span className="text-[#F7F3E3]">.me</span>
+          </span>
         </h1>
       </div>
 
@@ -117,7 +122,7 @@ function App() {
       <div className="flex h-[calc(100vh-73px)]"> {/* Subtract header height */}
         {/* Left Column - Portfolio Metrics (40%) */}
         <div className="w-2/5 border-r border-[rgba(247,243,227,0.2)] bg-[#2A2633] flex flex-col">
-          <div className="p-6 pb-4 shrink-0">
+          <div className="p-5 pb-3 shrink-0">
             <h2 className="text-lg font-semibold text-[#F7F3E3]">
               Portfolio Metrics
             </h2>
