@@ -24,6 +24,14 @@ yarn start:dev
     
 - TODO:now that we have a ui and refined data model, lets do some csv importing. (importing the same data from multiple csvs should not duplicate data)
 
+- TODO: (LOW PRIORITY) Trading Feature - Track Bitcoin-denominated investments
+    - Add new `trades` table to track sats sent out and received back
+    - Open Trade: Record sats sent + memo (e.g., "Lent to friend", "Mining equipment", "Lightning channel")
+    - Close Trade: Record sats received back to calculate sat P&L
+    - Trade Metrics: Active trades, sats at risk, trade P&L, best trade performance
+    - UI: Trade management in top-right section, trade events in events list
+    - Focus: Measure success in sats gained/lost, not fiat - true Bitcoin standard
+
 
 
 
