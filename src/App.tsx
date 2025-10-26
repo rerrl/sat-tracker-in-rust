@@ -26,7 +26,7 @@ const EventItem = React.memo(({
   if (isEditing || isCreating) {
     return (
       <div className="border-b border-[rgba(247,243,227,0.1)] bg-[rgba(247,243,227,0.05)] px-4 py-2 text-xs">
-        <div className="grid grid-cols-6 gap-2 items-center">
+        <div className="grid gap-2 items-center" style={{gridTemplateColumns: "2fr 0.8fr 1.2fr 1fr 1fr 1.5fr 1.5fr"}}>
           <div className="text-[rgba(247,243,227,0.6)]">
             {isCreating ? 'New Event' : (
               new Date(event!.created_at).toLocaleString('en-US', {
@@ -118,6 +118,15 @@ const EventItem = React.memo(({
               placeholder={editData.event_type === 'Fee' ? 'N/A for fees' : '0.00'}
             />
           </div>
+          <div className="text-[rgba(247,243,227,0.6)] text-xs text-center">
+            {(editData.event_type === 'Buy' || editData.event_type === 'Sell') && 
+             editData.amount_sats && 
+             editData.value_cents && 
+             editData.value_cents !== '' ? 
+              `$${((Math.abs(editData.value_cents) / 100) / (Math.abs(editData.amount_sats) / 100_000_000)).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}` : 
+              '-'
+            }
+          </div>
           <div>
             <input
               type="text"
@@ -159,7 +168,7 @@ const EventItem = React.memo(({
   
   return (
     <div className="border-b border-[rgba(247,243,227,0.1)] hover:bg-[rgba(247,243,227,0.1)] px-4 py-2 text-xs group">
-      <div className="grid grid-cols-6 gap-2 items-center">
+      <div className="grid gap-2 items-center" style={{gridTemplateColumns: "2fr 0.8fr 1.2fr 1fr 1fr 1.5fr 1.5fr"}}>
         <div className="text-[rgba(247,243,227,0.5)] text-xs">
           {new Date(event.created_at).toLocaleString('en-US', {
             year: 'numeric',
@@ -178,10 +187,18 @@ const EventItem = React.memo(({
           {event.event_type}
         </div>
         <div className="text-[#F7F3E3] font-semibold">
-          {event.amount_sats.toLocaleString()} sats
+          {event.event_type === "Buy" ? "+" : "-"} {event.amount_sats.toLocaleString()} sats
         </div>
         <div className="text-[#F7F3E3] font-semibold">
           {event.value_cents ? `$${(event.value_cents / 100).toFixed(2)}` : '-'}
+        </div>
+        <div className="text-[#F7F3E3] text-xs">
+          {(event.event_type === 'Buy' || event.event_type === 'Sell') && 
+           event.amount_sats && 
+           event.value_cents ? 
+            `$${((Math.abs(event.value_cents) / 100) / (Math.abs(event.amount_sats) / 100_000_000)).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}` : 
+            '-'
+          }
         </div>
         <div className="text-[rgba(247,243,227,0.5)] truncate text-xs">
           {event.memo || '-'}
@@ -465,12 +482,12 @@ function App() {
               <div className="flex gap-3 mb-3">
                 <div className="flex-1 text-center border border-[#61dafb] bg-[rgba(9,12,8,0.5)] p-3">
                   <p className="text-sm font-bold text-[#61dafb] mb-1">Bitcoin Price</p>
-                  <p className="text-lg text-[#61dafb]">$97,234</p>
-                  <p className="text-xs text-[#61dafb]">+2.4%</p>
+                  <p className="text-lg text-[#61dafb]">$ IP</p>
+                  <p className="text-xs text-[#61dafb]">+ IP %</p>
                 </div>
                 <div className="flex-1 text-center border border-[#f7931a] bg-[rgba(9,12,8,0.5)] p-3">
                   <p className="text-sm font-bold text-[#f7931a] mb-1">Portfolio Value</p>
-                  <p className="text-lg text-[#f7931a]">$12,847.32</p>
+                  <p className="text-lg text-[#f7931a]">$I P</p>
                 </div>
               </div>
               <div className="flex gap-3">
@@ -514,8 +531,8 @@ function App() {
               <div className="flex gap-3">
                 <div className="flex-1 text-center border border-lightgreen bg-[rgba(9,12,8,0.5)] p-3">
                   <p className="text-sm font-bold text-lightgreen mb-1">Unrealized Gain</p>
-                  <p className="text-lg text-lightgreen">+$1,023.87</p>
-                  <p className="text-xs text-lightgreen">+8.66%</p>
+                  <p className="text-lg text-lightgreen">+$ IP</p>
+                  <p className="text-xs text-lightgreen">+ IP %</p>
                 </div>
               </div>
             </div>
@@ -576,11 +593,12 @@ function App() {
                 </button>
               </div>
               {/* Column Headers */}
-              <div className="grid grid-cols-6 gap-2 mt-2 text-xs font-medium text-[rgba(247,243,227,0.6)]">
+              <div className="grid gap-2 mt-2 text-xs font-medium text-[rgba(247,243,227,0.6)]" style={{gridTemplateColumns: "2fr 0.8fr 1.2fr 1fr 1fr 1.5fr 1.5fr"}}>
                 <div>Date</div>
                 <div>Type</div>
                 <div>Amount</div>
                 <div>USD</div>
+                <div>BTC/USD</div>
                 <div>Memo</div>
                 <div>Actions</div>
               </div>

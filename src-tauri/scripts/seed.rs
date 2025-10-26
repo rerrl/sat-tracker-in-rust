@@ -112,7 +112,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     "INSERT INTO balance_change_events (id, amount_sats, value_cents, event_type, memo, created_at) VALUES (?, ?, ?, ?, ?, ?)"
                 )
                 .bind(Uuid::new_v4().to_string())
-                .bind(-amount_sats)
+                .bind(amount_sats)
                 .bind(value_cents)
                 .bind("Sell")
                 .bind(&memo)
@@ -128,7 +128,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     "INSERT INTO balance_change_events (id, amount_sats, value_cents, event_type, memo, created_at) VALUES (?, ?, ?, ?, ?, ?)"
                 )
                 .bind(Uuid::new_v4().to_string())
-                .bind(-amount_sats)
+                .bind(amount_sats)
                 .bind(0)
                 .bind("Fee")
                 .bind(&memo)
