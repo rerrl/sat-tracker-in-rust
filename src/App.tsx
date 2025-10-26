@@ -5,6 +5,7 @@ import "./App.css";
 const EventItem = React.memo(({ 
   event, 
   isEditing, 
+  isCreating,
   onEdit, 
   onSave, 
   onDelete, 
@@ -12,8 +13,9 @@ const EventItem = React.memo(({
   editData,
   onEditDataChange 
 }: { 
-  event: BalanceChangeEvent;
+  event: BalanceChangeEvent | null; // Allow null for new events
   isEditing: boolean;
+  isCreating?: boolean; // New prop to indicate creation mode
   onEdit: () => void;
   onSave: () => void;
   onDelete: () => void;
@@ -21,19 +23,21 @@ const EventItem = React.memo(({
   editData: any;
   onEditDataChange: (field: string, value: any) => void;
 }) => {
-  if (isEditing) {
+  if (isEditing || isCreating) {
     return (
       <div className="border-b border-[rgba(247,243,227,0.1)] bg-[rgba(247,243,227,0.05)] px-4 py-2 text-xs">
         <div className="grid grid-cols-6 gap-2 items-center">
           <div className="text-[rgba(247,243,227,0.6)]">
-            {new Date(event.created_at).toLocaleString('en-US', {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: true
-            }).replace(',', '')}
+            {isCreating ? 'New Event' : (
+              new Date(event!.created_at).toLocaleString('en-US', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+              }).replace(',', '')
+            )}
           </div>
           <div>
             <select 
@@ -55,18 +59,40 @@ const EventItem = React.memo(({
           </div>
           <div>
             <input
-              type="number"
-              value={editData.amount_sats}
-              onChange={(e) => onEditDataChange('amount_sats', parseInt(e.target.value) || 0)}
+              type="text"
+              value={editData.amount_sats?.toString() || ''}
+              onChange={(e) => {
+                const value = e.target.value;
+                // Allow empty string or valid numbers
+                if (value === '' || /^\d+$/.test(value)) {
+                  onEditDataChange('amount_sats', value === '' ? 0 : parseInt(value));
+                }
+              }}
               className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded"
             />
           </div>
           <div>
             <input
-              type="number"
-              step="0.01"
+              type="text"
               value={editData.value_cents ? (editData.value_cents / 100).toFixed(2) : ''}
-              onChange={(e) => onEditDataChange('value_cents', e.target.value ? Math.round(parseFloat(e.target.value) * 100) : null)}
+              onChange={(e) => {
+                const value = e.target.value;
+                // Allow empty string, numbers with up to 2 decimal places, and partial inputs like "1." or ".5"
+                if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
+                  if (value === '') {
+                    onEditDataChange('value_cents', null);
+                  } else if (value === '.' || value === '') {
+                    onEditDataChange('value_cents', null);
+                  } else {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue)) {
+                      onEditDataChange('value_cents', Math.round(numValue * 100));
+                    } else {
+                      onEditDataChange('value_cents', null);
+                    }
+                  }
+                }
+              }}
               className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded"
               placeholder="0.00"
             />
@@ -87,12 +113,14 @@ const EventItem = React.memo(({
             >
               Save
             </button>
-            <button
-              onClick={onDelete}
-              className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs rounded"
-            >
-              Del
-            </button>
+            {!isCreating && ( // Only show delete button when editing existing events
+              <button
+                onClick={onDelete}
+                className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs rounded"
+              >
+                Del
+              </button>
+            )}
             <button
               onClick={onCancel}
               className="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 text-xs rounded"
@@ -105,6 +133,9 @@ const EventItem = React.memo(({
     );
   }
 
+  // Regular display mode (only for existing events)
+  if (!event) return null;
+  
   return (
     <div className="border-b border-[rgba(247,243,227,0.1)] hover:bg-[rgba(247,243,227,0.1)] px-4 py-2 text-xs group">
       <div className="grid grid-cols-6 gap-2 items-center">
@@ -151,6 +182,8 @@ function App() {
   const [totalCount, setTotalCount] = useState(0);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [editData, setEditData] = useState<any>(null);
+  const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [newEventData, setNewEventData] = useState<any>(null);
 
   const observer = useRef<IntersectionObserver>();
   const lastEventElementRef = useCallback(
@@ -214,6 +247,10 @@ function App() {
 
 
   const handleEditEvent = (event: BalanceChangeEvent) => {
+    // Cancel new event creation if in progress
+    setIsCreatingNew(false);
+    setNewEventData(null);
+    
     setEditingEventId(event.id);
     setEditData({
       event_type: event.event_type,
@@ -282,6 +319,59 @@ function App() {
 
   const handleEditDataChange = (field: string, value: any) => {
     setEditData((prev: any) => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleAddNewEvent = () => {
+    setIsCreatingNew(true);
+    setNewEventData({
+      event_type: 'Buy',
+      amount_sats: 0,
+      value_cents: null,
+      memo: null
+    });
+    // Cancel any existing edits
+    setEditingEventId(null);
+    setEditData(null);
+  };
+
+  const handleSaveNewEvent = async () => {
+    if (!newEventData) return;
+    
+    try {
+      const createRequest = {
+        amount_sats: newEventData.amount_sats,
+        value_cents: newEventData.value_cents,
+        event_type: newEventData.event_type as 'Buy' | 'Sell' | 'Fee',
+        memo: newEventData.memo
+      };
+      
+      const createdEvent = await TauriService.createBalanceChangeEvent(createRequest);
+      
+      // Add the new event to the beginning of the list
+      setEvents(prevEvents => [createdEvent, ...prevEvents]);
+      
+      // Update total count
+      setTotalCount(prevCount => prevCount + 1);
+      
+      console.log('Event created successfully:', createdEvent);
+    } catch (error) {
+      console.error('Error creating event:', error);
+    } finally {
+      setIsCreatingNew(false);
+      setNewEventData(null);
+    }
+  };
+
+  const handleCancelNewEvent = () => {
+    setIsCreatingNew(false);
+    setNewEventData(null);
+  };
+
+  const handleNewEventDataChange = (field: string, value: any) => {
+    setNewEventData((prev: any) => ({
       ...prev,
       [field]: value
     }));
@@ -408,9 +498,17 @@ function App() {
           <div className="h-1/2 bg-[#2A2633] flex flex-col">
             {/* Header */}
             <div className="px-4 py-3 border-b border-[rgba(247,243,227,0.2)] bg-[rgba(42,38,51,0.8)] shrink-0">
-              <h3 className="text-sm font-semibold text-[#F7F3E3]">
-                Events ({events.length} of {totalCount})
-              </h3>
+              <div className="flex justify-between items-center">
+                <h3 className="text-sm font-semibold text-[#F7F3E3]">
+                  Events ({events.length} of {totalCount})
+                </h3>
+                <button
+                  onClick={handleAddNewEvent}
+                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-xs rounded"
+                >
+                  Add Event
+                </button>
+              </div>
               {/* Column Headers */}
               <div className="grid grid-cols-6 gap-2 mt-2 text-xs font-medium text-[rgba(247,243,227,0.6)]">
                 <div>Date</div>
@@ -424,6 +522,21 @@ function App() {
 
             {/* Events List - Scrollable within this section only */}
             <div className="flex-1 overflow-y-auto">
+              {/* New Event Row using EventItem */}
+              {isCreatingNew && (
+                <EventItem 
+                  event={null}
+                  isEditing={false}
+                  isCreating={true}
+                  onEdit={() => {}}
+                  onSave={handleSaveNewEvent}
+                  onDelete={() => {}}
+                  onCancel={handleCancelNewEvent}
+                  editData={newEventData}
+                  onEditDataChange={handleNewEventDataChange}
+                />
+              )}
+              
               {events.map((event, index) => (
                 <div
                   key={event.id}
@@ -432,6 +545,7 @@ function App() {
                   <EventItem 
                     event={event}
                     isEditing={editingEventId === event.id}
+                    isCreating={false}
                     onEdit={() => handleEditEvent(event)}
                     onSave={handleSaveEvent}
                     onDelete={handleDeleteEvent}
