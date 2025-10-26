@@ -190,7 +190,7 @@ const EventItem = React.memo(({
           {event.event_type === "Buy" ? "+" : "-"} {event.amount_sats.toLocaleString()} sats
         </div>
         <div className="text-[#F7F3E3] font-semibold">
-          {event.value_cents ? `$${(event.value_cents / 100).toFixed(2)}` : '-'}
+          {event.value_cents ? `$${(event.value_cents / 100).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '-'}
         </div>
         <div className="text-[#F7F3E3] text-xs">
           {(event.event_type === 'Buy' || event.event_type === 'Sell') && 
@@ -524,7 +524,7 @@ function App() {
                 <div className="flex-1 text-center border border-lightgreen bg-[rgba(9,12,8,0.5)] p-3">
                   <p className="text-sm font-bold text-lightgreen mb-1">Total Invested</p>
                   <p className="text-lg text-lightgreen">
-                    {metricsLoading ? '...' : `$${((portfolioMetrics?.total_invested_cents || 0) / 100).toFixed(2)}`}
+                    {metricsLoading ? '...' : `$${((portfolioMetrics?.total_invested_cents || 0) / 100).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`}
                   </p>
                 </div>
               </div>
@@ -552,7 +552,7 @@ function App() {
                 <div className="flex-1 text-center border border-lightcoral bg-[rgba(9,12,8,0.5)] p-3">
                   <p className="text-sm font-bold text-lightcoral mb-1">Fiat Extracted</p>
                   <p className="text-lg text-lightcoral">
-                    {metricsLoading ? '...' : `$${((portfolioMetrics?.fiat_extracted_cents || 0) / 100).toFixed(2)}`}
+                    {metricsLoading ? '...' : `$${((portfolioMetrics?.fiat_extracted_cents || 0) / 100).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`}
                   </p>
                 </div>
                 <div className="flex-1 text-center border border-lightcoral bg-[rgba(9,12,8,0.5)] p-3">
