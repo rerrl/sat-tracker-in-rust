@@ -42,7 +42,14 @@ const EventItem = React.memo(({
           <div>
             <select 
               value={editData.event_type}
-              onChange={(e) => onEditDataChange('event_type', e.target.value)}
+              onChange={(e) => {
+                const newType = e.target.value;
+                onEditDataChange('event_type', newType);
+                // Clear value_cents when switching to Fee, keep it for Buy/Sell
+                if (newType === 'Fee') {
+                  onEditDataChange('value_cents', null);
+                }
+              }}
               className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded"
               style={{ 
                 backgroundColor: '#090C08', 
@@ -74,10 +81,13 @@ const EventItem = React.memo(({
           <div>
             <input
               type="text"
-              value={editData.value_cents === null || editData.value_cents === undefined ? '' : 
-                     editData.value_cents === '' ? '' : 
-                     (typeof editData.value_cents === 'string' ? editData.value_cents : (editData.value_cents / 100).toString())}
+              value={editData.event_type === 'Fee' ? 'N/A' : 
+                     (editData.value_cents === null || editData.value_cents === undefined ? '' : 
+                      editData.value_cents === '' ? '' : 
+                      (typeof editData.value_cents === 'string' ? editData.value_cents : (editData.value_cents / 100).toString()))}
               onChange={(e) => {
+                if (editData.event_type === 'Fee') return; // Don't allow changes for Fee type
+                
                 const value = e.target.value;
                 // Allow empty string or positive numbers with up to 2 decimal places
                 if (value === '' || /^[0-9]+(\.[0-9]{0,2})?$/.test(value)) {
@@ -90,6 +100,8 @@ const EventItem = React.memo(({
                 }
               }}
               onBlur={() => {
+                if (editData.event_type === 'Fee') return; // Don't process blur for Fee type
+                
                 if (editData.value_cents && typeof editData.value_cents === 'string') {
                   const numValue = parseFloat(editData.value_cents);
                   if (!isNaN(numValue)) {
@@ -97,8 +109,13 @@ const EventItem = React.memo(({
                   }
                 }
               }}
-              className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded"
-              placeholder="0.00"
+              disabled={editData.event_type === 'Fee'}
+              className={`w-full border px-2 py-1 text-xs rounded ${
+                editData.event_type === 'Fee' 
+                  ? 'bg-[rgba(9,12,8,0.5)] border-[rgba(247,243,227,0.1)] text-[rgba(247,243,227,0.4)] cursor-not-allowed' 
+                  : 'bg-[#090C08] border-[rgba(247,243,227,0.3)] text-[#F7F3E3]'
+              }`}
+              placeholder={editData.event_type === 'Fee' ? 'N/A for fees' : '0.00'}
             />
           </div>
           <div>
@@ -143,7 +160,7 @@ const EventItem = React.memo(({
   return (
     <div className="border-b border-[rgba(247,243,227,0.1)] hover:bg-[rgba(247,243,227,0.1)] px-4 py-2 text-xs group">
       <div className="grid grid-cols-6 gap-2 items-center">
-        <div className="text-[rgba(247,243,227,0.6)]">
+        <div className="text-[rgba(247,243,227,0.5)] text-xs">
           {new Date(event.created_at).toLocaleString('en-US', {
             year: 'numeric',
             month: '2-digit',
@@ -153,16 +170,20 @@ const EventItem = React.memo(({
             hour12: true
           }).replace(',', '')}
         </div>
-        <div className="font-medium text-[#F7F3E3]">
+        <div className={`font-medium text-xs ${
+          event.event_type === 'Buy' ? 'text-green-400' :
+          event.event_type === 'Sell' ? 'text-red-400' :
+          'text-yellow-400'
+        }`}>
           {event.event_type}
         </div>
-        <div className="text-[rgba(247,243,227,0.8)]">
+        <div className="text-[#F7F3E3] font-semibold">
           {event.amount_sats.toLocaleString()} sats
         </div>
-        <div className="text-[rgba(247,243,227,0.8)]">
+        <div className="text-[#F7F3E3] font-semibold">
           {event.value_cents ? `$${(event.value_cents / 100).toFixed(2)}` : '-'}
         </div>
-        <div className="text-[rgba(247,243,227,0.6)] truncate">
+        <div className="text-[rgba(247,243,227,0.5)] truncate text-xs">
           {event.memo || '-'}
         </div>
         <div className="flex justify-end">
@@ -518,7 +539,7 @@ function App() {
                 <div>Date</div>
                 <div>Type</div>
                 <div>Amount</div>
-                <div>Value</div>
+                <div>USD</div>
                 <div>Memo</div>
                 <div>Actions</div>
               </div>
