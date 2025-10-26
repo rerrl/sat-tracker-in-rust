@@ -37,7 +37,7 @@ export class TauriService {
   // Get paginated balance change events with simple parameters
   static async getBalanceChangeEvents(
     page: number = 0,
-    pageSize: number = 10
+    pageSize: number = 100
   ): Promise<PaginatedBalanceChangeEvents> {
     return await invoke("get_balance_change_events", { 
       page, 
