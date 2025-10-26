@@ -18,3 +18,20 @@
   will-change: filter;
   transition: 0.75s;
 }
+
+/* Add these custom color utilities */
+.border-lightgreen {
+  border-color: lightgreen;
+}
+
+.text-lightgreen {
+  color: lightgreen;
+}
+
+.border-lightcoral {
+  border-color: lightcoral;
+}
+
+.text-lightcoral {
+  color: lightcoral;
+}
