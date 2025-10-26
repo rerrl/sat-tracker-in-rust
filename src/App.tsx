@@ -130,21 +130,23 @@ function App() {
                 Overview
               </h3>
               <div className="flex gap-3 mb-3">
-                <div className="flex-1 text-center border border-[#61dafb] bg-[#090C08] p-3">
+                <div className="flex-1 text-center border border-[#61dafb] bg-[rgba(9,12,8,0.5)] p-3">
                   <p className="text-sm font-bold text-[#61dafb] mb-1">Bitcoin Price</p>
                   <p className="text-lg text-[#61dafb]">$97,234</p>
+                  <p className="text-xs text-[#61dafb]">+2.4%</p>
                 </div>
-                <div className="flex-1 text-center border border-[#f7931a] bg-[#090C08] p-3">
+                <div className="flex-1 text-center border border-[#f7931a] bg-[rgba(9,12,8,0.5)] p-3">
                   <p className="text-sm font-bold text-[#f7931a] mb-1">Portfolio Value</p>
                   <p className="text-lg text-[#f7931a]">$12,847.32</p>
                 </div>
               </div>
               <div className="flex gap-3">
-                <div className="flex-1 text-center border border-[#f7931a] bg-[#090C08] p-3">
+                <div className="flex-1 text-center border border-[#f7931a] bg-[rgba(9,12,8,0.5)] p-3">
                   <p className="text-sm font-bold text-[#f7931a] mb-1">Current Sats</p>
                   <p className="text-lg text-[#f7931a]">13,214,567</p>
+                  <p className="text-xs text-[#f7931a]">0.13214567 BTC</p>
                 </div>
-                <div className="flex-1 text-center border border-[#f7931a] bg-[#090C08] p-3">
+                <div className="flex-1 text-center border border-[#f7931a] bg-[rgba(9,12,8,0.5)] p-3">
                   <p className="text-sm font-bold text-[#f7931a] mb-1">Total Sats Stacked</p>
                   <p className="text-lg text-[#f7931a]">15,234,567</p>
                 </div>
@@ -156,15 +158,21 @@ function App() {
               <h3 className="text-md font-semibold text-[#F7F3E3] mb-2 border-b border-[rgba(247,243,227,0.2)] pb-1">
                 Buys
               </h3>
-              <div className="flex gap-3">
-                <div className="flex-1 text-center border border-lightgreen bg-[#090C08] p-3">
-                  <p className="text-sm font-bold text-lightgreen mb-1">Total Buys</p>
-                  <p className="text-lg text-lightgreen">42</p>
-                  <p className="text-xs text-lightgreen">$11,823.45</p>
-                </div>
-                <div className="flex-1 text-center border border-lightgreen bg-[#090C08] p-3">
+              <div className="flex gap-3 mb-3">
+                <div className="flex-1 text-center border border-lightgreen bg-[rgba(9,12,8,0.5)] p-3">
                   <p className="text-sm font-bold text-lightgreen mb-1">Avg Buy Price</p>
                   <p className="text-lg text-lightgreen">$89,456</p>
+                </div>
+                <div className="flex-1 text-center border border-lightgreen bg-[rgba(9,12,8,0.5)] p-3">
+                  <p className="text-sm font-bold text-lightgreen mb-1">Total Invested</p>
+                  <p className="text-lg text-lightgreen">$11,823.45</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="flex-1 text-center border border-lightgreen bg-[rgba(9,12,8,0.5)] p-3">
+                  <p className="text-sm font-bold text-lightgreen mb-1">Unrealized Gain</p>
+                  <p className="text-lg text-lightgreen">+$1,023.87</p>
+                  <p className="text-xs text-lightgreen">+8.66%</p>
                 </div>
               </div>
             </div>
@@ -175,18 +183,17 @@ function App() {
                 Sells
               </h3>
               <div className="flex gap-3">
-                <div className="flex-1 text-center border border-lightcoral bg-[#090C08] p-3">
-                  <p className="text-sm font-bold text-lightcoral mb-1">Total Sells</p>
-                  <p className="text-lg text-lightcoral">3</p>
-                  <p className="text-xs text-lightcoral">$2,156.78</p>
-                </div>
-                <div className="flex-1 text-center border border-lightcoral bg-[#090C08] p-3">
+                <div className="flex-1 text-center border border-lightcoral bg-[rgba(9,12,8,0.5)] p-3">
                   <p className="text-sm font-bold text-lightcoral mb-1">Avg Sell Price</p>
                   <p className="text-lg text-lightcoral">$95,234</p>
                 </div>
-                <div className="flex-1 text-center border border-lightcoral bg-[#090C08] p-3">
-                  <p className="text-sm font-bold text-lightcoral mb-1">Total Fees</p>
-                  <p className="text-lg text-lightcoral">$234.56</p>
+                <div className="flex-1 text-center border border-lightcoral bg-[rgba(9,12,8,0.5)] p-3">
+                  <p className="text-sm font-bold text-lightcoral mb-1">Fiat Extracted</p>
+                  <p className="text-lg text-lightcoral">$2,156.78</p>
+                </div>
+                <div className="flex-1 text-center border border-lightcoral bg-[rgba(9,12,8,0.5)] p-3">
+                  <p className="text-sm font-bold text-lightcoral mb-1">Total Sats Spent</p>
+                  <p className="text-lg text-lightcoral">2,020,000</p>
                 </div>
               </div>
             </div>
