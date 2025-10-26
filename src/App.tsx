@@ -60,12 +60,12 @@ const EventItem = React.memo(({
           <div>
             <input
               type="text"
-              value={editData.amount_sats?.toString() || ''}
+              value={editData.amount_sats === '' ? '' : (editData.amount_sats?.toString() || '')}
               onChange={(e) => {
                 const value = e.target.value;
-                // Allow empty string or valid numbers
-                if (value === '' || /^\d+$/.test(value)) {
-                  onEditDataChange('amount_sats', value === '' ? 0 : parseInt(value));
+                // Allow empty string or positive integers only
+                if (value === '' || /^[1-9]\d*$/.test(value)) {
+                  onEditDataChange('amount_sats', value === '' ? '' : parseInt(value));
                 }
               }}
               className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded"
@@ -74,22 +74,26 @@ const EventItem = React.memo(({
           <div>
             <input
               type="text"
-              value={editData.value_cents ? (editData.value_cents / 100).toFixed(2) : ''}
+              value={editData.value_cents === null || editData.value_cents === undefined ? '' : 
+                     editData.value_cents === '' ? '' : 
+                     (typeof editData.value_cents === 'string' ? editData.value_cents : (editData.value_cents / 100).toString())}
               onChange={(e) => {
                 const value = e.target.value;
-                // Allow empty string, numbers with up to 2 decimal places, and partial inputs like "1." or ".5"
-                if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
+                // Allow empty string or positive numbers with up to 2 decimal places
+                if (value === '' || /^[0-9]+(\.[0-9]{0,2})?$/.test(value)) {
                   if (value === '') {
-                    onEditDataChange('value_cents', null);
-                  } else if (value === '.' || value === '') {
-                    onEditDataChange('value_cents', null);
+                    onEditDataChange('value_cents', '');
                   } else {
-                    const numValue = parseFloat(value);
-                    if (!isNaN(numValue)) {
-                      onEditDataChange('value_cents', Math.round(numValue * 100));
-                    } else {
-                      onEditDataChange('value_cents', null);
-                    }
+                    // Store the string value during typing, convert to cents only when complete
+                    onEditDataChange('value_cents', value);
+                  }
+                }
+              }}
+              onBlur={() => {
+                if (editData.value_cents && typeof editData.value_cents === 'string') {
+                  const numValue = parseFloat(editData.value_cents);
+                  if (!isNaN(numValue)) {
+                    onEditDataChange('value_cents', Math.round(numValue * 100));
                   }
                 }
               }}
