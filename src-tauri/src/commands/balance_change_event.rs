@@ -1,7 +1,8 @@
 use crate::models::balance_change_event::{BalanceChangeEvent, CreateBalanceChangeEventRequest, UpdateBalanceChangeEventRequest, PaginatedBalanceChangeEvents};
+use crate::models::portfolio_metrics::PortfolioMetrics;
 use uuid::Uuid;
 use chrono::Utc;
-use sqlx::SqlitePool;
+use sqlx::{SqlitePool, Row};
 use tauri::State;
 
 #[tauri::command]
@@ -126,4 +127,62 @@ pub async fn delete_balance_change_event(
     
     println!("Deleted balance change event with id: {}", id);
     Ok(())
+}
+
+#[tauri::command]
+pub async fn get_portfolio_metrics(
+    pool: State<'_, SqlitePool>,
+) -> Result<PortfolioMetrics, String> {
+    let row = sqlx::query(
+        r#"
+        SELECT 
+            COALESCE(SUM(CASE WHEN event_type = 'Buy' THEN amount_sats ELSE 0 END), 0) as total_bought_sats,
+            COALESCE(SUM(CASE WHEN event_type = 'Sell' THEN amount_sats ELSE 0 END), 0) as total_sold_sats,
+            COALESCE(SUM(CASE WHEN event_type = 'Fee' THEN amount_sats ELSE 0 END), 0) as total_fee_sats,
+            COALESCE(SUM(CASE WHEN event_type = 'Buy' AND value_cents IS NOT NULL THEN value_cents ELSE 0 END), 0) as total_invested_cents,
+            COALESCE(SUM(CASE WHEN event_type = 'Sell' AND value_cents IS NOT NULL THEN value_cents ELSE 0 END), 0) as total_extracted_cents,
+            COUNT(CASE WHEN event_type = 'Buy' AND value_cents IS NOT NULL THEN 1 END) as buy_count,
+            COUNT(CASE WHEN event_type = 'Sell' AND value_cents IS NOT NULL THEN 1 END) as sell_count
+        FROM balance_change_events
+        "#
+    )
+    .fetch_one(pool.inner())
+    .await
+    .map_err(|e| format!("Database error: {}", e))?;
+
+    let total_bought_sats: i64 = row.get("total_bought_sats");
+    let total_sold_sats: i64 = row.get("total_sold_sats");
+    let total_fee_sats: i64 = row.get("total_fee_sats");
+    let total_invested_cents: i64 = row.get("total_invested_cents");
+    let total_extracted_cents: i64 = row.get("total_extracted_cents");
+    let buy_count: i64 = row.get("buy_count");
+    let sell_count: i64 = row.get("sell_count");
+    
+    let current_sats = total_bought_sats - total_sold_sats - total_fee_sats;
+    let total_sats_stacked = total_bought_sats;
+    
+    let avg_buy_price = if buy_count > 0 && total_bought_sats > 0 {
+        Some((total_invested_cents as f64 / 100.0) / (total_bought_sats as f64 / 100_000_000.0))
+    } else { 
+        None 
+    };
+    
+    let avg_sell_price = if sell_count > 0 && total_sold_sats > 0 {
+        Some((total_extracted_cents as f64 / 100.0) / (total_sold_sats as f64 / 100_000_000.0))
+    } else { 
+        None 
+    };
+
+    let portfolio_metrics = PortfolioMetrics {
+        current_sats,
+        total_sats_stacked,
+        avg_buy_price,
+        total_invested_cents,
+        avg_sell_price,
+        fiat_extracted_cents: total_extracted_cents,
+        total_sats_spent: total_sold_sats + total_fee_sats,
+    };
+
+    println!("Calculated portfolio metrics: {:?}", portfolio_metrics);
+    Ok(portfolio_metrics)
 }

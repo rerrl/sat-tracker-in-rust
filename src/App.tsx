@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { TauriService, BalanceChangeEvent } from "./services/tauriService";
+import { TauriService, BalanceChangeEvent, PortfolioMetrics } from "./services/tauriService";
 import "./App.css";
 
 const EventItem = React.memo(({ 
@@ -209,6 +209,8 @@ function App() {
   const [editData, setEditData] = useState<any>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [newEventData, setNewEventData] = useState<any>(null);
+  const [portfolioMetrics, setPortfolioMetrics] = useState<PortfolioMetrics | null>(null);
+  const [metricsLoading, setMetricsLoading] = useState(false);
 
   const observer = useRef<IntersectionObserver>();
   const lastEventElementRef = useCallback(
@@ -251,6 +253,19 @@ function App() {
       console.error("Error loading events:", error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  // Load portfolio metrics
+  async function loadPortfolioMetrics() {
+    setMetricsLoading(true);
+    try {
+      const metrics = await TauriService.getPortfolioMetrics();
+      setPortfolioMetrics(metrics);
+    } catch (error) {
+      console.error("Error loading portfolio metrics:", error);
+    } finally {
+      setMetricsLoading(false);
     }
   }
 
@@ -306,6 +321,9 @@ function App() {
       );
       
       console.log('Event updated successfully:', updatedEvent);
+      
+      // Refresh portfolio metrics
+      loadPortfolioMetrics();
     } catch (error) {
       console.error('Error updating event:', error);
     } finally {
@@ -329,6 +347,9 @@ function App() {
       setTotalCount(prevCount => prevCount - 1);
       
       console.log('Event deleted successfully');
+      
+      // Refresh portfolio metrics
+      loadPortfolioMetrics();
     } catch (error) {
       console.error('Error deleting event:', error);
     } finally {
@@ -382,6 +403,9 @@ function App() {
       setTotalCount(prevCount => prevCount + 1);
       
       console.log('Event created successfully:', createdEvent);
+      
+      // Refresh portfolio metrics
+      loadPortfolioMetrics();
     } catch (error) {
       console.error('Error creating event:', error);
     } finally {
@@ -402,9 +426,10 @@ function App() {
     }));
   };
 
-  // Load initial events on component mount
+  // Load initial events and portfolio metrics on component mount
   useEffect(() => {
     loadInitialEvents();
+    loadPortfolioMetrics();
   }, []);
 
   return (
@@ -451,12 +476,18 @@ function App() {
               <div className="flex gap-3">
                 <div className="flex-1 text-center border border-[#f7931a] bg-[rgba(9,12,8,0.5)] p-3">
                   <p className="text-sm font-bold text-[#f7931a] mb-1">Current Sats</p>
-                  <p className="text-lg text-[#f7931a]">13,214,567</p>
-                  <p className="text-xs text-[#f7931a]">0.13214567 BTC</p>
+                  <p className="text-lg text-[#f7931a]">
+                    {metricsLoading ? '...' : portfolioMetrics?.current_sats.toLocaleString() || '0'}
+                  </p>
+                  <p className="text-xs text-[#f7931a]">
+                    {metricsLoading ? '...' : (portfolioMetrics?.current_sats ? (portfolioMetrics.current_sats / 100_000_000).toFixed(8) : '0.00000000')} BTC
+                  </p>
                 </div>
                 <div className="flex-1 text-center border border-[#f7931a] bg-[rgba(9,12,8,0.5)] p-3">
                   <p className="text-sm font-bold text-[#f7931a] mb-1">Total Sats Stacked</p>
-                  <p className="text-lg text-[#f7931a]">15,234,567</p>
+                  <p className="text-lg text-[#f7931a]">
+                    {metricsLoading ? '...' : portfolioMetrics?.total_sats_stacked.toLocaleString() || '0'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -469,11 +500,15 @@ function App() {
               <div className="flex gap-3 mb-3">
                 <div className="flex-1 text-center border border-lightgreen bg-[rgba(9,12,8,0.5)] p-3">
                   <p className="text-sm font-bold text-lightgreen mb-1">Avg Buy Price</p>
-                  <p className="text-lg text-lightgreen">$89,456</p>
+                  <p className="text-lg text-lightgreen">
+                    {metricsLoading ? '...' : portfolioMetrics?.avg_buy_price ? `$${portfolioMetrics.avg_buy_price.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}` : '-'}
+                  </p>
                 </div>
                 <div className="flex-1 text-center border border-lightgreen bg-[rgba(9,12,8,0.5)] p-3">
                   <p className="text-sm font-bold text-lightgreen mb-1">Total Invested</p>
-                  <p className="text-lg text-lightgreen">$11,823.45</p>
+                  <p className="text-lg text-lightgreen">
+                    {metricsLoading ? '...' : `$${((portfolioMetrics?.total_invested_cents || 0) / 100).toFixed(2)}`}
+                  </p>
                 </div>
               </div>
               <div className="flex gap-3">
@@ -493,15 +528,21 @@ function App() {
               <div className="flex gap-3">
                 <div className="flex-1 text-center border border-lightcoral bg-[rgba(9,12,8,0.5)] p-3">
                   <p className="text-sm font-bold text-lightcoral mb-1">Avg Sell Price</p>
-                  <p className="text-lg text-lightcoral">$95,234</p>
+                  <p className="text-lg text-lightcoral">
+                    {metricsLoading ? '...' : portfolioMetrics?.avg_sell_price ? `$${portfolioMetrics.avg_sell_price.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0})}` : '-'}
+                  </p>
                 </div>
                 <div className="flex-1 text-center border border-lightcoral bg-[rgba(9,12,8,0.5)] p-3">
                   <p className="text-sm font-bold text-lightcoral mb-1">Fiat Extracted</p>
-                  <p className="text-lg text-lightcoral">$2,156.78</p>
+                  <p className="text-lg text-lightcoral">
+                    {metricsLoading ? '...' : `$${((portfolioMetrics?.fiat_extracted_cents || 0) / 100).toFixed(2)}`}
+                  </p>
                 </div>
                 <div className="flex-1 text-center border border-lightcoral bg-[rgba(9,12,8,0.5)] p-3">
                   <p className="text-sm font-bold text-lightcoral mb-1">Total Sats Spent</p>
-                  <p className="text-lg text-lightcoral">2,020,000</p>
+                  <p className="text-lg text-lightcoral">
+                    {metricsLoading ? '...' : portfolioMetrics?.total_sats_spent.toLocaleString() || '0'}
+                  </p>
                 </div>
               </div>
             </div>

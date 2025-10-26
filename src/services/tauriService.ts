@@ -33,6 +33,16 @@ export interface PaginatedBalanceChangeEvents {
   has_more: boolean;
 }
 
+export interface PortfolioMetrics {
+  current_sats: number;
+  total_sats_stacked: number;
+  avg_buy_price: number | null;
+  total_invested_cents: number;
+  avg_sell_price: number | null;
+  fiat_extracted_cents: number;
+  total_sats_spent: number;
+}
+
 export class TauriService {
   // Create a new balance change event
   static async createBalanceChangeEvent(
@@ -64,6 +74,11 @@ export class TauriService {
   static async deleteBalanceChangeEvent(id: string): Promise<void> {
     return await invoke("delete_balance_change_event", { id });
   }
+
+  // Get portfolio metrics
+  static async getPortfolioMetrics(): Promise<PortfolioMetrics> {
+    return await invoke("get_portfolio_metrics");
+  }
 }
 
 // Export individual functions for convenience
@@ -71,5 +86,6 @@ export const {
   createBalanceChangeEvent,
   getBalanceChangeEvents,
   updateBalanceChangeEvent,
-  deleteBalanceChangeEvent
+  deleteBalanceChangeEvent,
+  getPortfolioMetrics
 } = TauriService;
