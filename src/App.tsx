@@ -105,11 +105,30 @@ function App() {
 
       {/* Main Content - Two Columns */}
       <div className="flex h-[calc(100vh-73px)]"> {/* Subtract header height */}
-        {/* Left Column - Events (40%) */}
+        {/* Left Column - Empty for now (40%) */}
         <div className="w-2/5 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <div className="flex flex-col h-full">
+          <div className="p-6">
+            <div className="text-gray-500 dark:text-gray-400 text-center">
+              Left column content coming soon...
+            </div>
+          </div>
+        </div>
+        
+        {/* Right Column - Split into top and bottom (60%) */}
+        <div className="flex-1 flex flex-col">
+          {/* Top Section (50%) */}
+          <div className="h-1/2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+            <div className="p-6">
+              <div className="text-gray-500 dark:text-gray-400 text-center">
+                Top section content coming soon...
+              </div>
+            </div>
+          </div>
+          
+          {/* Bottom Section (50%) - Events */}
+          <div className="h-1/2 bg-white dark:bg-gray-800 flex flex-col">
             {/* Header */}
-            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 flex-shrink-0">
               <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                 Events ({events.length} of {totalCount})
               </h3>
@@ -122,7 +141,7 @@ function App() {
               </div>
             </div>
 
-            {/* Events List */}
+            {/* Events List - Scrollable within this section only */}
             <div className="flex-1 overflow-y-auto">
               {events.map((event, index) => (
                 <div
@@ -147,27 +166,6 @@ function App() {
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-        
-        {/* Right Column - Split into top and bottom (60%) */}
-        <div className="flex-1 bg-gray-50 dark:bg-gray-900 flex flex-col">
-          {/* Top Section (50%) */}
-          <div className="flex-1 border-b border-gray-200 dark:border-gray-700">
-            <div className="p-6">
-              <div className="text-gray-500 dark:text-gray-400 text-center">
-                Top section content coming soon...
-              </div>
-            </div>
-          </div>
-          
-          {/* Bottom Section (50%) */}
-          <div className="flex-1">
-            <div className="p-6">
-              <div className="text-gray-500 dark:text-gray-400 text-center">
-                Bottom section content coming soon...
-              </div>
             </div>
           </div>
         </div>
