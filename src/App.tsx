@@ -3,45 +3,19 @@ import { TauriService, BalanceChangeEvent } from "./services/tauriService";
 import "./App.css";
 
 const EventItem = React.memo(({ event }: { event: BalanceChangeEvent }) => (
-  <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 cursor-pointer">
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
-      <div>
-        <span className="font-medium text-gray-600 dark:text-gray-400">
-          Type:
-        </span>
-        <p className="text-gray-900 dark:text-gray-100">{event.event_type}</p>
+  <div className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 px-4 py-2 text-xs">
+    <div className="grid grid-cols-4 gap-2 items-center">
+      <div className="font-medium text-gray-900 dark:text-gray-100">
+        {event.event_type}
       </div>
-      <div>
-        <span className="font-medium text-gray-600 dark:text-gray-400">
-          Amount:
-        </span>
-        <p className="text-gray-900 dark:text-gray-100">
-          {event.amount_sats} sats
-        </p>
+      <div className="text-gray-700 dark:text-gray-300">
+        {event.amount_sats.toLocaleString()} sats
       </div>
-      <div>
-        <span className="font-medium text-gray-600 dark:text-gray-400">
-          Value:
-        </span>
-        <p className="text-gray-900 dark:text-gray-100">
-          {event.value_cents ? `${event.value_cents} cents` : "N/A"}
-        </p>
+      <div className="text-gray-700 dark:text-gray-300">
+        {event.value_cents ? `$${(event.value_cents / 100).toFixed(2)}` : '-'}
       </div>
-      <div>
-        <span className="font-medium text-gray-600 dark:text-gray-400">
-          Memo:
-        </span>
-        <p className="text-gray-900 dark:text-gray-100">
-          {event.memo || "None"}
-        </p>
-      </div>
-      <div>
-        <span className="font-medium text-gray-600 dark:text-gray-400">
-          Created:
-        </span>
-        <p className="text-gray-900 dark:text-gray-100">
-          {new Date(event.created_at).toLocaleString()}
-        </p>
+      <div className="text-gray-600 dark:text-gray-400 truncate">
+        {event.memo || '-'}
       </div>
     </div>
   </div>
@@ -114,27 +88,6 @@ function App() {
     }
   }
 
-  // Create test event and refresh list
-  async function createTestEvent() {
-    try {
-      const event = await TauriService.createBalanceChangeEvent({
-        amount_sats: 100000,
-        value_cents: 5000,
-        event_type: "Buy",
-        memo: "Test purchase from React",
-      });
-
-      console.log("Created event:", event);
-
-      // Reset and reload from the beginning
-      setEvents([]);
-      setCurrentPage(0);
-      setHasMore(true);
-      loadInitialEvents();
-    } catch (error) {
-      console.error("Error creating event:", error);
-    }
-  }
 
   // Load initial events on component mount
   useEffect(() => {
@@ -142,57 +95,79 @@ function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
-      <div className="max-w-4xl mx-auto px-4">
-        <h1 className="text-3xl font-bold text-center text-gray-900 dark:text-gray-100 mb-8">
-          Sat Tracker In Rust
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Title Header */}
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          Sat Tracker
         </h1>
+      </div>
 
-        <div className="space-y-6">
-          <div className="text-center">
-            <button
-              onClick={createTestEvent}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors duration-200"
-            >
-              Create Test Event
-            </button>
-          </div>
+      {/* Main Content - Two Columns */}
+      <div className="flex h-[calc(100vh-73px)]"> {/* Subtract header height */}
+        {/* Left Column - Events (40%) */}
+        <div className="w-2/5 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+              <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                Events ({events.length} of {totalCount})
+              </h3>
+              {/* Column Headers */}
+              <div className="grid grid-cols-4 gap-2 mt-2 text-xs font-medium text-gray-600 dark:text-gray-400">
+                <div>Type</div>
+                <div>Amount</div>
+                <div>Value</div>
+                <div>Memo</div>
+              </div>
+            </div>
 
-          <div>
-            <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-4">
-              Events ({events.length} of {totalCount})
-            </h3>
-
-            {/* Simple scrollable list */}
-            <div className="space-y-3 max-h-[540px] overflow-y-auto">
+            {/* Events List */}
+            <div className="flex-1 overflow-y-auto">
               {events.map((event, index) => (
                 <div
                   key={event.id}
-                  ref={
-                    index === events.length - 10
-                      ? lastEventElementRef
-                      : undefined
-                  }
+                  ref={index === events.length - 10 ? lastEventElementRef : undefined}
                 >
                   <EventItem event={event} />
                 </div>
               ))}
               
-              {/* Loading and end messages inside the scrollable area */}
               {loading && (
                 <div className="text-center py-4">
-                  <div className="text-gray-600 dark:text-gray-400">
+                  <div className="text-xs text-gray-600 dark:text-gray-400">
                     Loading more events...
                   </div>
                 </div>
               )}
               {!hasMore && events.length > 0 && (
-                <div className="text-center py-8">
-                  <div className="text-gray-500 dark:text-gray-500">
+                <div className="text-center py-4">
+                  <div className="text-xs text-gray-500 dark:text-gray-500">
                     No more events to load
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+        
+        {/* Right Column - Split into top and bottom (60%) */}
+        <div className="flex-1 bg-gray-50 dark:bg-gray-900 flex flex-col">
+          {/* Top Section (50%) */}
+          <div className="flex-1 border-b border-gray-200 dark:border-gray-700">
+            <div className="p-6">
+              <div className="text-gray-500 dark:text-gray-400 text-center">
+                Top section content coming soon...
+              </div>
+            </div>
+          </div>
+          
+          {/* Bottom Section (50%) */}
+          <div className="flex-1">
+            <div className="p-6">
+              <div className="text-gray-500 dark:text-gray-400 text-center">
+                Bottom section content coming soon...
+              </div>
             </div>
           </div>
         </div>
