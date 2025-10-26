@@ -60,6 +60,14 @@ pub struct CreateBalanceChangeEventRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct UpdateBalanceChangeEventRequest {
+    pub amount_sats: i64,
+    pub value_cents: Option<i64>,
+    pub event_type: BalanceChangeType,
+    pub memo: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct PaginatedBalanceChangeEvents {
     pub events: Vec<BalanceChangeEvent>,
     pub total_count: i64,

@@ -1,4 +1,4 @@
-use crate::models::balance_change_event::{BalanceChangeEvent, CreateBalanceChangeEventRequest, PaginatedBalanceChangeEvents};
+use crate::models::balance_change_event::{BalanceChangeEvent, CreateBalanceChangeEventRequest, UpdateBalanceChangeEventRequest, PaginatedBalanceChangeEvents};
 use uuid::Uuid;
 use chrono::Utc;
 use sqlx::SqlitePool;
@@ -75,4 +75,55 @@ pub async fn get_balance_change_events(
     
     println!("Retrieved {} balance change events (page {} of {}, has_more: {})", result.events.len(), page, total_pages, has_more);
     Ok(result)
+}
+
+#[tauri::command]
+pub async fn update_balance_change_event(
+    pool: State<'_, SqlitePool>,
+    id: String,
+    request: UpdateBalanceChangeEventRequest,
+) -> Result<BalanceChangeEvent, String> {
+    // Update the event
+    sqlx::query(
+        "UPDATE balance_change_events SET amount_sats = ?, value_cents = ?, event_type = ?, memo = ? WHERE id = ?"
+    )
+    .bind(request.amount_sats)
+    .bind(request.value_cents)
+    .bind(request.event_type.to_string())
+    .bind(&request.memo)
+    .bind(&id)
+    .execute(pool.inner())
+    .await
+    .map_err(|e| format!("Database error: {}", e))?;
+    
+    // Fetch and return the updated event
+    let updated_event = sqlx::query_as::<_, BalanceChangeEvent>(
+        "SELECT id, amount_sats, value_cents, event_type, memo, created_at FROM balance_change_events WHERE id = ?"
+    )
+    .bind(&id)
+    .fetch_one(pool.inner())
+    .await
+    .map_err(|e| format!("Database error: {}", e))?;
+    
+    println!("Updated balance change event: {:?}", updated_event);
+    Ok(updated_event)
+}
+
+#[tauri::command]
+pub async fn delete_balance_change_event(
+    pool: State<'_, SqlitePool>,
+    id: String,
+) -> Result<(), String> {
+    let result = sqlx::query("DELETE FROM balance_change_events WHERE id = ?")
+        .bind(&id)
+        .execute(pool.inner())
+        .await
+        .map_err(|e| format!("Database error: {}", e))?;
+    
+    if result.rows_affected() == 0 {
+        return Err("Event not found".to_string());
+    }
+    
+    println!("Deleted balance change event with id: {}", id);
+    Ok(())
 }

@@ -2,34 +2,146 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { TauriService, BalanceChangeEvent } from "./services/tauriService";
 import "./App.css";
 
-const EventItem = React.memo(({ event }: { event: BalanceChangeEvent }) => (
-  <div className="border-b border-[rgba(247,243,227,0.1)] hover:bg-[rgba(247,243,227,0.1)] px-4 py-2 text-xs">
-    <div className="grid grid-cols-5 gap-2 items-center">
-      <div className="text-[rgba(247,243,227,0.6)]">
-        {new Date(event.created_at).toLocaleString('en-US', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true
-        }).replace(',', '')}
+const EventItem = React.memo(({ 
+  event, 
+  isEditing, 
+  onEdit, 
+  onSave, 
+  onDelete, 
+  onCancel,
+  editData,
+  onEditDataChange 
+}: { 
+  event: BalanceChangeEvent;
+  isEditing: boolean;
+  onEdit: () => void;
+  onSave: () => void;
+  onDelete: () => void;
+  onCancel: () => void;
+  editData: any;
+  onEditDataChange: (field: string, value: any) => void;
+}) => {
+  if (isEditing) {
+    return (
+      <div className="border-b border-[rgba(247,243,227,0.1)] bg-[rgba(247,243,227,0.05)] px-4 py-2 text-xs">
+        <div className="grid grid-cols-6 gap-2 items-center">
+          <div className="text-[rgba(247,243,227,0.6)]">
+            {new Date(event.created_at).toLocaleString('en-US', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true
+            }).replace(',', '')}
+          </div>
+          <div>
+            <select 
+              value={editData.event_type}
+              onChange={(e) => onEditDataChange('event_type', e.target.value)}
+              className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded"
+              style={{ 
+                backgroundColor: '#090C08', 
+                color: '#F7F3E3',
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                MozAppearance: 'none'
+              }}
+            >
+              <option value="Buy" style={{ backgroundColor: '#090C08', color: '#F7F3E3' }}>Buy</option>
+              <option value="Sell" style={{ backgroundColor: '#090C08', color: '#F7F3E3' }}>Sell</option>
+              <option value="Fee" style={{ backgroundColor: '#090C08', color: '#F7F3E3' }}>Fee</option>
+            </select>
+          </div>
+          <div>
+            <input
+              type="number"
+              value={editData.amount_sats}
+              onChange={(e) => onEditDataChange('amount_sats', parseInt(e.target.value) || 0)}
+              className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded"
+            />
+          </div>
+          <div>
+            <input
+              type="number"
+              step="0.01"
+              value={editData.value_cents ? (editData.value_cents / 100).toFixed(2) : ''}
+              onChange={(e) => onEditDataChange('value_cents', e.target.value ? Math.round(parseFloat(e.target.value) * 100) : null)}
+              className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded"
+              placeholder="0.00"
+            />
+          </div>
+          <div>
+            <input
+              type="text"
+              value={editData.memo || ''}
+              onChange={(e) => onEditDataChange('memo', e.target.value || null)}
+              className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded"
+              placeholder="Memo"
+            />
+          </div>
+          <div className="flex gap-1">
+            <button
+              onClick={onSave}
+              className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 text-xs rounded"
+            >
+              Save
+            </button>
+            <button
+              onClick={onDelete}
+              className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs rounded"
+            >
+              Del
+            </button>
+            <button
+              onClick={onCancel}
+              className="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 text-xs rounded"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       </div>
-      <div className="font-medium text-[#F7F3E3]">
-        {event.event_type}
-      </div>
-      <div className="text-[rgba(247,243,227,0.8)]">
-        {event.amount_sats.toLocaleString()} sats
-      </div>
-      <div className="text-[rgba(247,243,227,0.8)]">
-        {event.value_cents ? `$${(event.value_cents / 100).toFixed(2)}` : '-'}
-      </div>
-      <div className="text-[rgba(247,243,227,0.6)] truncate">
-        {event.memo || '-'}
+    );
+  }
+
+  return (
+    <div className="border-b border-[rgba(247,243,227,0.1)] hover:bg-[rgba(247,243,227,0.1)] px-4 py-2 text-xs group">
+      <div className="grid grid-cols-6 gap-2 items-center">
+        <div className="text-[rgba(247,243,227,0.6)]">
+          {new Date(event.created_at).toLocaleString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          }).replace(',', '')}
+        </div>
+        <div className="font-medium text-[#F7F3E3]">
+          {event.event_type}
+        </div>
+        <div className="text-[rgba(247,243,227,0.8)]">
+          {event.amount_sats.toLocaleString()} sats
+        </div>
+        <div className="text-[rgba(247,243,227,0.8)]">
+          {event.value_cents ? `$${(event.value_cents / 100).toFixed(2)}` : '-'}
+        </div>
+        <div className="text-[rgba(247,243,227,0.6)] truncate">
+          {event.memo || '-'}
+        </div>
+        <div className="flex justify-end">
+          <button
+            onClick={onEdit}
+            className="opacity-0 group-hover:opacity-100 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 text-xs rounded transition-opacity"
+          >
+            Edit
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-));
+  );
+});
 
 function App() {
   const [events, setEvents] = useState<BalanceChangeEvent[]>([]);
@@ -37,6 +149,8 @@ function App() {
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [editData, setEditData] = useState<any>(null);
 
   const observer = useRef<IntersectionObserver>();
   const lastEventElementRef = useCallback(
@@ -98,6 +212,80 @@ function App() {
     }
   }
 
+
+  const handleEditEvent = (event: BalanceChangeEvent) => {
+    setEditingEventId(event.id);
+    setEditData({
+      event_type: event.event_type,
+      amount_sats: event.amount_sats,
+      value_cents: event.value_cents,
+      memo: event.memo
+    });
+  };
+
+  const handleSaveEvent = async () => {
+    if (!editingEventId || !editData) return;
+    
+    try {
+      const updateRequest = {
+        amount_sats: editData.amount_sats,
+        value_cents: editData.value_cents,
+        event_type: editData.event_type as 'Buy' | 'Sell' | 'Fee',
+        memo: editData.memo
+      };
+      
+      const updatedEvent = await TauriService.updateBalanceChangeEvent(editingEventId, updateRequest);
+      
+      // Update the event in the local state
+      setEvents(prevEvents => 
+        prevEvents.map(event => 
+          event.id === editingEventId ? updatedEvent : event
+        )
+      );
+      
+      console.log('Event updated successfully:', updatedEvent);
+    } catch (error) {
+      console.error('Error updating event:', error);
+    } finally {
+      setEditingEventId(null);
+      setEditData(null);
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!editingEventId) return;
+    
+    try {
+      await TauriService.deleteBalanceChangeEvent(editingEventId);
+      
+      // Remove the event from local state
+      setEvents(prevEvents => 
+        prevEvents.filter(event => event.id !== editingEventId)
+      );
+      
+      // Update total count
+      setTotalCount(prevCount => prevCount - 1);
+      
+      console.log('Event deleted successfully');
+    } catch (error) {
+      console.error('Error deleting event:', error);
+    } finally {
+      setEditingEventId(null);
+      setEditData(null);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingEventId(null);
+    setEditData(null);
+  };
+
+  const handleEditDataChange = (field: string, value: any) => {
+    setEditData((prev: any) => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   // Load initial events on component mount
   useEffect(() => {
@@ -224,12 +412,13 @@ function App() {
                 Events ({events.length} of {totalCount})
               </h3>
               {/* Column Headers */}
-              <div className="grid grid-cols-5 gap-2 mt-2 text-xs font-medium text-[rgba(247,243,227,0.6)]">
+              <div className="grid grid-cols-6 gap-2 mt-2 text-xs font-medium text-[rgba(247,243,227,0.6)]">
                 <div>Date</div>
                 <div>Type</div>
                 <div>Amount</div>
                 <div>Value</div>
                 <div>Memo</div>
+                <div>Actions</div>
               </div>
             </div>
 
@@ -240,7 +429,16 @@ function App() {
                   key={event.id}
                   ref={index === events.length - 10 ? lastEventElementRef : undefined}
                 >
-                  <EventItem event={event} />
+                  <EventItem 
+                    event={event}
+                    isEditing={editingEventId === event.id}
+                    onEdit={() => handleEditEvent(event)}
+                    onSave={handleSaveEvent}
+                    onDelete={handleDeleteEvent}
+                    onCancel={handleCancelEdit}
+                    editData={editData}
+                    onEditDataChange={handleEditDataChange}
+                  />
                 </div>
               ))}
               

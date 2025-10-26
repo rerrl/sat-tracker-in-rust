@@ -17,6 +17,13 @@ export interface CreateBalanceChangeEventRequest {
   memo: string | null;
 }
 
+export interface UpdateBalanceChangeEventRequest {
+  amount_sats: number;
+  value_cents: number | null;
+  event_type: 'Buy' | 'Sell' | 'Fee';
+  memo: string | null;
+}
+
 export interface PaginatedBalanceChangeEvents {
   events: BalanceChangeEvent[];
   total_count: number;
@@ -44,10 +51,25 @@ export class TauriService {
       pageSize 
     });
   }
+
+  // Update a balance change event
+  static async updateBalanceChangeEvent(
+    id: string,
+    request: UpdateBalanceChangeEventRequest
+  ): Promise<BalanceChangeEvent> {
+    return await invoke("update_balance_change_event", { id, request });
+  }
+
+  // Delete a balance change event
+  static async deleteBalanceChangeEvent(id: string): Promise<void> {
+    return await invoke("delete_balance_change_event", { id });
+  }
 }
 
 // Export individual functions for convenience
 export const {
   createBalanceChangeEvent,
-  getBalanceChangeEvents
+  getBalanceChangeEvents,
+  updateBalanceChangeEvent,
+  deleteBalanceChangeEvent
 } = TauriService;
