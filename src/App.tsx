@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   TauriService,
   BalanceChangeEvent,
@@ -306,8 +306,6 @@ function App() {
 
   const [events, setEvents] = useState<BalanceChangeEvent[]>([]);
   const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [currentPage, setCurrentPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [editData, setEditData] = useState<any>(null);
@@ -326,50 +324,6 @@ function App() {
     memo: "",
   });
 
-  const observer = useRef<IntersectionObserver>();
-  const lastEventElementRef = useCallback(
-    (node: HTMLDivElement) => {
-      if (loading) return;
-      if (observer.current) observer.current.disconnect();
-      observer.current = new IntersectionObserver(
-        (entries) => {
-          if (entries[0].isIntersecting && hasMore) {
-            loadMoreEvents();
-          }
-        },
-        {
-          rootMargin: "200px", // Start loading 200px before reaching the element
-        }
-      );
-      if (node) observer.current.observe(node);
-    },
-    [loading, hasMore]
-  );
-
-  // Load more events - load big chunks for smooth experience
-  async function loadMoreEvents() {
-    if (loading || !hasMore) return;
-
-    setLoading(true);
-    try {
-      const result = await TauriService.getBalanceChangeEvents(
-        currentPage,
-        200
-      ); // Load 200 at once
-
-      setEvents((prevEvents) => [...prevEvents, ...result.events]);
-      setHasMore(result.has_more);
-      setCurrentPage((prevPage) => prevPage + 1);
-      setTotalCount(result.total_count);
-
-      console.log(`Loaded page ${result.page}, has more: ${result.has_more}`);
-    } catch (error) {
-      console.error("Error loading events:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   // Load portfolio metrics
   async function loadPortfolioMetrics() {
     setMetricsLoading(true);
@@ -383,15 +337,39 @@ function App() {
     }
   }
 
-  // Load initial events
+  // Load initial events - load ALL events for accurate chart data
   async function loadInitialEvents() {
     setLoading(true);
     try {
-      const result = await TauriService.getBalanceChangeEvents(0, 200); // Load 200 initially
-      setEvents(result.events);
-      setHasMore(result.has_more);
-      setCurrentPage(1);
-      setTotalCount(result.total_count);
+      let allEvents: BalanceChangeEvent[] = [];
+      let currentPage = 0;
+      let hasMore = true;
+      let totalCount = 0;
+
+      // Keep loading until we have all events
+      while (hasMore) {
+        const result = await TauriService.getBalanceChangeEvents(
+          currentPage,
+          1000
+        ); // Load 1000 at a time
+        allEvents = [...allEvents, ...result.events];
+        hasMore = result.has_more;
+        totalCount = result.total_count;
+        currentPage++;
+
+        console.log(
+          `Loaded page ${currentPage - 1}, total events so far: ${
+            allEvents.length
+          }, has more: ${hasMore}`
+        );
+      }
+
+      setEvents(allEvents);
+      setTotalCount(totalCount);
+
+      console.log(
+        `✅ Loaded all ${allEvents.length} events for complete chart data`
+      );
     } catch (error) {
       console.error("Error loading initial events:", error);
     } finally {
@@ -1024,40 +1002,25 @@ function App() {
                 />
               )}
 
-              {events.map((event, index) => (
-                <div
+              {events.map((event) => (
+                <EventItem
                   key={event.id}
-                  ref={
-                    index === events.length - 10
-                      ? lastEventElementRef
-                      : undefined
-                  }
-                >
-                  <EventItem
-                    event={event}
-                    isEditing={editingEventId === event.id}
-                    isCreating={false}
-                    onEdit={() => handleEditEvent(event)}
-                    onSave={handleSaveEvent}
-                    onDelete={handleDeleteEvent}
-                    onCancel={handleCancelEdit}
-                    editData={editData}
-                    onEditDataChange={handleEditDataChange}
-                  />
-                </div>
+                  event={event}
+                  isEditing={editingEventId === event.id}
+                  isCreating={false}
+                  onEdit={() => handleEditEvent(event)}
+                  onSave={handleSaveEvent}
+                  onDelete={handleDeleteEvent}
+                  onCancel={handleCancelEdit}
+                  editData={editData}
+                  onEditDataChange={handleEditDataChange}
+                />
               ))}
 
-              {loading && (
-                <div className="text-center py-4">
-                  <div className="text-xs text-[rgba(247,243,227,0.6)]">
-                    Loading more events...
-                  </div>
-                </div>
-              )}
-              {!hasMore && events.length > 0 && (
+              {events.length > 0 && (
                 <div className="text-center py-4">
                   <div className="text-xs text-[rgba(247,243,227,0.5)]">
-                    No more events to load
+                    All events loaded
                   </div>
                 </div>
               )}
