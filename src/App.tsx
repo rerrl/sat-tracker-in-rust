@@ -323,6 +323,7 @@ function App() {
     total_sats: "",
     total_usd: "",
     frequency: "weekly" as "daily" | "weekly" | "monthly",
+    memo: "",
   });
 
   const observer = useRef<IntersectionObserver>();
@@ -559,7 +560,7 @@ function App() {
       // Validate that end date is not before start date
       const startDate = new Date(lumpsumData.start_date);
       const endDate = new Date(lumpsumData.end_date);
-      
+
       if (endDate < startDate) {
         alert("End date cannot be before start date");
         return;
@@ -571,6 +572,7 @@ function App() {
         total_sats: parseInt(lumpsumData.total_sats),
         total_usd_cents: Math.round(parseFloat(lumpsumData.total_usd) * 100),
         frequency: lumpsumData.frequency,
+        memo: lumpsumData.memo.trim() || undefined,
       };
 
       const createdEvents = await TauriService.createUndocumentedLumpsumEvents(
@@ -591,6 +593,7 @@ function App() {
         total_sats: "",
         total_usd: "",
         frequency: "weekly",
+        memo: "",
       });
 
       alert(`Successfully created ${createdEvents.length} events`);

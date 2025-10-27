@@ -52,6 +52,7 @@ export interface CreateUndocumentedLumpsumRequest {
   total_sats: number;
   total_usd_cents: number;
   frequency: 'daily' | 'weekly' | 'monthly';
+  memo?: string;
 }
 
 export class TauriService {
@@ -105,7 +106,8 @@ export class TauriService {
       endDate: request.end_date,
       totalSats: request.total_sats,
       totalUsdCents: request.total_usd_cents,
-      frequency: request.frequency
+      frequency: request.frequency,
+      memo: request.memo
     });
   }
 }

@@ -1,4 +1,3 @@
-import React from "react";
 import ModalDateInput from "./ModalDateInput";
 import { validateLumpsumForm } from "../utils/dateValidation";
 
@@ -11,6 +10,7 @@ interface LumpsumModalProps {
     total_sats: string;
     total_usd: string;
     frequency: "daily" | "weekly" | "monthly";
+    memo: string;
   };
   onLumpsumDataChange: (field: string, value: any) => void;
   onCreateEvents: () => void;
@@ -148,7 +148,7 @@ export default function LumpsumModal({
 
             {/* Second Row - Amounts */}
             <div
-              className="grid gap-3 items-center"
+              className="grid gap-3 items-center mb-4"
               style={{ gridTemplateColumns: "1fr 1fr" }}
             >
               <div>
@@ -186,6 +186,20 @@ export default function LumpsumModal({
                   placeholder="500.00"
                 />
               </div>
+            </div>
+
+            {/* Third Row - Memo */}
+            <div>
+              <label className="block text-[rgba(247,243,227,0.8)] font-medium mb-2">
+                Memo (Optional)
+              </label>
+              <input
+                type="text"
+                value={lumpsumData.memo}
+                onChange={(e) => onLumpsumDataChange("memo", e.target.value)}
+                className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-3 py-2 text-xs rounded"
+                placeholder="e.g., DCA from savings account"
+              />
             </div>
           </div>
 

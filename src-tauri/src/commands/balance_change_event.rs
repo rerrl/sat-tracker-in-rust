@@ -198,8 +198,10 @@ pub async fn create_undocumented_lumpsum_events(
     total_sats: i64,
     total_usd_cents: i64,
     frequency: String, // "daily", "weekly", "monthly"
+    memo: Option<String>,
 ) -> Result<Vec<BalanceChangeEvent>, String> {
     use chrono::Duration;
+    use rand::Rng;
     
     let start = DateTime::parse_from_rfc3339(&start_date)
         .map_err(|e| format!("Invalid start date: {}", e))?
@@ -212,6 +214,13 @@ pub async fn create_undocumented_lumpsum_events(
     if start >= end {
         return Err("Start date must be before end date".to_string());
     }
+    
+    // Generate auto memo if none provided
+    let final_memo = memo.unwrap_or_else(|| {
+        let mut rng = rand::thread_rng();
+        let id: u16 = rng.gen_range(1000..=9999);
+        format!("DCA {}", id)
+    });
     
     // Calculate interval based on frequency
     let interval_days = match frequency.as_str() {
@@ -255,7 +264,7 @@ pub async fn create_undocumented_lumpsum_events(
             amount_sats,
             value_cents: Some(value_cents),
             event_type: BalanceChangeType::Buy,
-            memo: Some(format!("Undocumented lumpsum - {} interval {}/{}", frequency, i + 1, num_intervals)),
+            memo: Some(final_memo.clone()),
             timestamp: current_date,
         };
         
