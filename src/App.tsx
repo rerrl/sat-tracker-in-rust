@@ -556,9 +556,18 @@ function App() {
 
   const handleCreateLumpsumEvents = async () => {
     try {
+      // Validate that end date is not before start date
+      const startDate = new Date(lumpsumData.start_date);
+      const endDate = new Date(lumpsumData.end_date);
+      
+      if (endDate < startDate) {
+        alert("End date cannot be before start date");
+        return;
+      }
+
       const request = {
-        start_date: new Date(lumpsumData.start_date).toISOString(),
-        end_date: new Date(lumpsumData.end_date).toISOString(),
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
         total_sats: parseInt(lumpsumData.total_sats),
         total_usd_cents: Math.round(parseFloat(lumpsumData.total_usd) * 100),
         frequency: lumpsumData.frequency,
