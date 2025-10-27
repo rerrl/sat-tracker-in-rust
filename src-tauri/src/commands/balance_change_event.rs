@@ -48,7 +48,7 @@ pub async fn get_balance_change_events(
     
     // Get total count
     let total_count: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM balance_change_events"
+        "SELECT COUNT(*) FROM balance_change_events ORDER BY timestamp DESC"
     )
     .fetch_one(pool.inner())
     .await

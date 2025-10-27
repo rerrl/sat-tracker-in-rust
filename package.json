@@ -12,7 +12,7 @@
     "start:dev:release": "tauri dev --release",
     "tauri": "tauri",
     "db:drop": "rm -rf src-tauri/db",
-    "db:reset": "yarn:drop && yarn db:seed",
+    "db:reset": "yarn db:drop && yarn db:seed",
     "db:seed": "cd src-tauri && cargo run --bin seed"
   },
   "dependencies": {
