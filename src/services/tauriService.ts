@@ -46,6 +46,14 @@ export interface PortfolioMetrics {
   total_sats_spent: number;
 }
 
+export interface CreateUndocumentedLumpsumRequest {
+  start_date: string;
+  end_date: string;
+  total_sats: number;
+  total_usd_cents: number;
+  frequency: 'daily' | 'weekly' | 'monthly';
+}
+
 export class TauriService {
   // Create a new balance change event
   static async createBalanceChangeEvent(
@@ -87,6 +95,19 @@ export class TauriService {
   static async importSatTrackerV1Data(): Promise<string> {
     return await invoke("import_sat_tracker_v1_data");
   }
+
+  // Create undocumented lumpsum events
+  static async createUndocumentedLumpsumEvents(
+    request: CreateUndocumentedLumpsumRequest
+  ): Promise<BalanceChangeEvent[]> {
+    return await invoke("create_undocumented_lumpsum_events", {
+      startDate: request.start_date,
+      endDate: request.end_date,
+      totalSats: request.total_sats,
+      totalUsdCents: request.total_usd_cents,
+      frequency: request.frequency
+    });
+  }
 }
 
 // Export individual functions for convenience
@@ -96,5 +117,6 @@ export const {
   updateBalanceChangeEvent,
   deleteBalanceChangeEvent,
   getPortfolioMetrics,
-  importSatTrackerV1Data
+  importSatTrackerV1Data,
+  createUndocumentedLumpsumEvents
 } = TauriService;

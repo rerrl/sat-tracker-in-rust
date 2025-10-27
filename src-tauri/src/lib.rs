@@ -2,7 +2,7 @@ mod models;
 mod commands;
 mod database;
 
-use commands::balance_change_event::{create_balance_change_event, get_balance_change_events, update_balance_change_event, delete_balance_change_event, get_portfolio_metrics};
+use commands::balance_change_event::{create_balance_change_event, get_balance_change_events, update_balance_change_event, delete_balance_change_event, get_portfolio_metrics, create_undocumented_lumpsum_events};
 use commands::import::import_sat_tracker_v1_data;
 use tauri::{Manager, Emitter, menu::{Menu, MenuItem, Submenu, PredefinedMenuItem}};
 
@@ -13,11 +13,13 @@ pub fn run() {
         .setup(|app| {
             // Create the menu inside setup where we have access to the app handle
             let import_item = MenuItem::with_id(app, "import_sat_tracker_v1", "Import Sat Tracker v1 Data", true, None::<&str>)?;
+            let lumpsum_item = MenuItem::with_id(app, "add_undocumented_lumpsum", "Add Undocumented Lumpsum", true, None::<&str>)?;
             let quit_item = PredefinedMenuItem::quit(app, None)?;
             let separator = PredefinedMenuItem::separator(app)?;
 
             let file_menu = Submenu::with_items(app, "File", true, &[
                 &import_item,
+                &lumpsum_item,
                 &separator,
                 &quit_item,
             ])?;
@@ -47,6 +49,18 @@ pub fn run() {
                         }
                     });
                 }
+                "add_undocumented_lumpsum" => {
+                    println!("📊 Lumpsum menu item clicked!");
+                    let app_handle = app.clone();
+                    tauri::async_runtime::spawn(async move {
+                        println!("🚀 About to emit lumpsum menu event...");
+                        if let Err(e) = app_handle.emit("menu_add_undocumented_lumpsum", ()) {
+                            eprintln!("❌ Failed to emit lumpsum menu event: {}", e);
+                        } else {
+                            println!("✅ Lumpsum menu event emitted successfully");
+                        }
+                    });
+                }
                 _ => {
                     println!("🤷 Unknown menu event: {}", event.id().as_ref());
                 }
@@ -58,7 +72,8 @@ pub fn run() {
             update_balance_change_event,
             delete_balance_change_event,
             get_portfolio_metrics,
-            import_sat_tracker_v1_data
+            import_sat_tracker_v1_data,
+            create_undocumented_lumpsum_events
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

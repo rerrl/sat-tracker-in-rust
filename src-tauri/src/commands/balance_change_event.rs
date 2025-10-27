@@ -1,7 +1,7 @@
-use crate::models::balance_change_event::{BalanceChangeEvent, CreateBalanceChangeEventRequest, UpdateBalanceChangeEventRequest, PaginatedBalanceChangeEvents};
+use crate::models::balance_change_event::{BalanceChangeEvent, CreateBalanceChangeEventRequest, UpdateBalanceChangeEventRequest, PaginatedBalanceChangeEvents, BalanceChangeType};
 use crate::models::portfolio_metrics::PortfolioMetrics;
 use uuid::Uuid;
-use chrono::Utc;
+use chrono::{Utc, DateTime};
 use sqlx::{SqlitePool, Row};
 use tauri::State;
 
@@ -188,4 +188,84 @@ pub async fn get_portfolio_metrics(
 
     println!("Calculated portfolio metrics: {:?}", portfolio_metrics);
     Ok(portfolio_metrics)
+}
+
+#[tauri::command]
+pub async fn create_undocumented_lumpsum_events(
+    pool: State<'_, SqlitePool>,
+    start_date: String,
+    end_date: String,
+    total_sats: i64,
+    total_usd_cents: i64,
+    frequency: String, // "daily", "weekly", "monthly"
+) -> Result<Vec<BalanceChangeEvent>, String> {
+    use chrono::Duration;
+    
+    let start = DateTime::parse_from_rfc3339(&start_date)
+        .map_err(|e| format!("Invalid start date: {}", e))?
+        .with_timezone(&Utc);
+    
+    let end = DateTime::parse_from_rfc3339(&end_date)
+        .map_err(|e| format!("Invalid end date: {}", e))?
+        .with_timezone(&Utc);
+    
+    if start >= end {
+        return Err("Start date must be before end date".to_string());
+    }
+    
+    // Calculate interval based on frequency
+    let interval_days = match frequency.as_str() {
+        "daily" => 1,
+        "weekly" => 7,
+        "monthly" => 30,
+        _ => return Err("Invalid frequency. Use 'daily', 'weekly', or 'monthly'".to_string()),
+    };
+    
+    // Calculate number of intervals
+    let total_days = (end - start).num_days();
+    let num_intervals = (total_days / interval_days).max(1);
+    
+    // Calculate amounts per interval
+    let sats_per_interval = total_sats / num_intervals;
+    let cents_per_interval = total_usd_cents / num_intervals;
+    
+    // Handle remainders for the last transaction
+    let remaining_sats = total_sats % num_intervals;
+    let remaining_cents = total_usd_cents % num_intervals;
+    
+    let mut created_events = Vec::new();
+    let mut current_date = start;
+    
+    for i in 0..num_intervals {
+        let is_last = i == num_intervals - 1;
+        
+        let amount_sats = if is_last {
+            sats_per_interval + remaining_sats
+        } else {
+            sats_per_interval
+        };
+        
+        let value_cents = if is_last {
+            cents_per_interval + remaining_cents
+        } else {
+            cents_per_interval
+        };
+        
+        let request = CreateBalanceChangeEventRequest {
+            amount_sats,
+            value_cents: Some(value_cents),
+            event_type: BalanceChangeType::Buy,
+            memo: Some(format!("Undocumented lumpsum - {} interval {}/{}", frequency, i + 1, num_intervals)),
+            timestamp: current_date,
+        };
+        
+        match create_balance_change_event(pool.clone(), request).await {
+            Ok(event) => created_events.push(event),
+            Err(e) => return Err(format!("Failed to create event {}: {}", i + 1, e)),
+        }
+        
+        current_date = current_date + Duration::days(interval_days);
+    }
+    
+    Ok(created_events)
 }

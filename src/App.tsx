@@ -315,6 +315,14 @@ function App() {
   const [portfolioMetrics, setPortfolioMetrics] =
     useState<PortfolioMetrics | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(false);
+  const [showLumpsumModal, setShowLumpsumModal] = useState(false);
+  const [lumpsumData, setLumpsumData] = useState({
+    start_date: '',
+    end_date: '',
+    total_sats: '',
+    total_usd: '',
+    frequency: 'weekly' as 'daily' | 'weekly' | 'monthly'
+  });
 
   const observer = useRef<IntersectionObserver>();
   const lastEventElementRef = useCallback(
@@ -538,6 +546,42 @@ function App() {
     }));
   };
 
+  const handleCreateLumpsumEvents = async () => {
+    try {
+      const request = {
+        start_date: new Date(lumpsumData.start_date).toISOString(),
+        end_date: new Date(lumpsumData.end_date).toISOString(),
+        total_sats: parseInt(lumpsumData.total_sats),
+        total_usd_cents: Math.round(parseFloat(lumpsumData.total_usd) * 100),
+        frequency: lumpsumData.frequency
+      };
+
+      const createdEvents = await TauriService.createUndocumentedLumpsumEvents(request);
+      
+      // Add events to the beginning of the list
+      setEvents(prevEvents => [...createdEvents.reverse(), ...prevEvents]);
+      setTotalCount(prevCount => prevCount + createdEvents.length);
+      
+      // Refresh portfolio metrics
+      loadPortfolioMetrics();
+      
+      // Close modal and reset form
+      setShowLumpsumModal(false);
+      setLumpsumData({
+        start_date: '',
+        end_date: '',
+        total_sats: '',
+        total_usd: '',
+        frequency: 'weekly'
+      });
+      
+      alert(`Successfully created ${createdEvents.length} events`);
+    } catch (error) {
+      console.error('Error creating lumpsum events:', error);
+      alert(`Failed to create events: ${error}`);
+    }
+  };
+
   // Load initial events and portfolio metrics on component mount
   useEffect(() => {
     loadInitialEvents();
@@ -562,13 +606,21 @@ function App() {
         }
       });
 
-      return unlisten;
+      const unlisten2 = await listen('menu_add_undocumented_lumpsum', () => {
+        console.log('📊 Menu lumpsum event received!');
+        setShowLumpsumModal(true);
+      });
+
+      return () => {
+        unlisten();
+        unlisten2();
+      };
     };
 
     let unlistenPromise = setupMenuListener();
     
     return () => {
-      unlistenPromise.then(unlisten => unlisten());
+      unlistenPromise.then(cleanup => cleanup());
     };
   }, []);
 
@@ -915,6 +967,88 @@ function App() {
           </div>
         </div>
       </div>
+
+      {/* Lumpsum Modal */}
+      {showLumpsumModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-[#2A2633] border border-[rgba(247,243,227,0.3)] rounded-lg p-6 w-96">
+            <h3 className="text-lg font-semibold text-[#F7F3E3] mb-4">Add Undocumented Lumpsum</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-[#F7F3E3] mb-1">Start Date</label>
+                <input
+                  type="date"
+                  value={lumpsumData.start_date}
+                  onChange={(e) => setLumpsumData(prev => ({ ...prev, start_date: e.target.value }))}
+                  className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-3 py-2 rounded"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm text-[#F7F3E3] mb-1">End Date</label>
+                <input
+                  type="date"
+                  value={lumpsumData.end_date}
+                  onChange={(e) => setLumpsumData(prev => ({ ...prev, end_date: e.target.value }))}
+                  className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-3 py-2 rounded"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm text-[#F7F3E3] mb-1">Total Sats Accumulated</label>
+                <input
+                  type="number"
+                  value={lumpsumData.total_sats}
+                  onChange={(e) => setLumpsumData(prev => ({ ...prev, total_sats: e.target.value }))}
+                  className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-3 py-2 rounded"
+                  placeholder="e.g., 1000000"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm text-[#F7F3E3] mb-1">Total USD Paid</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={lumpsumData.total_usd}
+                  onChange={(e) => setLumpsumData(prev => ({ ...prev, total_usd: e.target.value }))}
+                  className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-3 py-2 rounded"
+                  placeholder="e.g., 500.00"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm text-[#F7F3E3] mb-1">Frequency</label>
+                <select
+                  value={lumpsumData.frequency}
+                  onChange={(e) => setLumpsumData(prev => ({ ...prev, frequency: e.target.value as 'daily' | 'weekly' | 'monthly' }))}
+                  className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-3 py-2 rounded"
+                >
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleCreateLumpsumEvents}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded"
+              >
+                Create Events
+              </button>
+              <button
+                onClick={() => setShowLumpsumModal(false)}
+                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

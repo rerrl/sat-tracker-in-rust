@@ -8,7 +8,6 @@ use tauri::State;
 pub async fn import_sat_tracker_v1_data(pool: State<'_, SqlitePool>) -> Result<String, String> {
     // Get the path to the v1 database
     let home_dir = dirs::home_dir().ok_or("Could not find home directory")?;
-    // let v1_db_path = home_dir.join(".sat-tracker").join("dev").join("database.sqlite"); // dev db
     let v1_db_path = home_dir.join(".sat-tracker").join("database.sqlite"); // real db
 
     println!("🔍 Looking for v1 database at: {}", v1_db_path.display());
@@ -48,8 +47,7 @@ pub async fn import_sat_tracker_v1_data(pool: State<'_, SqlitePool>) -> Result<S
                     Ok(dt) => dt.with_timezone(&Utc),
                     Err(_) => {
                         // Try parsing as SQLite datetime format with milliseconds and timezone
-                        match DateTime::parse_from_str(&date_str, "%Y-%m-%d %H:%M:%S%.3f %z")
-                        {
+                        match DateTime::parse_from_str(&date_str, "%Y-%m-%d %H:%M:%S%.3f %z") {
                             Ok(dt) => dt.with_timezone(&Utc),
                             Err(_) => {
                                 // Try parsing as SQLite datetime format without timezone
@@ -123,8 +121,7 @@ pub async fn import_sat_tracker_v1_data(pool: State<'_, SqlitePool>) -> Result<S
                     Ok(dt) => dt.with_timezone(&Utc),
                     Err(_) => {
                         // Try parsing as SQLite datetime format with milliseconds and timezone
-                        match DateTime::parse_from_str(&date_str, "%Y-%m-%d %H:%M:%S%.3f %z")
-                        {
+                        match DateTime::parse_from_str(&date_str, "%Y-%m-%d %H:%M:%S%.3f %z") {
                             Ok(dt) => dt.with_timezone(&Utc),
                             Err(_) => {
                                 // Try parsing as SQLite datetime format without timezone
