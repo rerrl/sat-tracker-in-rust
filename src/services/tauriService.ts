@@ -82,6 +82,11 @@ export class TauriService {
   static async getPortfolioMetrics(): Promise<PortfolioMetrics> {
     return await invoke("get_portfolio_metrics");
   }
+
+  // Import Sat Tracker v1 data
+  static async importSatTrackerV1Data(): Promise<string> {
+    return await invoke("import_sat_tracker_v1_data");
+  }
 }
 
 // Export individual functions for convenience
@@ -90,5 +95,6 @@ export const {
   getBalanceChangeEvents,
   updateBalanceChangeEvent,
   deleteBalanceChangeEvent,
-  getPortfolioMetrics
+  getPortfolioMetrics,
+  importSatTrackerV1Data
 } = TauriService;

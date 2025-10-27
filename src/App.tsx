@@ -5,6 +5,7 @@ import {
   PortfolioMetrics,
 } from "./services/tauriService";
 import SatsHoldingsChart from "./components/SatsHoldingsChart";
+import { listen } from '@tauri-apps/api/event';
 import "./App.css";
 
 const EventItem = React.memo(
@@ -541,6 +542,34 @@ function App() {
   useEffect(() => {
     loadInitialEvents();
     loadPortfolioMetrics();
+  }, []);
+
+  // Add menu event listener
+  useEffect(() => {
+    const setupMenuListener = async () => {
+      const unlisten = await listen('menu_import_sat_tracker_v1', async () => {
+        console.log('📥 Menu import event received!');
+        try {
+          const result = await TauriService.importSatTrackerV1Data();
+          console.log('Import result:', result);
+          alert(`Import completed: ${result}`);
+          // Refresh data after import
+          loadInitialEvents();
+          loadPortfolioMetrics();
+        } catch (error) {
+          console.error('Import failed:', error);
+          alert(`Import failed: ${error}`);
+        }
+      });
+
+      return unlisten;
+    };
+
+    let unlistenPromise = setupMenuListener();
+    
+    return () => {
+      unlistenPromise.then(unlisten => unlisten());
+    };
   }, []);
 
   return (
