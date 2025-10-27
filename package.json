@@ -11,7 +11,8 @@
     "start:dev": "tauri dev",
     "start:dev:release": "tauri dev --release",
     "tauri": "tauri",
-    "seed": "cd src-tauri && cargo run --bin seed"
+    "db:reset": "rm -rf src-tauri/db && yarn db:seed",
+    "db:seed": "cd src-tauri && cargo run --bin seed"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
