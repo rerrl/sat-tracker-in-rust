@@ -14,27 +14,26 @@ yarn start:dev
 
 **Common Issue:** The Tauri window may open blank initially while Vite finishes compiling. Simply right-click in the window and select "Reload" to refresh the page and the app will load properly. This is normal Tauri development behavior.
 
+- TODO: double check the metrics caluluations (should gain be 0 when bitcoin price is equal to avg buy price?)
+- TODO: add a help page to show how to use the app and how the metrics are calculated 
 
+- TODO: create a chart to show sat holdings over time
 
+- TODO: better metrics design (UI)
+- TODO: ability to show a description on the metric (api provider, fiat extracted, etc)
+- TODO: "preview" full memo on hover in events list
 
-- TODO: work on the UI (consider we want to be able to calculate total dca, gain from trades, etc)
-    -  think of all the possible metrics we want to show and then lets decide what we want to show. Refine db schema to accommodate
-    -  load in data to show (paginated, 50 at a time, infinite scroll)
-    -  edit ability (delete, change amounts, change memo, etc)
-    
-- TODO:now that we have a ui and refined data model, lets do some csv importing. (importing the same data from multiple csvs should not duplicate data)
+- TODO: now that we have a ui and refined data model, lets do some csv importing. (no duplicates - coinbase, river)
+
+- TODO: think about the method to add a "starter balance" in the event you dont have the individual receipts but you know you bought x sats with y fiat. This is so metrics still work and your chart is not badly skewed.
 
 - TODO: (LOW PRIORITY) Trading Feature - Track Bitcoin-denominated investments
-    - Add new `trades` table to track sats sent out and received back
-    - Open Trade: Record sats sent + memo (e.g., "Lent to friend", "Mining equipment", "Lightning channel")
-    - Close Trade: Record sats received back to calculate sat P&L
-    - Trade Metrics: Active trades, sats at risk, trade P&L, best trade performance
-    - UI: Trade management in top-right section, trade events in events list
-    - Focus: Measure success in sats gained/lost, not fiat - true Bitcoin standard
-
-
-
-
+  - Add new `trades` table to track sats sent out and received back
+  - Open Trade: Record sats sent + memo (e.g., "Lent to friend", "Mining equipment", "Lightning channel")
+  - Close Trade: Record sats received back to calculate sat P&L
+  - Trade Metrics: Active trades, sats at risk, trade P&L, best trade performance
+  - UI: Trade management in top-right section, trade events in events list
+  - Focus: Measure success in sats gained/lost, not fiat - true Bitcoin standard
 
 ### android development (no focus on mobile, keeping this for future reference)
 

@@ -4,6 +4,7 @@ import {
   BalanceChangeEvent,
   PortfolioMetrics,
 } from "./services/tauriService";
+import SatsHoldingsChart from "./components/SatsHoldingsChart";
 import "./App.css";
 
 const EventItem = React.memo(
@@ -781,9 +782,12 @@ function App() {
         <div className="flex-1 flex flex-col">
           {/* Top Section (50%) */}
           <div className="h-1/2 border-b border-[rgba(247,243,227,0.2)] bg-[rgba(9,12,8,0.8)]">
-            <div className="p-6">
-              <div className="text-[rgba(247,243,227,0.5)] text-center">
-                Top section content coming soon...
+            <div className="p-4 h-full flex flex-col">
+              <h3 className="text-sm font-semibold text-[#F7F3E3] mb-3">
+                Sats Holdings Over Time
+              </h3>
+              <div className="flex-1">
+                <SatsHoldingsChart events={events} />
               </div>
             </div>
           </div>
