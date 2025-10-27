@@ -41,7 +41,7 @@ const EventItem = React.memo(
             <div className="text-[rgba(247,243,227,0.6)]">
               {isCreating
                 ? "New Event"
-                : new Date(event!.created_at)
+                : new Date(event!.timestamp)
                     .toLocaleString("en-US", {
                       year: "numeric",
                       month: "2-digit",
@@ -233,7 +233,7 @@ const EventItem = React.memo(
           style={{ gridTemplateColumns: "2fr 0.8fr 1.2fr 1fr 1fr 1.5fr 1.5fr" }}
         >
           <div className="text-[rgba(247,243,227,0.5)] text-xs">
-            {new Date(event.created_at)
+            {new Date(event.timestamp)
               .toLocaleString("en-US", {
                 year: "numeric",
                 month: "2-digit",
@@ -399,6 +399,7 @@ function App() {
       amount_sats: event.amount_sats,
       value_cents: event.value_cents,
       memo: event.memo,
+      timestamp: event.timestamp,
     });
   };
 
@@ -411,6 +412,7 @@ function App() {
         value_cents: editData.value_cents,
         event_type: editData.event_type as "Buy" | "Sell" | "Fee",
         memo: editData.memo,
+        timestamp: editData.timestamp,
       };
 
       const updatedEvent = await TauriService.updateBalanceChangeEvent(
@@ -482,6 +484,7 @@ function App() {
       amount_sats: 0,
       value_cents: null,
       memo: null,
+      timestamp: new Date().toISOString(),
     });
     // Cancel any existing edits
     setEditingEventId(null);
@@ -497,6 +500,7 @@ function App() {
         value_cents: newEventData.value_cents,
         event_type: newEventData.event_type as "Buy" | "Sell" | "Fee",
         memo: newEventData.memo,
+        timestamp: newEventData.timestamp,
       };
 
       const createdEvent = await TauriService.createBalanceChangeEvent(

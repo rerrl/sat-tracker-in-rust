@@ -14,10 +14,10 @@ yarn start:dev
 
 **Common Issue:** The Tauri window may open blank initially while Vite finishes compiling. Simply right-click in the window and select "Reload" to refresh the page and the app will load properly. This is normal Tauri development behavior.
 
-- TODO: double check the metrics caluluations (should gain be 0 when bitcoin price is equal to avg buy price?)
-- TODO: add a help page to show how to use the app and how the metrics are calculated 
+- TODO: add a timestamp for the event. Currently we only have created_at, but we should also have a timestamp for when the event occurred.
 
-- TODO: create a chart to show sat holdings over time
+- TODO: double check the metrics caluluations (should gain be 0 when bitcoin price is equal to avg buy price?)
+- TODO: add a help page to show how to use the app and how the metrics are calculated
 
 - TODO: better metrics design (UI)
 - TODO: ability to show a description on the metric (api provider, fiat extracted, etc)

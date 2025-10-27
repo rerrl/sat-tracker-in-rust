@@ -1,4 +1,4 @@
-use chrono::Utc;
+use chrono::{Utc, Duration};
 use rand::seq::SliceRandom;
 use rand::Rng;
 use sqlx::{migrate::MigrateDatabase, Sqlite, SqlitePool};
@@ -84,6 +84,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     event_types.shuffle(&mut rng);
 
     let mut events_created = 0;
+    
+    // Start from January 15, 2023
+    let mut current_date = chrono::DateTime::parse_from_rfc3339("2023-01-15T10:00:00Z")
+        .unwrap()
+        .with_timezone(&Utc);
 
     // Create events in shuffled order
     for event_type in event_types {
@@ -105,13 +110,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
 
                 sqlx::query(
-                    "INSERT INTO balance_change_events (id, amount_sats, value_cents, event_type, memo, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO balance_change_events (id, amount_sats, value_cents, event_type, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
                 )
                 .bind(Uuid::new_v4().to_string())
                 .bind(amount_sats)
                 .bind(value_cents)
                 .bind("Buy")
                 .bind(&memo)
+                .bind(current_date)
                 .bind(Utc::now())
                 .execute(&pool)
                 .await?;
@@ -129,13 +135,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
 
                 sqlx::query(
-                    "INSERT INTO balance_change_events (id, amount_sats, value_cents, event_type, memo, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO balance_change_events (id, amount_sats, value_cents, event_type, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
                 )
                 .bind(Uuid::new_v4().to_string())
                 .bind(amount_sats)
                 .bind(value_cents)
                 .bind("Sell")
                 .bind(&memo)
+                .bind(current_date)
                 .bind(Utc::now())
                 .execute(&pool)
                 .await?;
@@ -149,13 +156,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
 
                 sqlx::query(
-                    "INSERT INTO balance_change_events (id, amount_sats, value_cents, event_type, memo, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO balance_change_events (id, amount_sats, value_cents, event_type, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
                 )
                 .bind(Uuid::new_v4().to_string())
                 .bind(amount_sats)
                 .bind(0)
                 .bind("Fee")
                 .bind(&memo)
+                .bind(current_date)
                 .bind(Utc::now())
                 .execute(&pool)
                 .await?;
@@ -164,6 +172,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         events_created += 1;
+        
+        // Add 3-5 days to current_date
+        let days_to_add = rng.gen_range(3..=5);
+        current_date = current_date + Duration::days(days_to_add);
     }
 
     println!(

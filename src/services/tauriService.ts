@@ -7,6 +7,7 @@ export interface BalanceChangeEvent {
   value_cents: number | null;
   event_type: 'Buy' | 'Sell' | 'Fee';
   memo: string | null;
+  timestamp: string; // ISO date string from Rust
   created_at: string; // ISO date string from Rust
 }
 
@@ -15,6 +16,7 @@ export interface CreateBalanceChangeEventRequest {
   value_cents: number | null;
   event_type: 'Buy' | 'Sell' | 'Fee';
   memo: string | null;
+  timestamp: string; // ISO date string
 }
 
 export interface UpdateBalanceChangeEventRequest {
@@ -22,6 +24,7 @@ export interface UpdateBalanceChangeEventRequest {
   value_cents: number | null;
   event_type: 'Buy' | 'Sell' | 'Fee';
   memo: string | null;
+  timestamp: string; // ISO date string
 }
 
 export interface PaginatedBalanceChangeEvents {

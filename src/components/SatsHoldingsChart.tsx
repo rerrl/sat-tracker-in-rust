@@ -40,7 +40,7 @@ export default function SatsHoldingsChart({ events }: SatsHoldingsChartProps) {
     // Sort events by date (oldest first)
     const sortedEvents = [...events].sort(
       (a, b) =>
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
 
     // Calculate running sats balance
@@ -60,7 +60,7 @@ export default function SatsHoldingsChart({ events }: SatsHoldingsChartProps) {
 
       runningBalance += balanceChange;
       return {
-        date: new Date(event.created_at),
+        date: new Date(event.timestamp),
         balance: runningBalance,
         event: event,
       };

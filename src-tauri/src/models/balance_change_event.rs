@@ -10,6 +10,7 @@ pub struct BalanceChangeEvent {
     #[sqlx(try_from = "String")]
     pub event_type: BalanceChangeType,
     pub memo: Option<String>,
+    pub timestamp: DateTime<Utc>,
     pub created_at: DateTime<Utc>,
 }
 
@@ -57,6 +58,7 @@ pub struct CreateBalanceChangeEventRequest {
     pub value_cents: Option<i64>,
     pub event_type: BalanceChangeType,
     pub memo: Option<String>,
+    pub timestamp: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -65,6 +67,7 @@ pub struct UpdateBalanceChangeEventRequest {
     pub value_cents: Option<i64>,
     pub event_type: BalanceChangeType,
     pub memo: Option<String>,
+    pub timestamp: DateTime<Utc>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

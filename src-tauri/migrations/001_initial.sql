@@ -4,5 +4,6 @@ CREATE TABLE balance_change_events (
     value_cents INTEGER,
     event_type TEXT NOT NULL,
     memo TEXT,
+    timestamp TEXT NOT NULL,
     created_at TEXT NOT NULL
 );

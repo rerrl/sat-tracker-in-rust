@@ -16,17 +16,19 @@ pub async fn create_balance_change_event(
         value_cents: request.value_cents,
         event_type: request.event_type,
         memo: request.memo,
+        timestamp: request.timestamp,
         created_at: Utc::now(),
     };
     
     sqlx::query(
-        "INSERT INTO balance_change_events (id, amount_sats, value_cents, event_type, memo, created_at) VALUES (?, ?, ?, ?, ?, ?)"
+        "INSERT INTO balance_change_events (id, amount_sats, value_cents, event_type, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
     )
     .bind(&event.id)
     .bind(event.amount_sats)
     .bind(event.value_cents)
     .bind(event.event_type.to_string())
     .bind(&event.memo)
+    .bind(event.timestamp)
     .bind(event.created_at)
     .execute(pool.inner())
     .await
@@ -54,7 +56,7 @@ pub async fn get_balance_change_events(
     
     // Get paginated events
     let events = sqlx::query_as::<_, BalanceChangeEvent>(
-        "SELECT id, amount_sats, value_cents, event_type, memo, created_at FROM balance_change_events ORDER BY created_at DESC LIMIT ? OFFSET ?"
+        "SELECT id, amount_sats, value_cents, event_type, memo, timestamp, created_at FROM balance_change_events ORDER BY timestamp DESC LIMIT ? OFFSET ?"
     )
     .bind(page_size as i64)
     .bind(offset as i64)
@@ -86,12 +88,13 @@ pub async fn update_balance_change_event(
 ) -> Result<BalanceChangeEvent, String> {
     // Update the event
     sqlx::query(
-        "UPDATE balance_change_events SET amount_sats = ?, value_cents = ?, event_type = ?, memo = ? WHERE id = ?"
+        "UPDATE balance_change_events SET amount_sats = ?, value_cents = ?, event_type = ?, memo = ?, timestamp = ? WHERE id = ?"
     )
     .bind(request.amount_sats)
     .bind(request.value_cents)
     .bind(request.event_type.to_string())
     .bind(&request.memo)
+    .bind(request.timestamp)
     .bind(&id)
     .execute(pool.inner())
     .await
@@ -99,7 +102,7 @@ pub async fn update_balance_change_event(
     
     // Fetch and return the updated event
     let updated_event = sqlx::query_as::<_, BalanceChangeEvent>(
-        "SELECT id, amount_sats, value_cents, event_type, memo, created_at FROM balance_change_events WHERE id = ?"
+        "SELECT id, amount_sats, value_cents, event_type, memo, timestamp, created_at FROM balance_change_events WHERE id = ?"
     )
     .bind(&id)
     .fetch_one(pool.inner())
