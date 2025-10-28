@@ -14,18 +14,24 @@ yarn start:dev
 
 **Common Issue:** The Tauri window may open blank initially while Vite finishes compiling. Simply right-click in the window and select "Reload" to refresh the page and the app will load properly. This is normal Tauri development behavior.
 
-- TODO: add a timestamp for the event. Currently we only have created_at, but we should also have a timestamp for when the event occurred.
-
+- TODO: get btc/usd price
 - TODO: double check the metrics caluluations (should gain be 0 when bitcoin price is equal to avg buy price?)
 - TODO: add a help page to show how to use the app and how the metrics are calculated
 
-- TODO: better metrics design (UI)
-- TODO: ability to show a description on the metric (api provider, fiat extracted, etc)
-- TODO: "preview" full memo on hover in events list
+- TODO: better metrics
+
+  - better general design
+  - metrics explainer tooltip
+  - maybe a pie chart showing balance changes by type/percentage
+  - sats stacked this month
+  - weekly streak / average sats stacked per week per rolling month, 12 month chart
+
+- TODO: events section
+
+  - edit event date
+  - view full memo in events list somehow (hover? click and expand?)
 
 - TODO: now that we have a ui and refined data model, lets do some csv importing. (no duplicates - coinbase, river)
-
-- TODO: think about the method to add a "starter balance" in the event you dont have the individual receipts but you know you bought x sats with y fiat. This is so metrics still work and your chart is not badly skewed.
 
 - TODO: (LOW PRIORITY) Trading Feature - Track Bitcoin-denominated investments
   - Add new `trades` table to track sats sent out and received back

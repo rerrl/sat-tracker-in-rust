@@ -4,6 +4,7 @@ mod database;
 
 use commands::balance_change_event::{create_balance_change_event, get_balance_change_events, update_balance_change_event, delete_balance_change_event, get_portfolio_metrics, create_undocumented_lumpsum_events};
 use commands::import::import_sat_tracker_v1_data;
+use commands::bitcoin_price::fetch_bitcoin_price;
 use tauri::{Manager, Emitter, menu::{Menu, MenuItem, Submenu, PredefinedMenuItem}};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -73,7 +74,8 @@ pub fn run() {
             delete_balance_change_event,
             get_portfolio_metrics,
             import_sat_tracker_v1_data,
-            create_undocumented_lumpsum_events
+            create_undocumented_lumpsum_events,
+            fetch_bitcoin_price
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

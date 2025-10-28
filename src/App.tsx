@@ -6,6 +6,7 @@ import {
 } from "./services/tauriService";
 import SatsHoldingsChart from "./components/SatsHoldingsChart";
 import LumpsumModal from "./components/LumpsumModal";
+import { useBitcoinPrice } from "./hooks/useBitcoinPrice";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
 
@@ -301,8 +302,7 @@ const EventItem = React.memo(
 );
 
 function App() {
-  // Hardcoded Bitcoin price for now
-  const bitcoinPrice = 115420; // USD
+  const { price: bitcoinPrice, loading: bitcoinPriceLoading, error: bitcoinPriceError } = useBitcoinPrice();
 
   const [events, setEvents] = useState<BalanceChangeEvent[]>([]);
   const [loading, setLoading] = useState(false);
@@ -660,9 +660,11 @@ function App() {
                     Bitcoin Price
                   </p>
                   <p className="text-lg text-[#61dafb]">
-                    ${bitcoinPrice.toLocaleString()}
+                    {bitcoinPriceLoading ? "Loading..." : `$${bitcoinPrice.toLocaleString()}`}
                   </p>
-                  <p className="text-xs text-[#61dafb]">+ IP %</p>
+                  <p className="text-xs text-[#61dafb]">
+                    {bitcoinPriceError ? "Error loading" : "Live price"}
+                  </p>
                 </div>
                 <div className="flex-1 text-center border border-[#f7931a] bg-[rgba(9,12,8,0.5)] p-3">
                   <p className="text-sm font-bold text-[#f7931a] mb-1">
