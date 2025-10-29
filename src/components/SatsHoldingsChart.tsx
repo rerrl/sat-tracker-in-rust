@@ -194,7 +194,11 @@ export default function SatsHoldingsChart({ events }: SatsHoldingsChartProps) {
 
   return (
     <div className="w-full h-full">
-      <Line data={chartData} options={chartOptions} />
+      <Line 
+        key={events.length + events.map(e => e.id).join(',')} 
+        data={chartData} 
+        options={chartOptions} 
+      />
     </div>
   );
 }
