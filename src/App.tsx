@@ -7,6 +7,7 @@ import {
 import SatsHoldingsChart from "./components/SatsHoldingsChart";
 import LumpsumModal from "./components/LumpsumModal";
 import ModalDateInput from "./components/ModalDateInput";
+import DateTimeInput from "./components/DateTimeInput";
 import { useBitcoinPrice } from "./hooks/useBitcoinPrice";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
@@ -43,13 +44,10 @@ const EventItem = React.memo(
             }}
           >
             <div>
-              <ModalDateInput
-                label=""
-                value={editData.timestamp ? editData.timestamp.split('T')[0] : new Date().toISOString().split('T')[0]}
-                onChange={(dateValue) => {
-                  // Keep the existing time part if it exists, otherwise use current time
-                  const existingTime = editData.timestamp ? editData.timestamp.split('T')[1] : new Date().toISOString().split('T')[1];
-                  onEditDataChange("timestamp", `${dateValue}T${existingTime}`);
+              <DateTimeInput
+                value={editData.timestamp || new Date().toISOString()}
+                onChange={(isoTimestamp) => {
+                  onEditDataChange("timestamp", isoTimestamp);
                 }}
               />
             </div>

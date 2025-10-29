@@ -2,7 +2,7 @@ import React from "react";
 
 interface ModalDateInputProps {
   label: string;
-  value: string; // Expected format: "YYYY-MM-DD"
+  value: string; // Expected format: "YYYY-MM-DDTHH:MM:SS.sssZ" (ISO timestamp)
   onChange: (value: string) => void;
   yearInputId?: string;
   monthInputId?: string;
@@ -34,20 +34,21 @@ export default function ModalDateInput({
         targetDate = today;
       }
       
-      const defaultValue = targetDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+      const defaultValue = targetDate.toISOString();
       onChange(defaultValue);
     }
   }, [value, onChange, isStartDate]);
 
-  const parts = value.split("-");
+  // Parse the ISO timestamp
+  const date = new Date(value);
+  const dateStr = value ? value.split('T')[0] : ""; // YYYY-MM-DD
+  const parts = dateStr.split("-");
   const year = parts[0] || "";
   const month = parts[1] || "";
   const day = parts[2] || "";
 
   const handleYearChange = (newYear: string) => {
-    if (newYear === "") {
-      onChange(`-${month}-${day}`);
-    } else if (/^\d{1,4}$/.test(newYear)) {
+    if (newYear === "" || /^\d{1,4}$/.test(newYear)) {
       onChange(`${newYear}-${month}-${day}`);
     }
   };
@@ -104,9 +105,11 @@ export default function ModalDateInput({
 
   return (
     <div>
-      <label className="block text-[rgba(247,243,227,0.8)] font-medium mb-2">
-        {label}
-      </label>
+      {label && (
+        <label className="block text-[rgba(247,243,227,0.8)] font-medium mb-2">
+          {label}
+        </label>
+      )}
       <div className="flex items-center gap-1">
         <input
           type="text"
