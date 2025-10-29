@@ -14,7 +14,6 @@ yarn start:dev
 
 **Common Issue:** The Tauri window may open blank initially while Vite finishes compiling. Simply right-click in the window and select "Reload" to refresh the page and the app will load properly. This is normal Tauri development behavior.
 
-- TODO: get btc/usd price
 - TODO: double check the metrics caluluations (should gain be 0 when bitcoin price is equal to avg buy price?)
 - TODO: add a help page to show how to use the app and how the metrics are calculated
 

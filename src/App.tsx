@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   TauriService,
   BalanceChangeEvent,
@@ -6,6 +6,7 @@ import {
 } from "./services/tauriService";
 import SatsHoldingsChart from "./components/SatsHoldingsChart";
 import LumpsumModal from "./components/LumpsumModal";
+import ModalDateInput from "./components/ModalDateInput";
 import { useBitcoinPrice } from "./hooks/useBitcoinPrice";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
@@ -41,19 +42,16 @@ const EventItem = React.memo(
               gridTemplateColumns: "2fr 0.8fr 1.2fr 1fr 1fr 1.5fr 1.5fr",
             }}
           >
-            <div className="text-[rgba(247,243,227,0.6)]">
-              {isCreating
-                ? "New Event"
-                : new Date(event!.timestamp)
-                    .toLocaleString("en-US", {
-                      year: "numeric",
-                      month: "2-digit",
-                      day: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: true,
-                    })
-                    .replace(",", "")}
+            <div>
+              <ModalDateInput
+                label=""
+                value={editData.timestamp ? editData.timestamp.split('T')[0] : new Date().toISOString().split('T')[0]}
+                onChange={(dateValue) => {
+                  // Keep the existing time part if it exists, otherwise use current time
+                  const existingTime = editData.timestamp ? editData.timestamp.split('T')[1] : new Date().toISOString().split('T')[1];
+                  onEditDataChange("timestamp", `${dateValue}T${existingTime}`);
+                }}
+              />
             </div>
             <div>
               <select
@@ -284,7 +282,10 @@ const EventItem = React.memo(
                 })}`
               : "-"}
           </div>
-          <div className="text-[rgba(247,243,227,0.5)] truncate text-xs">
+          <div 
+            className="text-[rgba(247,243,227,0.5)] truncate text-xs"
+            title={event.memo || ""}
+          >
             {event.memo || "-"}
           </div>
           <div className="flex justify-end">
