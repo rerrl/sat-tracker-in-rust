@@ -324,15 +324,19 @@ function App() {
   });
 
   // Load portfolio metrics
-  async function loadPortfolioMetrics() {
-    setMetricsLoading(true);
+  async function loadPortfolioMetrics(showLoading = false) {
+    if (showLoading) {
+      setMetricsLoading(true);
+    }
     try {
       const metrics = await TauriService.getPortfolioMetrics();
       setPortfolioMetrics(metrics);
     } catch (error) {
       console.error("Error loading portfolio metrics:", error);
     } finally {
-      setMetricsLoading(false);
+      if (showLoading) {
+        setMetricsLoading(false);
+      }
     }
   }
 
@@ -583,7 +587,7 @@ function App() {
   // Load initial events and portfolio metrics on component mount
   useEffect(() => {
     loadInitialEvents();
-    loadPortfolioMetrics();
+    loadPortfolioMetrics(true); // Show loading on initial load
   }, []);
 
   // Add menu event listener
@@ -597,7 +601,7 @@ function App() {
           alert(`Import completed: ${result}`);
           // Refresh data after import
           loadInitialEvents();
-          loadPortfolioMetrics();
+          loadPortfolioMetrics(true); // Show loading for import since it's a major operation
         } catch (error) {
           console.error("Import failed:", error);
           alert(`Import failed: ${error}`);
