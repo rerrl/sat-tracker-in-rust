@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "build:release": "tauri build",
     "preview": "vite preview",
+    "clean": "rm -rf dist src-tauri/target",
     "start:dev": "tauri dev",
     "start:dev:release": "tauri dev --release",
     "tauri": "tauri",
