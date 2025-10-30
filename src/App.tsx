@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
   TauriService,
   BalanceChangeEvent,
@@ -6,7 +6,6 @@ import {
 } from "./services/tauriService";
 import SatsHoldingsChart from "./components/SatsHoldingsChart";
 import LumpsumModal from "./components/LumpsumModal";
-import ModalDateInput from "./components/ModalDateInput";
 import DateTimeInput from "./components/DateTimeInput";
 import { useBitcoinPrice } from "./hooks/useBitcoinPrice";
 import { listen } from "@tauri-apps/api/event";
@@ -42,7 +41,9 @@ const EventItem = React.memo(
             <div className="px-4 py-1 text-xs border-b border-[rgba(247,243,227,0.1)] bg-[rgba(247,243,227,0.03)]">
               <div
                 className="grid gap-2 items-center opacity-60"
-                style={{ gridTemplateColumns: "2fr 0.8fr 1.2fr 1fr 1fr 1.5fr 1.5fr" }}
+                style={{
+                  gridTemplateColumns: "2fr 0.8fr 1.5fr 1.3fr 1fr 1.5fr 0.8fr",
+                }}
               >
                 <div className="text-[rgba(247,243,227,0.5)] text-xs">
                   {new Date(event.timestamp)
@@ -56,25 +57,40 @@ const EventItem = React.memo(
                     })
                     .replace(",", "")}
                 </div>
-                <div className="text-[rgba(247,243,227,0.5)] text-xs">{event.event_type}</div>
-                <div className="text-[rgba(247,243,227,0.5)] text-xs">{event.amount_sats.toLocaleString()} sats</div>
                 <div className="text-[rgba(247,243,227,0.5)] text-xs">
-                  {event.value_cents ? `$${(event.value_cents / 100).toFixed(2)}` : "-"}
+                  {event.event_type}
+                </div>
+                <div className="text-[rgba(247,243,227,0.5)] text-xs">
+                  {event.amount_sats.toLocaleString()} sats
+                </div>
+                <div className="text-[rgba(247,243,227,0.5)] text-xs">
+                  {event.value_cents
+                    ? `$${(event.value_cents / 100).toFixed(2)}`
+                    : "-"}
                 </div>
                 <div className="text-[rgba(247,243,227,0.5)] text-xs">-</div>
-                <div className="text-[rgba(247,243,227,0.5)] text-xs truncate">{event.memo || "-"}</div>
-                <div className="text-[rgba(247,243,227,0.5)] text-xs">Editing...</div>
+                <div className="text-[rgba(247,243,227,0.5)] text-xs truncate">
+                  {event.memo || "-"}
+                </div>
+                <div className="text-[rgba(247,243,227,0.5)] text-xs">
+                  Editing...
+                </div>
               </div>
             </div>
           )}
-          
+
           {/* Compact edit form */}
           <div className="px-4 py-2 bg-[rgba(247,243,227,0.03)] border-l-2 border-blue-500">
             {/* Main edit row */}
-            <div className="grid gap-2 items-end mb-2" style={{ gridTemplateColumns: "2fr 0.8fr 1.2fr 1fr 1.5fr" }}>
+            <div
+              className="grid gap-2 items-end mb-2"
+              style={{ gridTemplateColumns: "2fr 0.8fr 1.5fr 1.3fr 1.5fr" }}
+            >
               {/* Date & Time */}
               <div>
-                <label className="block text-[rgba(247,243,227,0.6)] text-xs mb-1">Date & Time</label>
+                <label className="block text-[rgba(247,243,227,0.6)] text-xs mb-1">
+                  Date & Time
+                </label>
                 <DateTimeInput
                   value={editData.timestamp || new Date().toISOString()}
                   onChange={(isoTimestamp) => {
@@ -85,7 +101,9 @@ const EventItem = React.memo(
 
               {/* Event Type */}
               <div>
-                <label className="block text-[rgba(247,243,227,0.6)] text-xs mb-1">Type</label>
+                <label className="block text-[rgba(247,243,227,0.6)] text-xs mb-1">
+                  Type
+                </label>
                 <select
                   value={editData.event_type}
                   onChange={(e) => {
@@ -104,15 +122,32 @@ const EventItem = React.memo(
                     MozAppearance: "none",
                   }}
                 >
-                  <option value="Buy" style={{ backgroundColor: "#090C08", color: "#F7F3E3" }}>Buy</option>
-                  <option value="Sell" style={{ backgroundColor: "#090C08", color: "#F7F3E3" }}>Sell</option>
-                  <option value="Fee" style={{ backgroundColor: "#090C08", color: "#F7F3E3" }}>Fee</option>
+                  <option
+                    value="Buy"
+                    style={{ backgroundColor: "#090C08", color: "#F7F3E3" }}
+                  >
+                    Buy
+                  </option>
+                  <option
+                    value="Sell"
+                    style={{ backgroundColor: "#090C08", color: "#F7F3E3" }}
+                  >
+                    Sell
+                  </option>
+                  <option
+                    value="Fee"
+                    style={{ backgroundColor: "#090C08", color: "#F7F3E3" }}
+                  >
+                    Fee
+                  </option>
                 </select>
               </div>
 
               {/* Amount in Sats */}
               <div>
-                <label className="block text-[rgba(247,243,227,0.6)] text-xs mb-1">Amount (Sats)</label>
+                <label className="block text-[rgba(247,243,227,0.6)] text-xs mb-1">
+                  Amount (Sats)
+                </label>
                 <input
                   type="text"
                   value={
@@ -137,7 +172,10 @@ const EventItem = React.memo(
               {/* USD Value */}
               <div>
                 <label className="block text-[rgba(247,243,227,0.6)] text-xs mb-1">
-                  USD {editData.event_type === "Fee" && <span className="text-[rgba(247,243,227,0.4)]">(N/A)</span>}
+                  USD{" "}
+                  {editData.event_type === "Fee" && (
+                    <span className="text-[rgba(247,243,227,0.4)]">(N/A)</span>
+                  )}
                 </label>
                 <input
                   type="text"
@@ -191,7 +229,9 @@ const EventItem = React.memo(
 
               {/* Memo */}
               <div>
-                <label className="block text-[rgba(247,243,227,0.6)] text-xs mb-1">Memo</label>
+                <label className="block text-[rgba(247,243,227,0.6)] text-xs mb-1">
+                  Memo
+                </label>
                 <input
                   type="text"
                   value={editData.memo || ""}
@@ -208,12 +248,14 @@ const EventItem = React.memo(
             <div className="flex justify-between items-center">
               {/* Calculated BTC/USD Rate */}
               <div className="text-xs text-[rgba(247,243,227,0.6)]">
-                {(editData.event_type === "Buy" || editData.event_type === "Sell") &&
+                {(editData.event_type === "Buy" ||
+                  editData.event_type === "Sell") &&
                   editData.amount_sats &&
                   editData.value_cents &&
                   editData.value_cents !== "" && (
                     <span>
-                      Rate: ${(
+                      Rate: $
+                      {(
                         Math.abs(editData.value_cents) /
                         100 /
                         (Math.abs(editData.amount_sats) / 100_000_000)
@@ -261,7 +303,9 @@ const EventItem = React.memo(
       <div className="border-b border-[rgba(247,243,227,0.1)] hover:bg-[rgba(247,243,227,0.1)] px-4 py-1 text-xs group">
         <div
           className="grid gap-2 items-center"
-          style={{ gridTemplateColumns: "2fr 0.8fr 1.2fr 1fr 1fr 1.5fr 1.5fr" }}
+          style={{
+            gridTemplateColumns: "2fr 0.8fr 1.5fr 1.3fr 1fr 1.5fr 0.8fr",
+          }}
         >
           <div className="text-[rgba(247,243,227,0.5)] text-xs">
             {new Date(event.timestamp)
@@ -312,7 +356,7 @@ const EventItem = React.memo(
                 })}`
               : "-"}
           </div>
-          <div 
+          <div
             className="text-[rgba(247,243,227,0.5)] truncate text-xs"
             title={event.memo || ""}
           >
@@ -333,7 +377,11 @@ const EventItem = React.memo(
 );
 
 function App() {
-  const { price: bitcoinPrice, loading: bitcoinPriceLoading, error: bitcoinPriceError } = useBitcoinPrice();
+  const {
+    price: bitcoinPrice,
+    loading: bitcoinPriceLoading,
+    error: bitcoinPriceError,
+  } = useBitcoinPrice();
 
   const [events, setEvents] = useState<BalanceChangeEvent[]>([]);
   const [loading, setLoading] = useState(false);
@@ -616,6 +664,30 @@ function App() {
     }
   };
 
+  // Keyboard event listener for Escape key
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        // Cancel any active edit or creation
+        if (editingEventId) {
+          handleCancelEdit();
+        } else if (isCreatingNew) {
+          handleCancelNewEvent();
+        } else if (showLumpsumModal) {
+          setShowLumpsumModal(false);
+        }
+      }
+    };
+
+    // Add event listener
+    document.addEventListener("keydown", handleKeyDown);
+
+    // Cleanup function to remove event listener
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [editingEventId, isCreatingNew, showLumpsumModal]); // Dependencies to ensure we have current state
+
   // Load initial events and portfolio metrics on component mount
   useEffect(() => {
     loadInitialEvents();
@@ -680,38 +752,51 @@ function App() {
             <div className="grid grid-cols-5 gap-3 mb-3">
               {/* Bitcoin Price */}
               <div className="text-center p-2 bg-[rgba(97,218,251,0.1)] border border-[rgba(97,218,251,0.2)] rounded">
-                <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">Bitcoin Price</div>
+                <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
+                  Bitcoin Price
+                </div>
                 <div className="text-sm text-[#61dafb] font-medium">
-                  {bitcoinPriceLoading ? "..." : `$${bitcoinPrice.toLocaleString()}`}
+                  {bitcoinPriceLoading
+                    ? "..."
+                    : `$${bitcoinPrice.toLocaleString()}`}
                 </div>
               </div>
-              
+
               {/* Portfolio Value */}
               <div className="text-center p-2 bg-[rgba(247,147,26,0.1)] border border-[rgba(247,147,26,0.2)] rounded">
-                <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">Portfolio Value</div>
+                <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
+                  Portfolio Value
+                </div>
                 <div className="text-sm text-[#f7931a] font-medium">
                   {metricsLoading
                     ? "..."
                     : `$${(
-                        ((portfolioMetrics?.current_sats || 0) / 100_000_000) * bitcoinPrice
+                        ((portfolioMetrics?.current_sats || 0) / 100_000_000) *
+                        bitcoinPrice
                       ).toLocaleString(undefined, {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
                       })}`}
                 </div>
               </div>
-              
+
               {/* Current Sats */}
               <div className="text-center p-2 bg-[rgba(247,147,26,0.1)] border border-[rgba(247,147,26,0.2)] rounded">
-                <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">Current Sats</div>
+                <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
+                  Current Sats
+                </div>
                 <div className="text-sm text-[#f7931a] font-medium">
-                  {metricsLoading ? "..." : portfolioMetrics?.current_sats.toLocaleString() || "0"}
+                  {metricsLoading
+                    ? "..."
+                    : portfolioMetrics?.current_sats.toLocaleString() || "0"}
                 </div>
               </div>
-              
+
               {/* Current BTC */}
               <div className="text-center p-2 bg-[rgba(247,147,26,0.1)] border border-[rgba(247,147,26,0.2)] rounded">
-                <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">Current BTC</div>
+                <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
+                  Current BTC
+                </div>
                 <div className="text-sm text-[#f7931a] font-medium">
                   {metricsLoading
                     ? "..."
@@ -720,10 +805,12 @@ function App() {
                     : "0.00000000"}
                 </div>
               </div>
-              
+
               {/* Unrealized Gain */}
               <div className="text-center p-2 bg-[rgba(144,238,144,0.1)] border border-[rgba(144,238,144,0.2)] rounded">
-                <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">Unrealized Gain</div>
+                <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
+                  Unrealized Gain
+                </div>
                 <div
                   className={`text-sm font-medium ${(() => {
                     if (
@@ -733,34 +820,46 @@ function App() {
                     ) {
                       return "text-lightgreen";
                     }
-                    const currentValue = ((portfolioMetrics.current_sats || 0) / 100_000_000) * bitcoinPrice;
-                    const totalInvested = (portfolioMetrics.total_invested_cents || 0) / 100;
+                    const currentValue =
+                      ((portfolioMetrics.current_sats || 0) / 100_000_000) *
+                      bitcoinPrice;
+                    const totalInvested =
+                      (portfolioMetrics.total_invested_cents || 0) / 100;
                     const unrealizedGain = currentValue - totalInvested;
-                    return unrealizedGain >= 0 ? "text-lightgreen" : "text-lightcoral";
+                    return unrealizedGain >= 0
+                      ? "text-lightgreen"
+                      : "text-lightcoral";
                   })()}`}
                 >
                   {metricsLoading
                     ? "..."
-                    : portfolioMetrics?.current_sats && portfolioMetrics?.total_invested_cents
+                    : portfolioMetrics?.current_sats &&
+                      portfolioMetrics?.total_invested_cents
                     ? (() => {
-                        const currentValue = ((portfolioMetrics.current_sats || 0) / 100_000_000) * bitcoinPrice;
-                        const totalInvested = (portfolioMetrics.total_invested_cents || 0) / 100;
+                        const currentValue =
+                          ((portfolioMetrics.current_sats || 0) / 100_000_000) *
+                          bitcoinPrice;
+                        const totalInvested =
+                          (portfolioMetrics.total_invested_cents || 0) / 100;
                         const unrealizedGain = currentValue - totalInvested;
                         return unrealizedGain >= 0
                           ? `+$${unrealizedGain.toLocaleString(undefined, {
                               minimumFractionDigits: 0,
                               maximumFractionDigits: 0,
                             })}`
-                          : `-$${Math.abs(unrealizedGain).toLocaleString(undefined, {
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 0,
-                            })}`;
+                          : `-$${Math.abs(unrealizedGain).toLocaleString(
+                              undefined,
+                              {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              }
+                            )}`;
                       })()
                     : "-"}
                 </div>
               </div>
             </div>
-            
+
             {/* Chart Header */}
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-semibold text-[#F7F3E3]">
@@ -771,7 +870,7 @@ function App() {
               </div>
             </div>
           </div>
-          
+
           {/* Chart Area */}
           <div className="flex-1 p-4">
             <SatsHoldingsChart events={events} />
@@ -803,25 +902,33 @@ function App() {
                     {/* Row 1: Avg Buy Price & Total Invested */}
                     <div className="grid grid-cols-2 gap-2">
                       <div className="text-center p-1.5 bg-[rgba(144,238,144,0.1)] border border-[rgba(144,238,144,0.2)] rounded">
-                        <div className="text-xs text-[rgba(247,243,227,0.6)] mb-0.5">Avg Buy Price</div>
+                        <div className="text-xs text-[rgba(247,243,227,0.6)] mb-0.5">
+                          Avg Buy Price
+                        </div>
                         <div className="text-xs text-lightgreen font-medium">
                           {metricsLoading
                             ? "..."
                             : portfolioMetrics?.avg_buy_price
                             ? `$${portfolioMetrics.avg_buy_price.toLocaleString(
                                 undefined,
-                                { minimumFractionDigits: 0, maximumFractionDigits: 0 }
+                                {
+                                  minimumFractionDigits: 0,
+                                  maximumFractionDigits: 0,
+                                }
                               )}`
                             : "-"}
                         </div>
                       </div>
                       <div className="text-center p-1.5 bg-[rgba(144,238,144,0.1)] border border-[rgba(144,238,144,0.2)] rounded">
-                        <div className="text-xs text-[rgba(247,243,227,0.6)] mb-0.5">Total Invested</div>
+                        <div className="text-xs text-[rgba(247,243,227,0.6)] mb-0.5">
+                          Total Invested
+                        </div>
                         <div className="text-xs text-lightgreen font-medium">
                           {metricsLoading
                             ? "..."
                             : `$${(
-                                (portfolioMetrics?.total_invested_cents || 0) / 100
+                                (portfolioMetrics?.total_invested_cents || 0) /
+                                100
                               ).toLocaleString(undefined, {
                                 minimumFractionDigits: 0,
                                 maximumFractionDigits: 0,
@@ -831,11 +938,14 @@ function App() {
                     </div>
                     {/* Row 2: Total Sats Stacked (single column) */}
                     <div className="text-center p-1.5 bg-[rgba(144,238,144,0.1)] border border-[rgba(144,238,144,0.2)] rounded">
-                      <div className="text-xs text-[rgba(247,243,227,0.6)] mb-0.5">Total Sats Stacked</div>
+                      <div className="text-xs text-[rgba(247,243,227,0.6)] mb-0.5">
+                        Total Sats Stacked
+                      </div>
                       <div className="text-xs text-lightgreen font-medium">
                         {metricsLoading
                           ? "..."
-                          : portfolioMetrics?.total_sats_stacked.toLocaleString() || "0"}
+                          : portfolioMetrics?.total_sats_stacked.toLocaleString() ||
+                            "0"}
                       </div>
                     </div>
                   </div>
@@ -850,25 +960,33 @@ function App() {
                     {/* Row 1: Avg Sell Price & Fiat Extracted */}
                     <div className="grid grid-cols-2 gap-2">
                       <div className="text-center p-1.5 bg-[rgba(240,128,128,0.1)] border border-[rgba(240,128,128,0.2)] rounded">
-                        <div className="text-xs text-[rgba(247,243,227,0.6)] mb-0.5">Avg Sell Price</div>
+                        <div className="text-xs text-[rgba(247,243,227,0.6)] mb-0.5">
+                          Avg Sell Price
+                        </div>
                         <div className="text-xs text-lightcoral font-medium">
                           {metricsLoading
                             ? "..."
                             : portfolioMetrics?.avg_sell_price
                             ? `$${portfolioMetrics.avg_sell_price.toLocaleString(
                                 undefined,
-                                { minimumFractionDigits: 0, maximumFractionDigits: 0 }
+                                {
+                                  minimumFractionDigits: 0,
+                                  maximumFractionDigits: 0,
+                                }
                               )}`
                             : "-"}
                         </div>
                       </div>
                       <div className="text-center p-1.5 bg-[rgba(240,128,128,0.1)] border border-[rgba(240,128,128,0.2)] rounded">
-                        <div className="text-xs text-[rgba(247,243,227,0.6)] mb-0.5">Fiat Extracted</div>
+                        <div className="text-xs text-[rgba(247,243,227,0.6)] mb-0.5">
+                          Fiat Extracted
+                        </div>
                         <div className="text-xs text-lightcoral font-medium">
                           {metricsLoading
                             ? "..."
                             : `$${(
-                                (portfolioMetrics?.fiat_extracted_cents || 0) / 100
+                                (portfolioMetrics?.fiat_extracted_cents || 0) /
+                                100
                               ).toLocaleString(undefined, {
                                 minimumFractionDigits: 0,
                                 maximumFractionDigits: 0,
@@ -878,11 +996,14 @@ function App() {
                     </div>
                     {/* Row 2: Total Sats Spent (single column) */}
                     <div className="text-center p-1.5 bg-[rgba(240,128,128,0.1)] border border-[rgba(240,128,128,0.2)] rounded">
-                      <div className="text-xs text-[rgba(247,243,227,0.6)] mb-0.5">Total Sats Spent</div>
+                      <div className="text-xs text-[rgba(247,243,227,0.6)] mb-0.5">
+                        Total Sats Spent
+                      </div>
                       <div className="text-xs text-lightcoral font-medium">
                         {metricsLoading
                           ? "..."
-                          : portfolioMetrics?.total_sats_spent.toLocaleString() || "0"}
+                          : portfolioMetrics?.total_sats_spent.toLocaleString() ||
+                            "0"}
                       </div>
                     </div>
                   </div>
@@ -893,38 +1014,38 @@ function App() {
 
           {/* Bottom Half - Events Table (50%) */}
           <div className="h-1/2 flex flex-col">
-          {/* Header */}
-          <div className="px-4 py-3 border-b border-[rgba(247,243,227,0.2)] bg-[rgba(42,38,51,0.8)] shrink-0">
-            <div className="flex justify-between items-center">
-              <h2 className="text-md font-semibold text-[#F7F3E3]">
-                Events ({events.length} of {totalCount})
-              </h2>
-              <button
-                onClick={handleAddNewEvent}
-                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-xs rounded"
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-[rgba(247,243,227,0.2)] bg-[rgba(42,38,51,0.8)] shrink-0">
+              <div className="flex justify-between items-center">
+                <h2 className="text-md font-semibold text-[#F7F3E3]">
+                  Events ({events.length} of {totalCount})
+                </h2>
+                <button
+                  onClick={handleAddNewEvent}
+                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-xs rounded"
+                >
+                  Add Event
+                </button>
+              </div>
+              {/* Column Headers */}
+              <div
+                className="grid gap-2 mt-2 text-xs font-medium text-[rgba(247,243,227,0.6)]"
+                style={{
+                  gridTemplateColumns: "2fr 0.8fr 1.5fr 1.3fr 1fr 1.5fr 0.8fr",
+                }}
               >
-                Add Event
-              </button>
+                <div>Date</div>
+                <div>Type</div>
+                <div>Amount</div>
+                <div>USD</div>
+                <div>BTC/USD</div>
+                <div>Memo</div>
+                <div>Actions</div>
+              </div>
             </div>
-            {/* Column Headers */}
-            <div
-              className="grid gap-2 mt-2 text-xs font-medium text-[rgba(247,243,227,0.6)]"
-              style={{
-                gridTemplateColumns: "2fr 0.8fr 1.2fr 1fr 1fr 1.5fr 1.5fr",
-              }}
-            >
-              <div>Date</div>
-              <div>Type</div>
-              <div>Amount</div>
-              <div>USD</div>
-              <div>BTC/USD</div>
-              <div>Memo</div>
-              <div>Actions</div>
-            </div>
-          </div>
 
-          {/* Events List - Scrollable */}
-          <div className="flex-1 overflow-y-auto">
+            {/* Events List - Scrollable */}
+            <div className="flex-1 overflow-y-auto">
               {/* New Event Row using EventItem */}
               {isCreatingNew && (
                 <EventItem
@@ -955,16 +1076,16 @@ function App() {
                 />
               ))}
 
-            {events.length > 0 && (
-              <div className="text-center py-4">
-                <div className="text-xs text-[rgba(247,243,227,0.5)]">
-                  All events loaded
+              {events.length > 0 && (
+                <div className="text-center py-4">
+                  <div className="text-xs text-[rgba(247,243,227,0.5)]">
+                    All events loaded
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
-      </div>
       </div>
 
       <LumpsumModal
