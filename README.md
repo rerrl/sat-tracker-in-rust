@@ -16,6 +16,7 @@ yarn start:dev
 
 - TODO: double check the metrics caluluations (should gain be 0 when bitcoin price is equal to avg buy price?)
 - TODO: add a help page to show how to use the app and how the metrics are calculated
+- TODO: add ability to manually set the bitcoin price to see how the metrics change
 
 - TODO: better metrics
 
@@ -25,20 +26,7 @@ yarn start:dev
   - sats stacked this month
   - weekly streak / average sats stacked per week per rolling month, 12 month chart
 
-- TODO: events section
-
-  - edit event date
-  - view full memo in events list somehow (hover? click and expand?)
-
 - TODO: now that we have a ui and refined data model, lets do some csv importing. (no duplicates - coinbase, river)
-
-- TODO: (LOW PRIORITY) Trading Feature - Track Bitcoin-denominated investments
-  - Add new `trades` table to track sats sent out and received back
-  - Open Trade: Record sats sent + memo (e.g., "Lent to friend", "Mining equipment", "Lightning channel")
-  - Close Trade: Record sats received back to calculate sat P&L
-  - Trade Metrics: Active trades, sats at risk, trade P&L, best trade performance
-  - UI: Trade management in top-right section, trade events in events list
-  - Focus: Measure success in sats gained/lost, not fiat - true Bitcoin standard
 
 ### android development (no focus on mobile, keeping this for future reference)
 

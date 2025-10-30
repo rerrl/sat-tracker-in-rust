@@ -36,186 +36,218 @@ const EventItem = React.memo(
   }) => {
     if (isEditing || isCreating) {
       return (
-        <div className="border-b border-[rgba(247,243,227,0.1)] bg-[rgba(247,243,227,0.05)] px-4 py-2 text-xs">
-          <div
-            className="grid gap-2 items-center"
-            style={{
-              gridTemplateColumns: "2fr 0.8fr 1.2fr 1fr 1fr 1.5fr 1.5fr",
-            }}
-          >
-            <div>
-              <DateTimeInput
-                value={editData.timestamp || new Date().toISOString()}
-                onChange={(isoTimestamp) => {
-                  onEditDataChange("timestamp", isoTimestamp);
-                }}
-              />
-            </div>
-            <div>
-              <select
-                value={editData.event_type}
-                onChange={(e) => {
-                  const newType = e.target.value;
-                  onEditDataChange("event_type", newType);
-                  // Clear value_cents when switching to Fee, keep it for Buy/Sell
-                  if (newType === "Fee") {
-                    onEditDataChange("value_cents", null);
-                  }
-                }}
-                className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded"
-                style={{
-                  backgroundColor: "#090C08",
-                  color: "#F7F3E3",
-                  appearance: "none",
-                  WebkitAppearance: "none",
-                  MozAppearance: "none",
-                }}
+        <div className="border-b border-[rgba(247,243,227,0.2)] bg-[rgba(247,243,227,0.08)]">
+          {/* Show original event data in collapsed form */}
+          {!isCreating && event && (
+            <div className="px-4 py-1 text-xs border-b border-[rgba(247,243,227,0.1)] bg-[rgba(247,243,227,0.03)]">
+              <div
+                className="grid gap-2 items-center opacity-60"
+                style={{ gridTemplateColumns: "2fr 0.8fr 1.2fr 1fr 1fr 1.5fr 1.5fr" }}
               >
-                <option
-                  value="Buy"
-                  style={{ backgroundColor: "#090C08", color: "#F7F3E3" }}
-                >
-                  Buy
-                </option>
-                <option
-                  value="Sell"
-                  style={{ backgroundColor: "#090C08", color: "#F7F3E3" }}
-                >
-                  Sell
-                </option>
-                <option
-                  value="Fee"
-                  style={{ backgroundColor: "#090C08", color: "#F7F3E3" }}
-                >
-                  Fee
-                </option>
-              </select>
+                <div className="text-[rgba(247,243,227,0.5)] text-xs">
+                  {new Date(event.timestamp)
+                    .toLocaleString("en-US", {
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: true,
+                    })
+                    .replace(",", "")}
+                </div>
+                <div className="text-[rgba(247,243,227,0.5)] text-xs">{event.event_type}</div>
+                <div className="text-[rgba(247,243,227,0.5)] text-xs">{event.amount_sats.toLocaleString()} sats</div>
+                <div className="text-[rgba(247,243,227,0.5)] text-xs">
+                  {event.value_cents ? `$${(event.value_cents / 100).toFixed(2)}` : "-"}
+                </div>
+                <div className="text-[rgba(247,243,227,0.5)] text-xs">-</div>
+                <div className="text-[rgba(247,243,227,0.5)] text-xs truncate">{event.memo || "-"}</div>
+                <div className="text-[rgba(247,243,227,0.5)] text-xs">Editing...</div>
+              </div>
             </div>
-            <div>
-              <input
-                type="text"
-                value={
-                  editData.amount_sats === ""
-                    ? ""
-                    : editData.amount_sats?.toString() || ""
-                }
-                onChange={(e) => {
-                  const value = e.target.value;
-                  // Allow empty string or positive integers only
-                  if (value === "" || /^[1-9]\d*$/.test(value)) {
-                    onEditDataChange(
-                      "amount_sats",
-                      value === "" ? "" : parseInt(value)
-                    );
-                  }
-                }}
-                className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded"
-              />
-            </div>
-            <div>
-              <input
-                type="text"
-                value={
-                  editData.event_type === "Fee"
-                    ? "N/A"
-                    : editData.value_cents === null ||
-                      editData.value_cents === undefined
-                    ? ""
-                    : editData.value_cents === ""
-                    ? ""
-                    : typeof editData.value_cents === "string"
-                    ? editData.value_cents
-                    : (editData.value_cents / 100).toString()
-                }
-                onChange={(e) => {
-                  if (editData.event_type === "Fee") return; // Don't allow changes for Fee type
+          )}
+          
+          {/* Compact edit form */}
+          <div className="px-4 py-2 bg-[rgba(247,243,227,0.03)] border-l-2 border-blue-500">
+            {/* Main edit row */}
+            <div className="grid gap-2 items-end mb-2" style={{ gridTemplateColumns: "2fr 0.8fr 1.2fr 1fr 1.5fr" }}>
+              {/* Date & Time */}
+              <div>
+                <label className="block text-[rgba(247,243,227,0.6)] text-xs mb-1">Date & Time</label>
+                <DateTimeInput
+                  value={editData.timestamp || new Date().toISOString()}
+                  onChange={(isoTimestamp) => {
+                    onEditDataChange("timestamp", isoTimestamp);
+                  }}
+                />
+              </div>
 
-                  const value = e.target.value;
-                  // Allow empty string or positive numbers with up to 2 decimal places
-                  if (value === "" || /^[0-9]+(\.[0-9]{0,2})?$/.test(value)) {
-                    if (value === "") {
-                      onEditDataChange("value_cents", "");
-                    } else {
-                      // Store the string value during typing, convert to cents only when complete
-                      onEditDataChange("value_cents", value);
+              {/* Event Type */}
+              <div>
+                <label className="block text-[rgba(247,243,227,0.6)] text-xs mb-1">Type</label>
+                <select
+                  value={editData.event_type}
+                  onChange={(e) => {
+                    const newType = e.target.value;
+                    onEditDataChange("event_type", newType);
+                    if (newType === "Fee") {
+                      onEditDataChange("value_cents", null);
                     }
-                  }
-                }}
-                onBlur={() => {
-                  if (editData.event_type === "Fee") return; // Don't process blur for Fee type
+                  }}
+                  className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded"
+                  style={{
+                    backgroundColor: "#090C08",
+                    color: "#F7F3E3",
+                    appearance: "none",
+                    WebkitAppearance: "none",
+                    MozAppearance: "none",
+                  }}
+                >
+                  <option value="Buy" style={{ backgroundColor: "#090C08", color: "#F7F3E3" }}>Buy</option>
+                  <option value="Sell" style={{ backgroundColor: "#090C08", color: "#F7F3E3" }}>Sell</option>
+                  <option value="Fee" style={{ backgroundColor: "#090C08", color: "#F7F3E3" }}>Fee</option>
+                </select>
+              </div>
 
-                  if (
-                    editData.value_cents &&
-                    typeof editData.value_cents === "string"
-                  ) {
-                    const numValue = parseFloat(editData.value_cents);
-                    if (!isNaN(numValue)) {
+              {/* Amount in Sats */}
+              <div>
+                <label className="block text-[rgba(247,243,227,0.6)] text-xs mb-1">Amount (Sats)</label>
+                <input
+                  type="text"
+                  value={
+                    editData.amount_sats === ""
+                      ? ""
+                      : editData.amount_sats?.toString() || ""
+                  }
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === "" || /^[1-9]\d*$/.test(value)) {
                       onEditDataChange(
-                        "value_cents",
-                        Math.round(numValue * 100)
+                        "amount_sats",
+                        value === "" ? "" : parseInt(value)
                       );
                     }
+                  }}
+                  className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded"
+                  placeholder="1000000"
+                />
+              </div>
+
+              {/* USD Value */}
+              <div>
+                <label className="block text-[rgba(247,243,227,0.6)] text-xs mb-1">
+                  USD {editData.event_type === "Fee" && <span className="text-[rgba(247,243,227,0.4)]">(N/A)</span>}
+                </label>
+                <input
+                  type="text"
+                  value={
+                    editData.event_type === "Fee"
+                      ? "N/A"
+                      : editData.value_cents === null ||
+                        editData.value_cents === undefined
+                      ? ""
+                      : editData.value_cents === ""
+                      ? ""
+                      : typeof editData.value_cents === "string"
+                      ? editData.value_cents
+                      : (editData.value_cents / 100).toString()
                   }
-                }}
-                disabled={editData.event_type === "Fee"}
-                className={`w-full border px-2 py-1 text-xs rounded ${
-                  editData.event_type === "Fee"
-                    ? "bg-[rgba(9,12,8,0.5)] border-[rgba(247,243,227,0.1)] text-[rgba(247,243,227,0.4)] cursor-not-allowed"
-                    : "bg-[#090C08] border-[rgba(247,243,227,0.3)] text-[#F7F3E3]"
-                }`}
-                placeholder={
-                  editData.event_type === "Fee" ? "N/A for fees" : "0.00"
-                }
-              />
+                  onChange={(e) => {
+                    if (editData.event_type === "Fee") return;
+                    const value = e.target.value;
+                    if (value === "" || /^[0-9]+(\.[0-9]{0,2})?$/.test(value)) {
+                      if (value === "") {
+                        onEditDataChange("value_cents", "");
+                      } else {
+                        onEditDataChange("value_cents", value);
+                      }
+                    }
+                  }}
+                  onBlur={() => {
+                    if (editData.event_type === "Fee") return;
+                    if (
+                      editData.value_cents &&
+                      typeof editData.value_cents === "string"
+                    ) {
+                      const numValue = parseFloat(editData.value_cents);
+                      if (!isNaN(numValue)) {
+                        onEditDataChange(
+                          "value_cents",
+                          Math.round(numValue * 100)
+                        );
+                      }
+                    }
+                  }}
+                  disabled={editData.event_type === "Fee"}
+                  className={`w-full border px-2 py-1 text-xs rounded ${
+                    editData.event_type === "Fee"
+                      ? "bg-[rgba(9,12,8,0.5)] border-[rgba(247,243,227,0.1)] text-[rgba(247,243,227,0.4)] cursor-not-allowed"
+                      : "bg-[#090C08] border-[rgba(247,243,227,0.3)] text-[#F7F3E3]"
+                  }`}
+                  placeholder={editData.event_type === "Fee" ? "N/A" : "500.00"}
+                />
+              </div>
+
+              {/* Memo */}
+              <div>
+                <label className="block text-[rgba(247,243,227,0.6)] text-xs mb-1">Memo</label>
+                <input
+                  type="text"
+                  value={editData.memo || ""}
+                  onChange={(e) =>
+                    onEditDataChange("memo", e.target.value || null)
+                  }
+                  className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded"
+                  placeholder="Optional memo"
+                />
+              </div>
             </div>
-            <div className="text-[rgba(247,243,227,0.6)] text-xs text-center">
-              {(editData.event_type === "Buy" ||
-                editData.event_type === "Sell") &&
-              editData.amount_sats &&
-              editData.value_cents &&
-              editData.value_cents !== ""
-                ? `$${(
-                    Math.abs(editData.value_cents) /
-                    100 /
-                    (Math.abs(editData.amount_sats) / 100_000_000)
-                  ).toLocaleString(undefined, {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0,
-                  })}`
-                : "-"}
-            </div>
-            <div>
-              <input
-                type="text"
-                value={editData.memo || ""}
-                onChange={(e) =>
-                  onEditDataChange("memo", e.target.value || null)
-                }
-                className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded"
-                placeholder="Memo"
-              />
-            </div>
-            <div className="flex gap-1">
-              <button
-                onClick={onSave}
-                className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 text-xs rounded"
-              >
-                Save
-              </button>
-              {!isCreating && ( // Only show delete button when editing existing events
+
+            {/* Bottom row with calculated rate and actions */}
+            <div className="flex justify-between items-center">
+              {/* Calculated BTC/USD Rate */}
+              <div className="text-xs text-[rgba(247,243,227,0.6)]">
+                {(editData.event_type === "Buy" || editData.event_type === "Sell") &&
+                  editData.amount_sats &&
+                  editData.value_cents &&
+                  editData.value_cents !== "" && (
+                    <span>
+                      Rate: ${(
+                        Math.abs(editData.value_cents) /
+                        100 /
+                        (Math.abs(editData.amount_sats) / 100_000_000)
+                      ).toLocaleString(undefined, {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}
+                    </span>
+                  )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2">
                 <button
-                  onClick={onDelete}
-                  className="bg-red-600 hover:bg-red-700 text-white px-2 py-1 text-xs rounded"
+                  onClick={onSave}
+                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-xs rounded"
                 >
-                  Del
+                  {isCreating ? "Create" : "Save"}
                 </button>
-              )}
-              <button
-                onClick={onCancel}
-                className="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 text-xs rounded"
-              >
-                Cancel
-              </button>
+                {!isCreating && (
+                  <button
+                    onClick={onDelete}
+                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-xs rounded"
+                  >
+                    Delete
+                  </button>
+                )}
+                <button
+                  onClick={onCancel}
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 text-xs rounded"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -641,357 +673,258 @@ function App() {
 
       {/* Main Content - Two Columns */}
       <div className="flex h-[calc(100vh-73px)]">
-        {" "}
-        {/* Subtract header height */}
-        {/* Left Column - Portfolio Metrics (40%) */}
-        <div className="w-2/5 border-r border-[rgba(247,243,227,0.2)] bg-[#2A2633] flex flex-col">
-          <div className="p-5 pb-3 shrink-0">
-            <h2 className="text-lg font-semibold text-[#F7F3E3]">
-              Portfolio Metrics
-            </h2>
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-6 pb-6">
-            {/* Overview Section */}
-            <div className="mb-5">
-              <h3 className="text-md font-semibold text-[#F7F3E3] mb-2 border-b border-[rgba(247,243,227,0.2)] pb-1">
-                Overview
-              </h3>
-              <div className="flex gap-3 mb-3">
-                <div className="flex-1 text-center border border-[#61dafb] bg-[rgba(9,12,8,0.5)] p-3">
-                  <p className="text-sm font-bold text-[#61dafb] mb-1">
-                    Bitcoin Price
-                  </p>
-                  <p className="text-lg text-[#61dafb]">
-                    {bitcoinPriceLoading ? "Loading..." : `$${bitcoinPrice.toLocaleString()}`}
-                  </p>
-                  <p className="text-xs text-[#61dafb]">
-                    {bitcoinPriceError ? "Error loading" : "Live price"}
-                  </p>
-                </div>
-                <div className="flex-1 text-center border border-[#f7931a] bg-[rgba(9,12,8,0.5)] p-3">
-                  <p className="text-sm font-bold text-[#f7931a] mb-1">
-                    Portfolio Value
-                  </p>
-                  <p className="text-lg text-[#f7931a]">
-                    {metricsLoading
-                      ? "..."
-                      : `$${(
-                          ((portfolioMetrics?.current_sats || 0) /
-                            100_000_000) *
-                          bitcoinPrice
-                        ).toLocaleString(undefined, {
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        })}`}
-                  </p>
+        {/* Left Column - Chart Area (65%) */}
+        <div className="w-[65%] bg-[rgba(9,12,8,0.8)] flex flex-col">
+          {/* Overview Metrics Strip */}
+          <div className="p-4 pb-2 shrink-0 border-b border-[rgba(247,243,227,0.1)]">
+            <div className="grid grid-cols-5 gap-3 mb-3">
+              {/* Bitcoin Price */}
+              <div className="text-center p-2 bg-[rgba(97,218,251,0.1)] border border-[rgba(97,218,251,0.2)] rounded">
+                <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">Bitcoin Price</div>
+                <div className="text-sm text-[#61dafb] font-medium">
+                  {bitcoinPriceLoading ? "..." : `$${bitcoinPrice.toLocaleString()}`}
                 </div>
               </div>
-              <div className="flex gap-3">
-                <div className="flex-1 text-center border border-[#f7931a] bg-[rgba(9,12,8,0.5)] p-3">
-                  <p className="text-sm font-bold text-[#f7931a] mb-1">
-                    Current Sats
-                  </p>
-                  <p className="text-lg text-[#f7931a]">
-                    {metricsLoading
-                      ? "..."
-                      : portfolioMetrics?.current_sats.toLocaleString() || "0"}
-                  </p>
-                  <p className="text-xs text-[#f7931a]">
-                    {metricsLoading
-                      ? "..."
-                      : portfolioMetrics?.current_sats
-                      ? (portfolioMetrics.current_sats / 100_000_000).toFixed(8)
-                      : "0.00000000"}{" "}
-                    BTC
-                  </p>
-                </div>
-                <div className="flex-1 text-center border border-[#f7931a] bg-[rgba(9,12,8,0.5)] p-3">
-                  <p className="text-sm font-bold text-[#f7931a] mb-1">
-                    Total Sats Stacked
-                  </p>
-                  <p className="text-lg text-[#f7931a]">
-                    {metricsLoading
-                      ? "..."
-                      : portfolioMetrics?.total_sats_stacked.toLocaleString() ||
-                        "0"}
-                  </p>
+              
+              {/* Portfolio Value */}
+              <div className="text-center p-2 bg-[rgba(247,147,26,0.1)] border border-[rgba(247,147,26,0.2)] rounded">
+                <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">Portfolio Value</div>
+                <div className="text-sm text-[#f7931a] font-medium">
+                  {metricsLoading
+                    ? "..."
+                    : `$${(
+                        ((portfolioMetrics?.current_sats || 0) / 100_000_000) * bitcoinPrice
+                      ).toLocaleString(undefined, {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}`}
                 </div>
               </div>
-            </div>
-
-            {/* Buys Section */}
-            <div className="mb-5">
-              <h3 className="text-md font-semibold text-[#F7F3E3] mb-2 border-b border-[rgba(247,243,227,0.2)] pb-1">
-                Buys
-              </h3>
-              <div className="flex gap-3 mb-3">
-                <div className="flex-1 text-center border border-lightgreen bg-[rgba(9,12,8,0.5)] p-3">
-                  <p className="text-sm font-bold text-lightgreen mb-1">
-                    Avg Buy Price
-                  </p>
-                  <p className="text-lg text-lightgreen">
-                    {metricsLoading
-                      ? "..."
-                      : portfolioMetrics?.avg_buy_price
-                      ? `$${portfolioMetrics.avg_buy_price.toLocaleString(
-                          undefined,
-                          { minimumFractionDigits: 0, maximumFractionDigits: 0 }
-                        )}`
-                      : "-"}
-                  </p>
-                </div>
-                <div className="flex-1 text-center border border-lightgreen bg-[rgba(9,12,8,0.5)] p-3">
-                  <p className="text-sm font-bold text-lightgreen mb-1">
-                    Total Invested
-                  </p>
-                  <p className="text-lg text-lightgreen">
-                    {metricsLoading
-                      ? "..."
-                      : `$${(
-                          (portfolioMetrics?.total_invested_cents || 0) / 100
-                        ).toLocaleString(undefined, {
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        })}`}
-                  </p>
+              
+              {/* Current Sats */}
+              <div className="text-center p-2 bg-[rgba(247,147,26,0.1)] border border-[rgba(247,147,26,0.2)] rounded">
+                <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">Current Sats</div>
+                <div className="text-sm text-[#f7931a] font-medium">
+                  {metricsLoading ? "..." : portfolioMetrics?.current_sats.toLocaleString() || "0"}
                 </div>
               </div>
-              <div className="flex gap-3">
+              
+              {/* Current BTC */}
+              <div className="text-center p-2 bg-[rgba(247,147,26,0.1)] border border-[rgba(247,147,26,0.2)] rounded">
+                <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">Current BTC</div>
+                <div className="text-sm text-[#f7931a] font-medium">
+                  {metricsLoading
+                    ? "..."
+                    : portfolioMetrics?.current_sats
+                    ? (portfolioMetrics.current_sats / 100_000_000).toFixed(8)
+                    : "0.00000000"}
+                </div>
+              </div>
+              
+              {/* Unrealized Gain */}
+              <div className="text-center p-2 bg-[rgba(144,238,144,0.1)] border border-[rgba(144,238,144,0.2)] rounded">
+                <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">Unrealized Gain</div>
                 <div
-                  className={`flex-1 text-center bg-[rgba(9,12,8,0.5)] p-3 ${(() => {
+                  className={`text-sm font-medium ${(() => {
                     if (
                       metricsLoading ||
                       !portfolioMetrics?.current_sats ||
                       !portfolioMetrics?.total_invested_cents
                     ) {
-                      return "border border-lightgreen";
+                      return "text-lightgreen";
                     }
-                    const currentValue =
-                      ((portfolioMetrics.current_sats || 0) / 100_000_000) *
-                      bitcoinPrice;
-                    const totalInvested =
-                      (portfolioMetrics.total_invested_cents || 0) / 100;
+                    const currentValue = ((portfolioMetrics.current_sats || 0) / 100_000_000) * bitcoinPrice;
+                    const totalInvested = (portfolioMetrics.total_invested_cents || 0) / 100;
                     const unrealizedGain = currentValue - totalInvested;
-                    return unrealizedGain >= 0
-                      ? "border border-lightgreen"
-                      : "border border-lightcoral";
+                    return unrealizedGain >= 0 ? "text-lightgreen" : "text-lightcoral";
                   })()}`}
                 >
-                  <p
-                    className={`text-sm font-bold mb-1 ${(() => {
-                      if (
-                        metricsLoading ||
-                        !portfolioMetrics?.current_sats ||
-                        !portfolioMetrics?.total_invested_cents
-                      ) {
-                        return "text-lightgreen";
-                      }
-                      const currentValue =
-                        ((portfolioMetrics.current_sats || 0) / 100_000_000) *
-                        bitcoinPrice;
-                      const totalInvested =
-                        (portfolioMetrics.total_invested_cents || 0) / 100;
-                      const unrealizedGain = currentValue - totalInvested;
-                      return unrealizedGain >= 0
-                        ? "text-lightgreen"
-                        : "text-lightcoral";
-                    })()}`}
-                  >
-                    Unrealized Gain
-                  </p>
-                  <p
-                    className={`text-lg ${(() => {
-                      if (
-                        metricsLoading ||
-                        !portfolioMetrics?.current_sats ||
-                        !portfolioMetrics?.total_invested_cents
-                      ) {
-                        return "text-lightgreen";
-                      }
-                      const currentValue =
-                        ((portfolioMetrics.current_sats || 0) / 100_000_000) *
-                        bitcoinPrice;
-                      const totalInvested =
-                        (portfolioMetrics.total_invested_cents || 0) / 100;
-                      const unrealizedGain = currentValue - totalInvested;
-                      return unrealizedGain >= 0
-                        ? "text-lightgreen"
-                        : "text-lightcoral";
-                    })()}`}
-                  >
-                    {metricsLoading
-                      ? "..."
-                      : portfolioMetrics?.current_sats &&
-                        portfolioMetrics?.total_invested_cents
-                      ? (() => {
-                          const currentValue =
-                            ((portfolioMetrics.current_sats || 0) /
-                              100_000_000) *
-                            bitcoinPrice;
-                          const totalInvested =
-                            (portfolioMetrics.total_invested_cents || 0) / 100;
-                          const unrealizedGain = currentValue - totalInvested;
-                          return unrealizedGain >= 0
-                            ? `+$${unrealizedGain.toLocaleString(undefined, {
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              })}`
-                            : `-$${Math.abs(unrealizedGain).toLocaleString(
-                                undefined,
-                                {
-                                  minimumFractionDigits: 0,
-                                  maximumFractionDigits: 0,
-                                }
-                              )}`;
-                        })()
-                      : "-"}
-                  </p>
-                  <p
-                    className={`text-xs ${(() => {
-                      if (
-                        metricsLoading ||
-                        !portfolioMetrics?.current_sats ||
-                        !portfolioMetrics?.total_invested_cents
-                      ) {
-                        return "text-lightgreen";
-                      }
-                      const currentValue =
-                        ((portfolioMetrics.current_sats || 0) / 100_000_000) *
-                        bitcoinPrice;
-                      const totalInvested =
-                        (portfolioMetrics.total_invested_cents || 0) / 100;
-                      const unrealizedGain = currentValue - totalInvested;
-                      return unrealizedGain >= 0
-                        ? "text-lightgreen"
-                        : "text-lightcoral";
-                    })()}`}
-                  >
-                    {metricsLoading
-                      ? "..."
-                      : portfolioMetrics?.current_sats &&
-                        portfolioMetrics?.total_invested_cents
-                      ? (() => {
-                          const currentValue =
-                            ((portfolioMetrics.current_sats || 0) /
-                              100_000_000) *
-                            bitcoinPrice;
-                          const totalInvested =
-                            (portfolioMetrics.total_invested_cents || 0) / 100;
-                          const unrealizedGain = currentValue - totalInvested;
-                          const gainPercentage =
-                            totalInvested > 0
-                              ? (unrealizedGain / totalInvested) * 100
-                              : 0;
-                          return gainPercentage >= 0
-                            ? `+${gainPercentage.toFixed(1)}%`
-                            : `${gainPercentage.toFixed(1)}%`;
-                        })()
-                      : "-"}
-                  </p>
+                  {metricsLoading
+                    ? "..."
+                    : portfolioMetrics?.current_sats && portfolioMetrics?.total_invested_cents
+                    ? (() => {
+                        const currentValue = ((portfolioMetrics.current_sats || 0) / 100_000_000) * bitcoinPrice;
+                        const totalInvested = (portfolioMetrics.total_invested_cents || 0) / 100;
+                        const unrealizedGain = currentValue - totalInvested;
+                        return unrealizedGain >= 0
+                          ? `+$${unrealizedGain.toLocaleString(undefined, {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            })}`
+                          : `-$${Math.abs(unrealizedGain).toLocaleString(undefined, {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            })}`;
+                      })()
+                    : "-"}
                 </div>
               </div>
             </div>
-
-            {/* Sells Section */}
-            <div className="mb-5">
-              <h3 className="text-md font-semibold text-[#F7F3E3] mb-2 border-b border-[rgba(247,243,227,0.2)] pb-1">
-                Sells
-              </h3>
-              <div className="flex gap-3">
-                <div className="flex-1 text-center border border-lightcoral bg-[rgba(9,12,8,0.5)] p-3">
-                  <p className="text-sm font-bold text-lightcoral mb-1">
-                    Avg Sell Price
-                  </p>
-                  <p className="text-lg text-lightcoral">
-                    {metricsLoading
-                      ? "..."
-                      : portfolioMetrics?.avg_sell_price
-                      ? `$${portfolioMetrics.avg_sell_price.toLocaleString(
-                          undefined,
-                          { minimumFractionDigits: 0, maximumFractionDigits: 0 }
-                        )}`
-                      : "-"}
-                  </p>
-                </div>
-                <div className="flex-1 text-center border border-lightcoral bg-[rgba(9,12,8,0.5)] p-3">
-                  <p className="text-sm font-bold text-lightcoral mb-1">
-                    Fiat Extracted
-                  </p>
-                  <p className="text-lg text-lightcoral">
-                    {metricsLoading
-                      ? "..."
-                      : `$${(
-                          (portfolioMetrics?.fiat_extracted_cents || 0) / 100
-                        ).toLocaleString(undefined, {
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        })}`}
-                  </p>
-                </div>
-                <div className="flex-1 text-center border border-lightcoral bg-[rgba(9,12,8,0.5)] p-3">
-                  <p className="text-sm font-bold text-lightcoral mb-1">
-                    Total Sats Spent
-                  </p>
-                  <p className="text-lg text-lightcoral">
-                    {metricsLoading
-                      ? "..."
-                      : portfolioMetrics?.total_sats_spent.toLocaleString() ||
-                        "0"}
-                  </p>
-                </div>
+            
+            {/* Chart Header */}
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-[#F7F3E3]">
+                Sats Holdings Over Time
+              </h2>
+              <div className="text-xs text-[rgba(247,243,227,0.5)] bg-[rgba(247,243,227,0.1)] px-2 py-1 rounded">
+                Premium: More Charts
               </div>
             </div>
+          </div>
+          
+          {/* Chart Area */}
+          <div className="flex-1 p-4">
+            <SatsHoldingsChart events={events} />
           </div>
         </div>
-        {/* Right Column - Split into top and bottom (60%) */}
-        <div className="flex-1 flex flex-col">
-          {/* Top Section (50%) */}
-          <div className="h-1/2 border-b border-[rgba(247,243,227,0.2)] bg-[rgba(9,12,8,0.8)]">
-            <div className="p-4 h-full flex flex-col">
-              <h3 className="text-sm font-semibold text-[#F7F3E3] mb-3">
-                Sats Holdings Over Time
-              </h3>
-              <div className="flex-1">
-                <SatsHoldingsChart events={events} />
+
+        {/* Right Column - Metrics + Events (35%) */}
+        <div className="w-[35%] border-l border-[rgba(247,243,227,0.2)] bg-[#2A2633] flex flex-col">
+          {/* Top Half - Buy/Sell Analytics (50%) */}
+          <div className="h-1/2 border-b border-[rgba(247,243,227,0.2)] flex flex-col">
+            <div className="p-4 pb-2 shrink-0">
+              <div className="flex justify-between items-center">
+                <h2 className="text-md font-semibold text-[#F7F3E3]">
+                  Analytics
+                </h2>
+                <div className="text-xs text-[rgba(247,243,227,0.5)] bg-[rgba(247,243,227,0.1)] px-2 py-1 rounded">
+                  Premium: Advanced Analytics
+                </div>
+              </div>
+            </div>
+            <div className="flex-1 px-4 pb-2 overflow-y-auto">
+              <div className="space-y-3">
+                {/* Buys Section */}
+                <div>
+                  <h3 className="text-xs font-semibold text-[#F7F3E3] mb-1 border-b border-[rgba(247,243,227,0.2)] pb-1">
+                    Buys
+                  </h3>
+                  <div className="space-y-1">
+                    {/* Row 1: Avg Buy Price & Total Invested */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="text-center p-1.5 bg-[rgba(144,238,144,0.1)] border border-[rgba(144,238,144,0.2)] rounded">
+                        <div className="text-xs text-[rgba(247,243,227,0.6)] mb-0.5">Avg Buy Price</div>
+                        <div className="text-xs text-lightgreen font-medium">
+                          {metricsLoading
+                            ? "..."
+                            : portfolioMetrics?.avg_buy_price
+                            ? `$${portfolioMetrics.avg_buy_price.toLocaleString(
+                                undefined,
+                                { minimumFractionDigits: 0, maximumFractionDigits: 0 }
+                              )}`
+                            : "-"}
+                        </div>
+                      </div>
+                      <div className="text-center p-1.5 bg-[rgba(144,238,144,0.1)] border border-[rgba(144,238,144,0.2)] rounded">
+                        <div className="text-xs text-[rgba(247,243,227,0.6)] mb-0.5">Total Invested</div>
+                        <div className="text-xs text-lightgreen font-medium">
+                          {metricsLoading
+                            ? "..."
+                            : `$${(
+                                (portfolioMetrics?.total_invested_cents || 0) / 100
+                              ).toLocaleString(undefined, {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              })}`}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Row 2: Total Sats Stacked (single column) */}
+                    <div className="text-center p-1.5 bg-[rgba(144,238,144,0.1)] border border-[rgba(144,238,144,0.2)] rounded">
+                      <div className="text-xs text-[rgba(247,243,227,0.6)] mb-0.5">Total Sats Stacked</div>
+                      <div className="text-xs text-lightgreen font-medium">
+                        {metricsLoading
+                          ? "..."
+                          : portfolioMetrics?.total_sats_stacked.toLocaleString() || "0"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sells Section */}
+                <div>
+                  <h3 className="text-xs font-semibold text-[#F7F3E3] mb-1 border-b border-[rgba(247,243,227,0.2)] pb-1">
+                    Sells
+                  </h3>
+                  <div className="space-y-1">
+                    {/* Row 1: Avg Sell Price & Fiat Extracted */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="text-center p-1.5 bg-[rgba(240,128,128,0.1)] border border-[rgba(240,128,128,0.2)] rounded">
+                        <div className="text-xs text-[rgba(247,243,227,0.6)] mb-0.5">Avg Sell Price</div>
+                        <div className="text-xs text-lightcoral font-medium">
+                          {metricsLoading
+                            ? "..."
+                            : portfolioMetrics?.avg_sell_price
+                            ? `$${portfolioMetrics.avg_sell_price.toLocaleString(
+                                undefined,
+                                { minimumFractionDigits: 0, maximumFractionDigits: 0 }
+                              )}`
+                            : "-"}
+                        </div>
+                      </div>
+                      <div className="text-center p-1.5 bg-[rgba(240,128,128,0.1)] border border-[rgba(240,128,128,0.2)] rounded">
+                        <div className="text-xs text-[rgba(247,243,227,0.6)] mb-0.5">Fiat Extracted</div>
+                        <div className="text-xs text-lightcoral font-medium">
+                          {metricsLoading
+                            ? "..."
+                            : `$${(
+                                (portfolioMetrics?.fiat_extracted_cents || 0) / 100
+                              ).toLocaleString(undefined, {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              })}`}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Row 2: Total Sats Spent (single column) */}
+                    <div className="text-center p-1.5 bg-[rgba(240,128,128,0.1)] border border-[rgba(240,128,128,0.2)] rounded">
+                      <div className="text-xs text-[rgba(247,243,227,0.6)] mb-0.5">Total Sats Spent</div>
+                      <div className="text-xs text-lightcoral font-medium">
+                        {metricsLoading
+                          ? "..."
+                          : portfolioMetrics?.total_sats_spent.toLocaleString() || "0"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Bottom Section (50%) - Events */}
-          <div className="h-1/2 bg-[#2A2633] flex flex-col">
-            {/* Header */}
-            <div className="px-4 py-3 border-b border-[rgba(247,243,227,0.2)] bg-[rgba(42,38,51,0.8)] shrink-0">
-              <div className="flex justify-between items-center">
-                <h3 className="text-sm font-semibold text-[#F7F3E3]">
-                  Events ({events.length} of {totalCount})
-                </h3>
-                <button
-                  onClick={handleAddNewEvent}
-                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-xs rounded"
-                >
-                  Add Event
-                </button>
-              </div>
-              {/* Column Headers */}
-              <div
-                className="grid gap-2 mt-2 text-xs font-medium text-[rgba(247,243,227,0.6)]"
-                style={{
-                  gridTemplateColumns: "2fr 0.8fr 1.2fr 1fr 1fr 1.5fr 1.5fr",
-                }}
+          {/* Bottom Half - Events Table (50%) */}
+          <div className="h-1/2 flex flex-col">
+          {/* Header */}
+          <div className="px-4 py-3 border-b border-[rgba(247,243,227,0.2)] bg-[rgba(42,38,51,0.8)] shrink-0">
+            <div className="flex justify-between items-center">
+              <h2 className="text-md font-semibold text-[#F7F3E3]">
+                Events ({events.length} of {totalCount})
+              </h2>
+              <button
+                onClick={handleAddNewEvent}
+                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-xs rounded"
               >
-                <div>Date</div>
-                <div>Type</div>
-                <div>Amount</div>
-                <div>USD</div>
-                <div>BTC/USD</div>
-                <div>Memo</div>
-                <div>Actions</div>
-              </div>
+                Add Event
+              </button>
             </div>
+            {/* Column Headers */}
+            <div
+              className="grid gap-2 mt-2 text-xs font-medium text-[rgba(247,243,227,0.6)]"
+              style={{
+                gridTemplateColumns: "2fr 0.8fr 1.2fr 1fr 1fr 1.5fr 1.5fr",
+              }}
+            >
+              <div>Date</div>
+              <div>Type</div>
+              <div>Amount</div>
+              <div>USD</div>
+              <div>BTC/USD</div>
+              <div>Memo</div>
+              <div>Actions</div>
+            </div>
+          </div>
 
-            {/* Events List - Scrollable within this section only */}
-            <div className="flex-1 overflow-y-auto">
+          {/* Events List - Scrollable */}
+          <div className="flex-1 overflow-y-auto">
               {/* New Event Row using EventItem */}
               {isCreatingNew && (
                 <EventItem
@@ -1022,16 +955,16 @@ function App() {
                 />
               ))}
 
-              {events.length > 0 && (
-                <div className="text-center py-4">
-                  <div className="text-xs text-[rgba(247,243,227,0.5)]">
-                    All events loaded
-                  </div>
+            {events.length > 0 && (
+              <div className="text-center py-4">
+                <div className="text-xs text-[rgba(247,243,227,0.5)]">
+                  All events loaded
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
+      </div>
       </div>
 
       <LumpsumModal

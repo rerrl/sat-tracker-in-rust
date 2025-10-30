@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::error::Error;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BitcoinPriceResponse {
@@ -22,7 +21,8 @@ pub async fn fetch_bitcoin_price() -> Result<BitcoinPriceResponse, String> {
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
     
     let response = client
-        .get("https://dprogram.me/api/proxy/bitcoin/current-price")
+        // .get("https://dprogram.me/api/proxy/bitcoin/current-price")
+        .get("http://localhost:3000/api/proxy/bitcoin/current-price")
         .send()
         .await
         .map_err(|e| format!("Failed to fetch Bitcoin price: {}", e))?;
