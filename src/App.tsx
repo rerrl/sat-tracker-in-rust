@@ -410,6 +410,15 @@ function App() {
     }
     try {
       const metrics = await TauriService.getPortfolioMetrics();
+      console.log("📊 Portfolio Metrics:", metrics);
+      console.log("📈 7-day metrics:", {
+        sats_stacked_7d: metrics.sats_stacked_7d,
+        usd_invested_7d: metrics.usd_invested_7d_cents / 100
+      });
+      console.log("📈 31-day metrics:", {
+        sats_stacked_31d: metrics.sats_stacked_31d,
+        usd_invested_31d: metrics.usd_invested_31d_cents / 100
+      });
       setPortfolioMetrics(metrics);
     } catch (error) {
       console.error("Error loading portfolio metrics:", error);

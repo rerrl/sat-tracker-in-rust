@@ -44,6 +44,10 @@ export interface PortfolioMetrics {
   avg_sell_price: number | null;
   fiat_extracted_cents: number;
   total_sats_spent: number;
+  sats_stacked_7d: number;
+  usd_invested_7d_cents: number;
+  sats_stacked_31d: number;
+  usd_invested_31d_cents: number;
 }
 
 export interface CreateUndocumentedLumpsumRequest {

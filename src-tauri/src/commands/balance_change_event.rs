@@ -145,7 +145,11 @@ pub async fn get_portfolio_metrics(
             COALESCE(SUM(CASE WHEN event_type = 'Buy' AND value_cents IS NOT NULL THEN value_cents ELSE 0 END), 0) as total_invested_cents,
             COALESCE(SUM(CASE WHEN event_type = 'Sell' AND value_cents IS NOT NULL THEN value_cents ELSE 0 END), 0) as total_extracted_cents,
             COUNT(CASE WHEN event_type = 'Buy' AND value_cents IS NOT NULL THEN 1 END) as buy_count,
-            COUNT(CASE WHEN event_type = 'Sell' AND value_cents IS NOT NULL THEN 1 END) as sell_count
+            COUNT(CASE WHEN event_type = 'Sell' AND value_cents IS NOT NULL THEN 1 END) as sell_count,
+            COALESCE(SUM(CASE WHEN event_type = 'Buy' AND timestamp >= datetime('now', '-7 days') THEN amount_sats ELSE 0 END), 0) as sats_stacked_7d,
+            COALESCE(SUM(CASE WHEN event_type = 'Buy' AND value_cents IS NOT NULL AND timestamp >= datetime('now', '-7 days') THEN value_cents ELSE 0 END), 0) as usd_invested_7d_cents,
+            COALESCE(SUM(CASE WHEN event_type = 'Buy' AND timestamp >= datetime('now', '-31 days') THEN amount_sats ELSE 0 END), 0) as sats_stacked_31d,
+            COALESCE(SUM(CASE WHEN event_type = 'Buy' AND value_cents IS NOT NULL AND timestamp >= datetime('now', '-31 days') THEN value_cents ELSE 0 END), 0) as usd_invested_31d_cents
         FROM balance_change_events
         "#
     )
@@ -160,6 +164,10 @@ pub async fn get_portfolio_metrics(
     let total_extracted_cents: i64 = row.get("total_extracted_cents");
     let buy_count: i64 = row.get("buy_count");
     let sell_count: i64 = row.get("sell_count");
+    let sats_stacked_7d: i64 = row.get("sats_stacked_7d");
+    let usd_invested_7d_cents: i64 = row.get("usd_invested_7d_cents");
+    let sats_stacked_31d: i64 = row.get("sats_stacked_31d");
+    let usd_invested_31d_cents: i64 = row.get("usd_invested_31d_cents");
     
     let current_sats = total_bought_sats - total_sold_sats - total_fee_sats;
     let total_sats_stacked = total_bought_sats;
@@ -184,6 +192,10 @@ pub async fn get_portfolio_metrics(
         avg_sell_price,
         fiat_extracted_cents: total_extracted_cents,
         total_sats_spent: total_sold_sats + total_fee_sats,
+        sats_stacked_7d,
+        usd_invested_7d_cents,
+        sats_stacked_31d,
+        usd_invested_31d_cents,
     };
 
     println!("Calculated portfolio metrics: {:?}", portfolio_metrics);

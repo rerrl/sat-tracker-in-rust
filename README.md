@@ -20,7 +20,6 @@ yarn start:dev
 
 - TODO: better metrics
 
-  - better general design
   - metrics explainer tooltip
   - maybe a pie chart showing balance changes by type/percentage
   - sats stacked this month
