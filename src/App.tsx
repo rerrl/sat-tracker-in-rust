@@ -381,11 +381,19 @@ const EventItem = React.memo(
 );
 
 function App() {
+  // Bitcoin price state - declare these first
+  const [isEditingBitcoinPrice, setIsEditingBitcoinPrice] = useState(false);
+  const [customBitcoinPrice, setCustomBitcoinPrice] = useState<number | null>(null);
+  const [bitcoinPriceInput, setBitcoinPriceInput] = useState("");
+
   const {
-    price: bitcoinPrice,
+    price: liveBitcoinPrice,
     loading: bitcoinPriceLoading,
     error: bitcoinPriceError,
   } = useBitcoinPrice();
+
+  // Use custom price if set, otherwise use live price
+  const bitcoinPrice = customBitcoinPrice !== null ? customBitcoinPrice : liveBitcoinPrice;
 
   // Database initialization state
   const [databaseStatus, setDatabaseStatus] = useState<DatabaseStatus | null>(null);
@@ -632,6 +640,44 @@ function App() {
       ...prev,
       [field]: value,
     }));
+  };
+
+  const handleBitcoinPriceClick = () => {
+    // Only allow editing if in manual mode
+    if (customBitcoinPrice !== null) {
+      setIsEditingBitcoinPrice(true);
+      setBitcoinPriceInput(bitcoinPrice.toString());
+    }
+  };
+
+  const handleBitcoinPriceBlur = () => {
+    const numValue = parseFloat(bitcoinPriceInput);
+    if (!isNaN(numValue) && numValue > 0) {
+      setCustomBitcoinPrice(numValue);
+    }
+    setIsEditingBitcoinPrice(false);
+  };
+
+  const handleBitcoinPriceKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleBitcoinPriceBlur();
+    } else if (e.key === 'Escape') {
+      setIsEditingBitcoinPrice(false);
+      setBitcoinPriceInput(bitcoinPrice.toString());
+    }
+  };
+
+  const handleModeToggle = () => {
+    if (customBitcoinPrice === null) {
+      // Switch to manual mode - set current live price as custom
+      setCustomBitcoinPrice(liveBitcoinPrice);
+      setIsEditingBitcoinPrice(true);
+      setBitcoinPriceInput(liveBitcoinPrice.toString());
+    } else {
+      // Switch back to live mode
+      setCustomBitcoinPrice(null);
+      setIsEditingBitcoinPrice(false);
+    }
   };
 
   const handleLumpsumDataChange = (field: string, value: any) => {
@@ -911,15 +957,52 @@ function App() {
           <div className="p-4 pb-2 shrink-0 border-b border-[rgba(247,243,227,0.1)]">
             <div className="grid grid-cols-5 gap-3 mb-3">
               {/* Bitcoin Price */}
-              <div className="text-center p-2 bg-[rgba(97,218,251,0.1)] border border-[rgba(97,218,251,0.2)] rounded">
-                <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
+              <div className="text-center p-2 bg-[rgba(97,218,251,0.1)] border border-[rgba(97,218,251,0.2)] rounded relative">
+                <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1 flex items-center justify-center gap-1">
                   Bitcoin Price
+                  <button
+                    onClick={handleModeToggle}
+                    className={`text-[10px] px-1 rounded ${
+                      customBitcoinPrice === null
+                        ? "bg-[rgba(144,238,144,0.2)] hover:bg-[rgba(144,238,144,0.3)] text-lightgreen"
+                        : "bg-[rgba(255,165,0,0.2)] hover:bg-[rgba(255,165,0,0.3)] text-orange"
+                    }`}
+                    title={customBitcoinPrice === null ? "Switch to manual mode" : "Switch to live mode"}
+                  >
+                    {customBitcoinPrice === null ? "Live" : "Manual"}
+                  </button>
                 </div>
-                <div className="text-sm text-[#61dafb] font-medium">
-                  {bitcoinPriceLoading
-                    ? "..."
-                    : `$${bitcoinPrice.toLocaleString()}`}
-                </div>
+                {isEditingBitcoinPrice ? (
+                  <input
+                    type="text"
+                    value={bitcoinPriceInput}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Allow numbers and decimal point
+                      if (value === "" || /^[0-9]*\.?[0-9]*$/.test(value)) {
+                        setBitcoinPriceInput(value);
+                      }
+                    }}
+                    onBlur={handleBitcoinPriceBlur}
+                    onKeyDown={handleBitcoinPriceKeyDown}
+                    className="w-full bg-[rgba(9,12,8,0.8)] border border-[rgba(97,218,251,0.5)] text-[#61dafb] text-sm font-medium text-center px-1 py-0 rounded"
+                    autoFocus
+                  />
+                ) : (
+                  <div 
+                    className={`text-sm text-[#61dafb] font-medium rounded px-1 py-0 ${
+                      customBitcoinPrice !== null 
+                        ? "cursor-pointer hover:bg-[rgba(97,218,251,0.1)]" 
+                        : "cursor-default"
+                    }`}
+                    onClick={handleBitcoinPriceClick}
+                    title={customBitcoinPrice !== null ? "Click to edit price" : "Click 'Live' to enter manual mode"}
+                  >
+                    {(bitcoinPriceLoading && customBitcoinPrice === null)
+                      ? "..."
+                      : `$${bitcoinPrice.toLocaleString()}`}
+                  </div>
+                )}
               </div>
 
               {/* Portfolio Value */}

@@ -14,9 +14,13 @@ yarn start:dev
 
 **Common Issue:** The Tauri window may open blank initially while Vite finishes compiling. Simply right-click in the window and select "Reload" to refresh the page and the app will load properly. This is normal Tauri development behavior.
 
+- TODO: make it so you cannot use existing "file" menu items when in the password prompt
+- TODO: add announcement at top (reminder) to encrypt db
+- TODO: pull announcements from server
+- TODO: ability to turn off announcements + all premium features to not annoy free users
 - TODO: btc <-> sats in events/charts
-- TODO: add ability to manually set the bitcoin price to see how the metrics change
 - TODO: csv importing. (no duplicates - coinbase, river)
+- TODO: work on adding more charts
 
 ## Chart Ideas & Features
 
