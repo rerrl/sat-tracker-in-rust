@@ -3,11 +3,14 @@ import {
   TauriService,
   BalanceChangeEvent,
   PortfolioMetrics,
+  DatabaseStatus,
 } from "./services/tauriService";
 import SatsHoldingsChart from "./components/SatsHoldingsChart";
 import LumpsumModal from "./components/LumpsumModal";
 import DateTimeInput from "./components/DateTimeInput";
 import Announcements from "./components/Announcements";
+import PasswordPromptModal from "./components/PasswordPromptModal";
+import EncryptionSettings from "./components/EncryptionSettings";
 import { useBitcoinPrice } from "./hooks/useBitcoinPrice";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
@@ -384,6 +387,13 @@ function App() {
     error: bitcoinPriceError,
   } = useBitcoinPrice();
 
+  // Database initialization state
+  const [databaseStatus, setDatabaseStatus] = useState<DatabaseStatus | null>(null);
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
+  const [passwordError, setPasswordError] = useState<string>("");
+  const [isValidatingPassword, setIsValidatingPassword] = useState(false);
+  const [isDatabaseInitialized, setIsDatabaseInitialized] = useState(false);
+
   const [events, setEvents] = useState<BalanceChangeEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
@@ -407,6 +417,7 @@ function App() {
   const [showAnalyticsDropdown, setShowAnalyticsDropdown] = useState(false);
   const [selectedChartPage, setSelectedChartPage] = useState<'sat-balance' | 'coming-soon'>('sat-balance');
   const [showChartDropdown, setShowChartDropdown] = useState(false);
+  const [showEncryptionSettings, setShowEncryptionSettings] = useState(false);
 
   // Load portfolio metrics
   async function loadPortfolioMetrics(showLoading = false) {
@@ -720,11 +731,94 @@ function App() {
     };
   }, [showAnalyticsDropdown, showChartDropdown]);
 
-  // Load initial events and portfolio metrics on component mount
+  // Database initialization functions
+  const checkDatabaseStatusAndInitialize = async () => {
+    try {
+      console.log("🔍 Checking database status...");
+      const status = await TauriService.checkDatabaseStatus();
+      console.log("📊 Database status:", status);
+      
+      setDatabaseStatus(status);
+      
+      if (status.needs_password) {
+        console.log("🔐 Password required, showing prompt");
+        setShowPasswordPrompt(true);
+      } else {
+        console.log("🚀 No password needed, initializing directly");
+        // Database is not encrypted, initialize without password
+        await initializeDatabase();
+      }
+    } catch (error) {
+      console.error("❌ Error checking database status:", error);
+      setPasswordError("Failed to check database status");
+    }
+  };
+
+  const initializeDatabase = async (password?: string) => {
+    try {
+      console.log("🚀 Initializing database...");
+      await TauriService.initializeDatabaseWithPassword(password);
+      console.log("✅ Database initialized successfully");
+      
+      setIsDatabaseInitialized(true);
+      setShowPasswordPrompt(false);
+      setPasswordError("");
+    } catch (error) {
+      console.error("❌ Error initializing database:", error);
+      throw error;
+    }
+  };
+
+  const handlePasswordSubmit = async (password: string) => {
+    if (!databaseStatus) return;
+
+    setIsValidatingPassword(true);
+    setPasswordError("");
+
+    try {
+      if (databaseStatus.is_encrypted) {
+        // Validate password for encrypted database
+        console.log("🔐 Validating password...");
+        const validation = await TauriService.validateDatabasePassword(password);
+        
+        if (!validation.is_valid) {
+          setPasswordError(validation.error_message || "Invalid password");
+          setIsValidatingPassword(false);
+          return;
+        }
+      }
+
+      // Initialize database with password
+      await initializeDatabase(password || undefined);
+    } catch (error) {
+      console.error("❌ Password validation/initialization failed:", error);
+      setPasswordError("Failed to unlock database");
+    } finally {
+      setIsValidatingPassword(false);
+    }
+  };
+
+  const handleSkipPassword = async () => {
+    try {
+      await initializeDatabase();
+    } catch (error) {
+      console.error("❌ Error initializing database without password:", error);
+      setPasswordError("Failed to initialize database");
+    }
+  };
+
+  // Check database status on component mount
   useEffect(() => {
-    loadInitialEvents();
-    loadPortfolioMetrics(true); // Show loading on initial load
+    checkDatabaseStatusAndInitialize();
   }, []);
+
+  // Load initial events and portfolio metrics once database is initialized
+  useEffect(() => {
+    if (isDatabaseInitialized) {
+      loadInitialEvents();
+      loadPortfolioMetrics(true); // Show loading on initial load
+    }
+  }, [isDatabaseInitialized]);
 
   // Add menu event listener
   useEffect(() => {
@@ -749,9 +843,15 @@ function App() {
         setShowLumpsumModal(true);
       });
 
+      const unlisten3 = await listen("menu_encryption_settings", () => {
+        console.log("🔐 Menu encryption settings event received!");
+        setShowEncryptionSettings(true);
+      });
+
       return () => {
         unlisten();
         unlisten2();
+        unlisten3();
       };
     };
 
@@ -761,6 +861,29 @@ function App() {
       unlistenPromise.then((cleanup) => cleanup());
     };
   }, []);
+
+  // Don't render main app until database is initialized
+  if (!isDatabaseInitialized) {
+    return (
+      <div className="min-h-screen bg-[#090C08] flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-2xl text-[#F7F3E3] mb-4">🗄️ Sat Tracker</div>
+          <div className="text-sm text-[rgba(247,243,227,0.6)]">
+            {databaseStatus === null ? "Checking database..." : "Initializing..."}
+          </div>
+        </div>
+        
+        <PasswordPromptModal
+          isOpen={showPasswordPrompt}
+          onPasswordSubmit={handlePasswordSubmit}
+          onSkip={databaseStatus?.is_encrypted ? undefined : handleSkipPassword}
+          isEncrypted={databaseStatus?.is_encrypted || false}
+          error={passwordError}
+          isValidating={isValidatingPassword}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#090C08]">
@@ -1267,6 +1390,33 @@ function App() {
         onLumpsumDataChange={handleLumpsumDataChange}
         onCreateEvents={handleCreateLumpsumEvents}
       />
+
+      {/* Encryption Settings Modal */}
+      {showEncryptionSettings && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-[#2A2633] border border-[rgba(247,243,227,0.3)] rounded-lg w-[500px] max-h-[80vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-[#F7F3E3]">Database Encryption</h2>
+                <button
+                  onClick={() => setShowEncryptionSettings(false)}
+                  className="text-[rgba(247,243,227,0.6)] hover:text-[#F7F3E3] text-xl"
+                >
+                  ×
+                </button>
+              </div>
+              <EncryptionSettings
+                isEncrypted={databaseStatus?.is_encrypted || false}
+                onEncryptionChange={async () => {
+                  // Refresh database status after encryption changes
+                  await checkDatabaseStatusAndInitialize();
+                }}
+                onClose={() => setShowEncryptionSettings(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
