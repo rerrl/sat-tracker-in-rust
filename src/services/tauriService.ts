@@ -59,6 +59,16 @@ export interface CreateUndocumentedLumpsumRequest {
   memo?: string;
 }
 
+export interface DatabaseStatus {
+  is_encrypted: boolean;
+  needs_password: boolean;
+}
+
+export interface PasswordValidationResult {
+  is_valid: boolean;
+  error_message?: string;
+}
+
 export class TauriService {
   // Create a new balance change event
   static async createBalanceChangeEvent(
@@ -113,6 +123,30 @@ export class TauriService {
       frequency: request.frequency,
       memo: request.memo
     });
+  }
+
+  // Encryption-related commands
+  static async checkDatabaseStatus(): Promise<DatabaseStatus> {
+    return await invoke("check_database_status");
+  }
+
+  static async validateDatabasePassword(password: string): Promise<PasswordValidationResult> {
+    return await invoke("validate_database_password", { password });
+  }
+
+  static async encryptDatabase(password: string): Promise<string> {
+    return await invoke("encrypt_database", { password });
+  }
+
+  static async changeDatabasePassword(oldPassword: string, newPassword: string): Promise<string> {
+    return await invoke("change_database_password", { 
+      oldPassword, 
+      newPassword 
+    });
+  }
+
+  static async initializeDatabaseWithPassword(password?: string): Promise<string> {
+    return await invoke("initialize_database_with_password", { password });
   }
 }
 
