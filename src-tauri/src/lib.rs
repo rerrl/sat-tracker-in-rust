@@ -6,82 +6,78 @@ use commands::balance_change_event::{create_balance_change_event, get_balance_ch
 use commands::import::import_sat_tracker_v1_data;
 use commands::bitcoin_price::fetch_bitcoin_price;
 use commands::encryption::{check_database_status, validate_database_password, encrypt_database, change_database_password, initialize_database_with_password};
-use tauri::{Manager, Emitter, menu::{Menu, MenuItem, Submenu, PredefinedMenuItem}};
+use tauri::{Manager, Emitter, menu::{Menu, MenuItem, Submenu, PredefinedMenuItem}, AppHandle};
+
+// Add these helper functions before the main run() function
+fn create_full_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, Box<dyn std::error::Error>> {
+    let import_item = MenuItem::with_id(app, "import_sat_tracker_v1", "Import Sat Tracker v1 Data", true, None::<&str>)?;
+    let lumpsum_item = MenuItem::with_id(app, "add_undocumented_lumpsum", "Add Undocumented Lumpsum", true, None::<&str>)?;
+    let encryption_item = MenuItem::with_id(app, "encryption_settings", "Database Encryption...", true, None::<&str>)?;
+    let separator = PredefinedMenuItem::separator(app)?;
+    let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+
+    let file_menu = Submenu::with_items(app, "File", true, &[
+        &import_item,
+        &lumpsum_item,
+        &separator,
+        &encryption_item,
+        &separator,
+        &quit_item,
+    ])?;
+
+    Ok(Menu::with_items(app, &[&file_menu])?)
+}
+
+fn create_minimal_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, Box<dyn std::error::Error>> {
+    let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+    let file_menu = Submenu::with_items(app, "File", true, &[&quit_item])?;
+    Ok(Menu::with_items(app, &[&file_menu])?)
+}
+
+#[tauri::command]
+async fn update_menu_for_database_status(app: AppHandle, is_unlocked: bool) -> Result<(), String> {
+    let menu = if is_unlocked {
+        create_full_menu(&app).map_err(|e| e.to_string())?
+    } else {
+        create_minimal_menu(&app).map_err(|e| e.to_string())?
+    };
+    
+    app.set_menu(menu).map_err(|e| e.to_string())?;
+    Ok(())
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            // Create the menu inside setup where we have access to the app handle
-            let import_item = MenuItem::with_id(app, "import_sat_tracker_v1", "Import Sat Tracker v1 Data", true, None::<&str>)?;
-            let lumpsum_item = MenuItem::with_id(app, "add_undocumented_lumpsum", "Add Undocumented Lumpsum", true, None::<&str>)?;
-            let encryption_item = MenuItem::with_id(app, "encryption_settings", "Database Encryption...", true, None::<&str>)?;
-            let quit_item = PredefinedMenuItem::quit(app, None)?;
-            let separator = PredefinedMenuItem::separator(app)?;
-
-            let file_menu = Submenu::with_items(app, "File", true, &[
-                &import_item,
-                &lumpsum_item,
-                &separator,
-                &encryption_item,
-                &separator,
-                &quit_item,
-            ])?;
-
-            let menu = Menu::with_items(app, &[&file_menu])?;
-            app.set_menu(menu)?;
-
+            // Set initial minimal menu
+            let menu = create_minimal_menu(app.handle()).expect("Failed to create minimal menu");
+            app.set_menu(menu).expect("Failed to set menu");
+            
             let _handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 // Don't initialize database here - wait for frontend to provide password
-                // The frontend will call a separate command to initialize with password
+                // The frontend will rely on menu events and commands
                 println!("🔐 Database initialization deferred until password provided");
             });
             Ok(())
         })
         .on_menu_event(|app, event| {
-            println!("🔍 Menu event triggered: {}", event.id().as_ref());
             match event.id().as_ref() {
                 "import_sat_tracker_v1" => {
-                    println!("📥 Import menu item clicked!");
-                    let app_handle = app.clone();
-                    tauri::async_runtime::spawn(async move {
-                        println!("🚀 About to emit menu event...");
-                        if let Err(e) = app_handle.emit("menu_import_sat_tracker_v1", ()) {
-                            eprintln!("❌ Failed to emit menu event: {}", e);
-                        } else {
-                            println!("✅ Menu event emitted successfully");
-                        }
-                    });
+                    app.emit("menu-import-v1", ()).unwrap();
                 }
                 "add_undocumented_lumpsum" => {
-                    println!("📊 Lumpsum menu item clicked!");
-                    let app_handle = app.clone();
-                    tauri::async_runtime::spawn(async move {
-                        println!("🚀 About to emit lumpsum menu event...");
-                        if let Err(e) = app_handle.emit("menu_add_undocumented_lumpsum", ()) {
-                            eprintln!("❌ Failed to emit lumpsum menu event: {}", e);
-                        } else {
-                            println!("✅ Lumpsum menu event emitted successfully");
-                        }
-                    });
+                    app.emit("menu-add-lumpsum", ()).unwrap();
                 }
                 "encryption_settings" => {
-                    println!("🔐 Encryption settings menu item clicked!");
-                    let app_handle = app.clone();
-                    tauri::async_runtime::spawn(async move {
-                        println!("🚀 About to emit encryption settings event...");
-                        if let Err(e) = app_handle.emit("menu_encryption_settings", ()) {
-                            eprintln!("❌ Failed to emit encryption settings event: {}", e);
-                        } else {
-                            println!("✅ Encryption settings event emitted successfully");
-                        }
-                    });
+                    app.emit("menu-encryption-settings", ()).unwrap();
                 }
-                _ => {
-                    println!("🤷 Unknown menu event: {}", event.id().as_ref());
+                "quit" => {
+                    app.exit(0);
                 }
+                _ => {}
             }
         })
         .invoke_handler(tauri::generate_handler![
@@ -97,7 +93,8 @@ pub fn run() {
             validate_database_password,
             encrypt_database,
             change_database_password,
-            initialize_database_with_password
+            initialize_database_with_password,
+            update_menu_for_database_status
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

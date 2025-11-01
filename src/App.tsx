@@ -863,50 +863,38 @@ function App() {
     if (isDatabaseInitialized) {
       loadInitialEvents();
       loadPortfolioMetrics(true); // Show loading on initial load
+      
+      // Update menu to show full options now that database is unlocked
+      TauriService.updateMenuForDatabaseStatus(true).catch(console.error);
+      
+      // Set up menu event listeners
+      const setupMenuListeners = async () => {
+        await listen("menu-import-v1", async () => {
+          try {
+            const result = await TauriService.importSatTrackerV1Data();
+            console.log("Import result:", result);
+            alert(`Import completed: ${result}`);
+            loadInitialEvents();
+            loadPortfolioMetrics(true);
+          } catch (error) {
+            console.error("Import failed:", error);
+            alert(`Import failed: ${error}`);
+          }
+        });
+
+        await listen("menu-add-lumpsum", () => {
+          setShowLumpsumModal(true);
+        });
+
+        await listen("menu-encryption-settings", () => {
+          setShowEncryptionSettings(true);
+        });
+      };
+
+      setupMenuListeners().catch(console.error);
     }
   }, [isDatabaseInitialized]);
 
-  // Add menu event listener
-  useEffect(() => {
-    const setupMenuListener = async () => {
-      const unlisten = await listen("menu_import_sat_tracker_v1", async () => {
-        console.log("📥 Menu import event received!");
-        try {
-          const result = await TauriService.importSatTrackerV1Data();
-          console.log("Import result:", result);
-          alert(`Import completed: ${result}`);
-          // Refresh data after import
-          loadInitialEvents();
-          loadPortfolioMetrics(true); // Show loading for import since it's a major operation
-        } catch (error) {
-          console.error("Import failed:", error);
-          alert(`Import failed: ${error}`);
-        }
-      });
-
-      const unlisten2 = await listen("menu_add_undocumented_lumpsum", () => {
-        console.log("📊 Menu lumpsum event received!");
-        setShowLumpsumModal(true);
-      });
-
-      const unlisten3 = await listen("menu_encryption_settings", () => {
-        console.log("🔐 Menu encryption settings event received!");
-        setShowEncryptionSettings(true);
-      });
-
-      return () => {
-        unlisten();
-        unlisten2();
-        unlisten3();
-      };
-    };
-
-    let unlistenPromise = setupMenuListener();
-
-    return () => {
-      unlistenPromise.then((cleanup) => cleanup());
-    };
-  }, []);
 
   // Don't render main app until database is initialized
   if (!isDatabaseInitialized) {
@@ -933,26 +921,28 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#090C08]">
-      {/* Title Header */}
-      <div className="bg-[#2A2633] border-b border-[rgba(247,243,227,0.2)] px-6 py-4">
-        <div className="flex items-center gap-6">
-          <h1 className="text-2xl font-bold text-[#F7F3E3] whitespace-nowrap">
-            Sat Tracker{" "}
-            <span className="text-sm font-normal">
-              by <span className="text-[#E16036]">dprogram</span>
-              <span className="text-[#F7F3E3]">.me</span>
-            </span>
-          </h1>
-          <div className="flex-1 min-w-0">
-            <Announcements />
-          </div>
-        </div>
-      </div>
-
       {/* Main Content - Two Columns */}
-      <div className="flex h-[calc(100vh-73px)]">
+      <div className="flex h-screen">
         {/* Left Column - Chart Area (65%) */}
         <div className="w-[65%] bg-[rgba(9,12,8,0.8)] flex flex-col">
+          {/* App Title, Menu, and Announcements */}
+          <div className="bg-[#2A2633] border-b border-[rgba(247,243,227,0.2)] px-6 py-3 shrink-0">
+            <div className="flex items-center gap-6">
+              <h1 className="text-xl font-bold text-[#F7F3E3] whitespace-nowrap">
+                Sat Tracker{" "}
+                <span className="text-sm font-normal">
+                  by <span className="text-[#E16036]">dprogram</span>
+                  <span className="text-[#F7F3E3]">.me</span>
+                </span>
+              </h1>
+              
+              
+              <div className="flex-1 min-w-0">
+                <Announcements />
+              </div>
+            </div>
+          </div>
+          
           {/* Overview Metrics Strip */}
           <div className="p-4 pb-2 shrink-0 border-b border-[rgba(247,243,227,0.1)]">
             <div className="grid grid-cols-5 gap-3 mb-3">

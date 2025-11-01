@@ -148,6 +148,10 @@ export class TauriService {
   static async initializeDatabaseWithPassword(password?: string): Promise<string> {
     return await invoke("initialize_database_with_password", { password });
   }
+
+  static async updateMenuForDatabaseStatus(isUnlocked: boolean): Promise<void> {
+    return await invoke("update_menu_for_database_status", { isUnlocked });
+  }
 }
 
 // Export individual functions for convenience
