@@ -48,11 +48,14 @@ pub async fn check_database_status() -> Result<DatabaseStatus, String> {
         });
     }
     
+    // print the db path
+    println!("🗄️  Database path: {}", db_path.display());
+
     // Try to open without password and read from a simple table
     match Connection::open(&db_path) {
         Ok(conn) => {
             // Try to query sqlite_master - this should work on any valid SQLite database
-            match conn.execute("SELECT COUNT(*) FROM sqlite_master", []) {
+            match conn.prepare("SELECT COUNT(*) FROM sqlite_master").and_then(|mut stmt| stmt.query_row([], |_| Ok(()))) {
                 Ok(_) => {
                     // Database opened successfully without password - not encrypted
                     Ok(DatabaseStatus {
@@ -63,6 +66,7 @@ pub async fn check_database_status() -> Result<DatabaseStatus, String> {
                 Err(e) => {
                     // Check if the error suggests encryption
                     let error_msg = e.to_string().to_lowercase();
+                    println!("🔐 Database query failed: {}", e);
                     if error_msg.contains("file is not a database") || 
                        error_msg.contains("file is encrypted") ||
                        error_msg.contains("cipher") {
@@ -100,7 +104,11 @@ pub async fn check_database_status() -> Result<DatabaseStatus, String> {
 pub async fn validate_database_password(password: String) -> Result<PasswordValidationResult, String> {
     let db_path = get_database_path();
     
+    println!("🔐 Validating password for database: {}", db_path.display());
+    println!("🔑 Password length: {}", password.len());
+    
     if !db_path.exists() {
+        println!("❌ Database file does not exist");
         return Ok(PasswordValidationResult {
             is_valid: false,
             error_message: Some("Database does not exist".to_string()),
@@ -109,27 +117,42 @@ pub async fn validate_database_password(password: String) -> Result<PasswordVali
     
     match Connection::open(&db_path) {
         Ok(conn) => {
+            println!("✅ Successfully opened database connection");
+            
             // Set the encryption key
+            println!("🔑 Setting encryption key...");
             if let Err(e) = conn.pragma_update(None, "key", &password) {
+                println!("❌ Failed to set encryption key: {}", e);
                 return Ok(PasswordValidationResult {
                     is_valid: false,
                     error_message: Some(format!("Failed to set key: {}", e)),
                 });
             }
+            println!("✅ Encryption key set successfully");
             
             // Try to read from the database
-            match conn.execute("SELECT name FROM sqlite_master LIMIT 1", []) {
-                Ok(_) => Ok(PasswordValidationResult {
-                    is_valid: true,
-                    error_message: None,
-                }),
-                Err(_) => Ok(PasswordValidationResult {
-                    is_valid: false,
-                    error_message: Some("Invalid password".to_string()),
-                }),
+            println!("🔍 Testing database access with query...");
+            match conn.prepare("SELECT name FROM sqlite_master LIMIT 1").and_then(|mut stmt| stmt.query_row([], |_| Ok(()))) {
+                Ok(_) => {
+                    println!("✅ Password validation successful - database accessible");
+                    Ok(PasswordValidationResult {
+                        is_valid: true,
+                        error_message: None,
+                    })
+                },
+                Err(e) => {
+                    println!("❌ Password validation failed - query error: {}", e);
+                    Ok(PasswordValidationResult {
+                        is_valid: false,
+                        error_message: Some(format!("Invalid password: {}", e)),
+                    })
+                },
             }
         }
-        Err(e) => Err(format!("Failed to open database: {}", e)),
+        Err(e) => {
+            println!("❌ Failed to open database connection: {}", e);
+            Err(format!("Failed to open database: {}", e))
+        },
     }
 }
 
@@ -182,6 +205,8 @@ pub async fn encrypt_database(password: String) -> Result<String, String> {
     let pool = crate::database::init_database_with_password(Some(password.clone())).await
         .map_err(|e| format!("Failed to initialize encrypted database: {}", e))?;
     
+    println!("📋 Starting data copy from backup to encrypted database...");
+    
     // Now copy data from backup to the newly migrated encrypted database
     let backup_conn = Connection::open(&backup_path)
         .map_err(|e| format!("Failed to open backup database: {}", e))?;
@@ -202,38 +227,81 @@ pub async fn encrypt_database(password: String) -> Result<String, String> {
     
     let table_names = table_names.map_err(|e| format!("Failed to get table names: {}", e))?;
     
+    println!("📊 Found {} tables to copy: {:?}", table_names.len(), table_names);
+    
     // Copy data for each table
     for table_name in table_names {
-        // Get all data from backup
-        let mut data_stmt = backup_conn.prepare(&format!("SELECT * FROM {}", table_name))
-            .map_err(|e| format!("Failed to prepare data query for {}: {}", table_name, e))?;
+        println!("🔄 Copying data for table: {}", table_name);
         
-        let column_count = data_stmt.column_count();
+        // Get column info from the backup table
+        let mut column_stmt = backup_conn.prepare(&format!("PRAGMA table_info({})", table_name))
+            .map_err(|e| format!("Failed to get column info for {}: {}", table_name, e))?;
         
-        if column_count > 0 {
+        let column_info: Result<Vec<(String, String, bool)>, _> = column_stmt.query_map([], |row| {
+            let name: String = row.get(1)?;
+            let type_name: String = row.get(2)?;
+            let not_null: bool = row.get(3)?;
+            Ok((name, type_name, not_null))
+        }).map_err(|e| format!("Failed to query column info for {}: {}", table_name, e))?.collect();
+        
+        let column_info = column_info.map_err(|e| format!("Failed to get column info: {}", e))?;
+        let column_names: Vec<String> = column_info.iter().map(|(name, _, _)| name.clone()).collect();
+        
+        println!("📋 Table {} has columns: {:?}", table_name, column_names);
+        
+        // Count rows in backup table
+        let mut count_stmt = backup_conn.prepare(&format!("SELECT COUNT(*) FROM {}", table_name))
+            .map_err(|e| format!("Failed to prepare count query for {}: {}", table_name, e))?;
+        
+        let row_count: i64 = count_stmt.query_row([], |row| row.get(0))
+            .map_err(|e| format!("Failed to count rows in {}: {}", table_name, e))?;
+        
+        println!("📊 Table {} has {} rows to copy", table_name, row_count);
+        
+        if row_count > 0 {
+            // Get all data from backup
+            let mut data_stmt = backup_conn.prepare(&format!("SELECT * FROM {}", table_name))
+                .map_err(|e| format!("Failed to prepare data query for {}: {}", table_name, e))?;
+            
+            let column_count = data_stmt.column_count();
             let placeholders = (0..column_count).map(|_| "?").collect::<Vec<_>>().join(", ");
             let insert_query = format!("INSERT INTO {} VALUES ({})", table_name, placeholders);
+            
+            println!("🔍 Insert query: {}", insert_query);
             
             let data_rows = data_stmt.query_map([], |row| {
                 let mut row_data = Vec::new();
                 for i in 0..column_count {
-                    let value: Option<String> = row.get(i).ok();
+                    // Try to get the value as different types
+                    let value: rusqlite::types::Value = row.get(i)?;
                     row_data.push(value);
                 }
                 Ok(row_data)
             }).map_err(|e| format!("Failed to query data for {}: {}", table_name, e))?;
             
+            let mut copied_rows = 0;
             for row_result in data_rows {
                 let row_data = row_result.map_err(|e| format!("Failed to get row data: {}", e))?;
+                
+                println!("🔍 Row data for {}: {:?}", table_name, row_data);
+                
                 let params: Vec<&dyn rusqlite::ToSql> = row_data.iter()
-                    .map(|v| v.as_ref().map(|s| s as &dyn rusqlite::ToSql).unwrap_or(&rusqlite::types::Null))
+                    .map(|v| v as &dyn rusqlite::ToSql)
                     .collect();
                 
                 encrypted_conn.execute(&insert_query, params.as_slice())
-                    .map_err(|e| format!("Failed to insert data into {}: {}", table_name, e))?;
+                    .map_err(|e| format!("Failed to insert data into {} (row data: {:?}): {}", table_name, row_data, e))?;
+                
+                copied_rows += 1;
             }
+            
+            println!("✅ Successfully copied {} rows to table {}", copied_rows, table_name);
+        } else {
+            println!("⏭️ Skipping empty table: {}", table_name);
         }
     }
+    
+    println!("✅ Data copy completed successfully");
     
     
     // Remove backup on success

@@ -1411,6 +1411,7 @@ function App() {
                   // Refresh database status after encryption changes
                   await checkDatabaseStatusAndInitialize();
                 }}
+                onClose={() => setShowEncryptionSettings(false)}
               />
             </div>
           </div>

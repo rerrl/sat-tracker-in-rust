@@ -4,11 +4,13 @@ import { TauriService } from "../services/tauriService";
 interface EncryptionSettingsProps {
   isEncrypted: boolean;
   onEncryptionChange: () => void; // Callback to refresh encryption status
+  onClose?: () => void; // Optional callback to close the settings modal
 }
 
 const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
   isEncrypted,
-  onEncryptionChange
+  onEncryptionChange,
+  onClose
 }) => {
   const [showEncryptForm, setShowEncryptForm] = useState(false);
   const [showChangePasswordForm, setShowChangePasswordForm] = useState(false);
@@ -18,11 +20,12 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"success" | "error">("success");
+  const [passwordChangeSuccess, setPasswordChangeSuccess] = useState(false);
 
   const showMessage = (msg: string, type: "success" | "error") => {
     setMessage(msg);
     setMessageType(type);
-    setTimeout(() => setMessage(""), 5000);
+    // setTimeout(() => setMessage(""), 5000);
   };
 
   const handleEncryptDatabase = async (e: React.FormEvent) => {
@@ -70,6 +73,7 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
     try {
       const result = await TauriService.changeDatabasePassword(currentPassword, newPassword);
       showMessage(result, "success");
+      setPasswordChangeSuccess(true);
       setShowChangePasswordForm(false);
       setCurrentPassword("");
       setNewPassword("");
@@ -88,7 +92,9 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
           🔐 Database Encryption
         </h3>
         <p className="text-sm text-[rgba(247,243,227,0.7)]">
-          Status: {isEncrypted ? "🔒 Encrypted" : "🔓 Not Encrypted"}
+          Status: <span className={isEncrypted ? "text-green-400" : "text-red-400"}>
+            {isEncrypted ? "🔒 Encrypted" : "🔓 Not Encrypted"}
+          </span>
         </p>
       </div>
 
@@ -178,14 +184,40 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
             Your database is encrypted. You can change your password below.
           </p>
           
-          {!showChangePasswordForm ? (
-            <button
-              onClick={() => setShowChangePasswordForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
-            >
-              Change Password
-            </button>
-          ) : (
+          {passwordChangeSuccess && (
+            <div className="mb-3">
+              <button
+                onClick={() => {
+                  setPasswordChangeSuccess(false);
+                  if (onClose) onClose();
+                }}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm"
+              >
+                Done
+              </button>
+            </div>
+          )}
+          
+          {!showChangePasswordForm && !passwordChangeSuccess && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowChangePasswordForm(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm"
+              >
+                Change Password
+              </button>
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          )}
+          
+          {showChangePasswordForm && (
             <form onSubmit={handleChangePassword} className="space-y-3">
               <div>
                 <label className="block text-sm text-[rgba(247,243,227,0.8)] mb-1">
@@ -248,6 +280,7 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
                     setCurrentPassword("");
                     setNewPassword("");
                     setConfirmPassword("");
+                    setPasswordChangeSuccess(false);
                   }}
                   disabled={isProcessing}
                   className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm"
