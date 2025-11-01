@@ -142,9 +142,18 @@ pub async fn validate_database_password(password: String) -> Result<PasswordVali
                 },
                 Err(e) => {
                     println!("❌ Password validation failed - query error: {}", e);
+                    let error_msg = e.to_string().to_lowercase();
+                    let user_friendly_error = if error_msg.contains("file is not a database") || 
+                                                error_msg.contains("file is encrypted") ||
+                                                error_msg.contains("cipher") {
+                        "Incorrect password. Please try again.".to_string()
+                    } else {
+                        format!("Database error: {}", e)
+                    };
+                    
                     Ok(PasswordValidationResult {
                         is_valid: false,
-                        error_message: Some(format!("Invalid password: {}", e)),
+                        error_message: Some(user_friendly_error),
                     })
                 },
             }
