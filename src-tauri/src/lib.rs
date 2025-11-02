@@ -4,7 +4,7 @@ mod database;
 
 use commands::balance_change_event::{create_balance_change_event, get_balance_change_events, update_balance_change_event, delete_balance_change_event, get_portfolio_metrics, create_undocumented_lumpsum_events};
 use commands::import::import_sat_tracker_v1_data;
-use commands::bitcoin_price::fetch_bitcoin_price;
+use commands::api::{fetch_bitcoin_price, fetch_announcements};
 use commands::encryption::{check_database_status, validate_database_password, encrypt_database, change_database_password, initialize_database_with_password};
 use tauri::{Manager, Emitter, menu::{Menu, MenuItem, Submenu, PredefinedMenuItem}, AppHandle};
 
@@ -89,6 +89,7 @@ pub fn run() {
             import_sat_tracker_v1_data,
             create_undocumented_lumpsum_events,
             fetch_bitcoin_price,
+            fetch_announcements,
             check_database_status,
             validate_database_password,
             encrypt_database,

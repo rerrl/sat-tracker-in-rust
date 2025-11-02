@@ -22,7 +22,7 @@ pub async fn fetch_bitcoin_price() -> Result<BitcoinPriceResponse, String> {
     
     let response = client
         // .get("https://dprogram.me/api/proxy/bitcoin/current-price")
-        .get("http://localhost:3000/api/proxy/bitcoin/current-price")
+        .get("http://localhost:3000/api/proxy/sat-tracker/bitcoin-price")
         .send()
         .await
         .map_err(|e| format!("Failed to fetch Bitcoin price: {}", e))?;
