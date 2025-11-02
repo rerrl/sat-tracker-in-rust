@@ -12,9 +12,10 @@
   "app": {
     "windows": [
       {
-        "title": "sat-tracker-in-rust",
-        "width": 800,
-        "height": 600
+        "title": "Sat Tracker",
+        "width": 1200,
+        "height": 1000,
+        "maximized": true
       }
     ],
     "security": {
@@ -25,6 +26,9 @@
     "http": {
       "all": true,
       "request": true
+    },
+    "opener": {
+      "requireLiteralLeadingDot": false
     }
   },
   "bundle": {

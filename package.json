@@ -14,12 +14,13 @@
     "tauri": "tauri",
     "db:drop": "rm -rf src-tauri/db",
     "db:reset": "yarn db:drop && yarn db:seed",
-    "db:seed": "cd src-tauri && cargo run --bin seed"
+    "db:seed": "cd src-tauri && cargo run --bin seed",
+    "version:bump": "./scripts/bump-version.sh"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.5",
     "@tauri-apps/api": "^2.9.0",
-    "@tauri-apps/plugin-opener": "^2",
+    "@tauri-apps/plugin-opener": "~2",
     "chart.js": "^4.4.0",
     "react": "^18.3.1",
     "react-chartjs-2": "^5.2.0",

@@ -69,6 +69,11 @@ export interface PasswordValidationResult {
   error_message?: string;
 }
 
+export interface AnnouncementsResponse {
+  latest_version: string;
+  announcements: string[];
+}
+
 export class TauriService {
   // Create a new balance change event
   static async createBalanceChangeEvent(
@@ -151,6 +156,11 @@ export class TauriService {
 
   static async updateMenuForDatabaseStatus(isUnlocked: boolean): Promise<void> {
     return await invoke("update_menu_for_database_status", { isUnlocked });
+  }
+
+  // Fetch announcements from API
+  static async fetchAnnouncements(): Promise<AnnouncementsResponse> {
+    return await invoke("fetch_announcements");
   }
 }
 
