@@ -181,24 +181,30 @@ const Announcements: React.FC = () => {
 
   return (
     <div className="bg-linear-to-r from-[#E16036] to-[#f7931a] text-white py-1 px-2 rounded overflow-hidden relative max-w-full">
-      <Marquee
-        speed={speed}
-        gradient={false}
-        delay={2}
-        pauseOnHover={true}
-        onCycleComplete={() => {
-          setSpeed(0);
-          setTimeout(() => {
-            setSpeed(50);
-          }, 1000);
-        }}
-      >
-        {announcements.map((announcement, index) => (
-          <span key={index} className="mx-8 text-xs font-medium">
-            {parseMarkdown(announcement)}
-          </span>
-        ))}
-      </Marquee>
+      {isLoading ? (
+        <div className="text-xs font-medium text-center py-1">
+          Loading announcements...
+        </div>
+      ) : (
+        <Marquee
+          speed={speed}
+          gradient={false}
+          delay={2}
+          pauseOnHover={true}
+          onCycleComplete={() => {
+            setSpeed(0);
+            setTimeout(() => {
+              setSpeed(50);
+            }, 1000);
+          }}
+        >
+          {announcements.map((announcement, index) => (
+            <span key={index} className="mx-8 text-xs font-medium">
+              {parseMarkdown(announcement)}
+            </span>
+          ))}
+        </Marquee>
+      )}
     </div>
   );
 };
