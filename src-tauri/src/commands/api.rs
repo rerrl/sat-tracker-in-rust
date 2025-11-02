@@ -19,6 +19,7 @@ pub struct BitcoinPriceResponse {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AnnouncementsResponse {
+    pub latest_version: String,
     pub announcements: Vec<String>,
 }
 

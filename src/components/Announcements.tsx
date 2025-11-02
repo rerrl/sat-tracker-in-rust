@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import Marquee from "react-fast-marquee";
 import { TauriService } from "../services/tauriService";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import packageJson from "../../package.json";
 
 const Announcements: React.FC = () => {
   const staticAnnouncements = [
-    "🎉 Welcome to Sat Tracker - A free, open source, local-first Bitcoin portfolio tracker!",
     "🔒 Your data stays local - no cloud sync, no tracking, complete privacy",
   ];
 
@@ -35,7 +35,7 @@ const Announcements: React.FC = () => {
       linkParts.push({
         type: 'link',
         url: match[2],
-        text: match[1],
+        text: match[1], // This will contain the raw text including ** markers
         key: elementKey++
       });
 
@@ -89,7 +89,37 @@ const Announcements: React.FC = () => {
           parts.push(part);
         }
       } else {
-        // Handle link objects
+        // Handle link objects - parse bold text within the link text
+        const linkText = part.text;
+        const boldRegex = /\*\*([^*]+)\*\*/g;
+        const linkContent: (string | JSX.Element)[] = [];
+        let lastBoldIndex = 0;
+        let boldMatch: RegExpExecArray | null;
+
+        while ((boldMatch = boldRegex.exec(linkText)) !== null) {
+          // Add text before the bold
+          if (boldMatch.index > lastBoldIndex) {
+            linkContent.push(linkText.slice(lastBoldIndex, boldMatch.index));
+          }
+
+          // Add the bold text
+          linkContent.push(
+            <strong key={elementKey++} className="font-bold">
+              {boldMatch[1]}
+            </strong>
+          );
+
+          lastBoldIndex = boldMatch.index + boldMatch[0].length;
+        }
+
+        // Add remaining text
+        if (lastBoldIndex < linkText.length) {
+          linkContent.push(linkText.slice(lastBoldIndex));
+        }
+
+        // If no bold found, use original text
+        const finalLinkContent = linkContent.length > 0 ? linkContent : [linkText];
+
         parts.push(
           <a
             key={part.key}
@@ -104,7 +134,7 @@ const Announcements: React.FC = () => {
               }
             }}
           >
-            {part.text}
+            {finalLinkContent}
           </a>
         );
       }
@@ -117,12 +147,30 @@ const Announcements: React.FC = () => {
     const fetchAnnouncements = async () => {
       try {
         const response = await TauriService.fetchAnnouncements();
-        if (response.announcements && response.announcements.length > 0) {
-          setAnnouncements([...staticAnnouncements, ...response.announcements]);
+        const allAnnouncements = [];
+        
+        // Create welcome message with version info
+        let welcomeMessage = `🎉 Welcome to Sat Tracker (v${packageJson.version}) - A free, open source, local-first Bitcoin portfolio tracker!`;
+        
+        // Check for version update and modify welcome message
+        if (response.latest_version && response.latest_version !== packageJson.version) {
+          welcomeMessage = `🎉 Welcome to Sat Tracker (v${packageJson.version}) - [**New version v${response.latest_version} available!**](https://dprogram.me/tools/sat-tracker) - A free, open source, local-first Bitcoin portfolio tracker!`;
         }
+        
+        allAnnouncements.push(welcomeMessage);
+        allAnnouncements.push(...staticAnnouncements);
+        
+        // Add remote announcements
+        if (response.announcements && response.announcements.length > 0) {
+          allAnnouncements.push(...response.announcements);
+        }
+        
+        setAnnouncements(allAnnouncements);
       } catch (error) {
         console.warn("Failed to fetch announcements, using fallback:", error);
-        // Keep the static announcements that are already set
+        // Fallback welcome message with current version
+        const fallbackWelcome = `🎉 Welcome to Sat Tracker (v${packageJson.version}) - A free, open source, local-first Bitcoin portfolio tracker!`;
+        setAnnouncements([fallbackWelcome, ...staticAnnouncements]);
       } finally {
         setIsLoading(false);
       }

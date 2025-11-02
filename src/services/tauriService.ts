@@ -70,6 +70,7 @@ export interface PasswordValidationResult {
 }
 
 export interface AnnouncementsResponse {
+  latest_version: string;
   announcements: string[];
 }
 
