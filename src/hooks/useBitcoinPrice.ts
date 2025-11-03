@@ -1,9 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
-import { invoke } from '@tauri-apps/api/core';
+import { useQuery } from "@tanstack/react-query";
+import { invoke } from "@tauri-apps/api/core";
 
 interface BitcoinPriceResponse {
   success: boolean;
   price?: number;
+  percentChange24hr?: number;
   cached?: boolean;
   cacheAge?: number;
   timestamp?: number;
@@ -14,9 +15,9 @@ interface BitcoinPriceResponse {
 
 export const useBitcoinPrice = () => {
   const query = useQuery<BitcoinPriceResponse>({
-    queryKey: ['bitcoinPrice'],
+    queryKey: ["bitcoinPrice"],
     queryFn: async (): Promise<BitcoinPriceResponse> => {
-      const response = await invoke('fetch_bitcoin_price');
+      const response = await invoke("fetch_bitcoin_price");
       return response as BitcoinPriceResponse;
     },
     refetchInterval: 30 * 1000, // Refetch every 30 seconds
@@ -26,7 +27,8 @@ export const useBitcoinPrice = () => {
   });
 
   return {
-    price: query.data?.price || 115420, // Fallback price
+    price: query.data?.price ?? null,
+    percentChange24hr: query.data?.percentChange24hr ?? null,
     loading: query.isLoading,
     error: query.error?.message || null,
   };

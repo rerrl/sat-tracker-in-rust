@@ -16,7 +16,6 @@ import { useBitcoinPrice } from "./hooks/useBitcoinPrice";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
 
-
 function App() {
   // Bitcoin price state - declare these first
   const [isEditingBitcoinPrice, setIsEditingBitcoinPrice] = useState(false);
@@ -27,13 +26,27 @@ function App() {
 
   const {
     price: liveBitcoinPrice,
+    percentChange24hr,
     loading: bitcoinPriceLoading,
     error: bitcoinPriceError,
   } = useBitcoinPrice();
 
-  // Use custom price if set, otherwise use live price
+  // Auto-switch to manual mode if live price is null
+  useEffect(() => {
+    if (
+      liveBitcoinPrice === null &&
+      customBitcoinPrice === null &&
+      !bitcoinPriceLoading
+    ) {
+      setCustomBitcoinPrice(100000); // Default fallback price
+    }
+  }, [liveBitcoinPrice, customBitcoinPrice, bitcoinPriceLoading]);
+
+  // Use custom price if set, otherwise use live price (with fallback)
   const bitcoinPrice =
-    customBitcoinPrice !== null ? customBitcoinPrice : liveBitcoinPrice;
+    customBitcoinPrice !== null
+      ? customBitcoinPrice
+      : liveBitcoinPrice || 100000;
 
   // Database initialization state
   const [databaseStatus, setDatabaseStatus] = useState<DatabaseStatus | null>(
@@ -307,10 +320,11 @@ function App() {
 
   const handleModeToggle = () => {
     if (customBitcoinPrice === null) {
-      // Switch to manual mode - set current live price as custom
-      setCustomBitcoinPrice(liveBitcoinPrice);
+      // Switch to manual mode - set current live price as custom (with fallback)
+      const priceToUse = liveBitcoinPrice || 100000;
+      setCustomBitcoinPrice(priceToUse);
       setIsEditingBitcoinPrice(true);
-      setBitcoinPriceInput(liveBitcoinPrice.toString());
+      setBitcoinPriceInput(priceToUse.toString());
     } else {
       // Switch back to live mode
       setCustomBitcoinPrice(null);
@@ -396,7 +410,6 @@ function App() {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [editingEventId, isCreatingNew, showLumpsumModal]); // Dependencies to ensure we have current state
-
 
   // Database initialization functions
   const checkDatabaseStatusAndInitialize = async () => {
@@ -606,22 +619,39 @@ function App() {
                     autoFocus
                   />
                 ) : (
-                  <div
-                    className={`text-sm text-[#61dafb] font-medium rounded px-1 py-0 ${
-                      customBitcoinPrice !== null
-                        ? "cursor-pointer hover:bg-[rgba(97,218,251,0.1)]"
-                        : "cursor-default"
-                    }`}
-                    onClick={handleBitcoinPriceClick}
-                    title={
-                      customBitcoinPrice !== null
-                        ? "Click to edit price"
-                        : "Click 'Live' to enter manual mode"
-                    }
-                  >
-                    {bitcoinPriceLoading && customBitcoinPrice === null
-                      ? "..."
-                      : `$${bitcoinPrice.toLocaleString()}`}
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={`text-sm text-[#61dafb] font-medium rounded px-1 py-0 ${
+                        customBitcoinPrice !== null
+                          ? "cursor-pointer hover:bg-[rgba(97,218,251,0.1)]"
+                          : "cursor-default"
+                      }`}
+                      onClick={handleBitcoinPriceClick}
+                      title={
+                        customBitcoinPrice !== null
+                          ? "Click to edit price"
+                          : "Click 'Live' to enter manual mode"
+                      }
+                    >
+                      {bitcoinPriceLoading && customBitcoinPrice === null
+                        ? "..."
+                        : `$${bitcoinPrice.toLocaleString()}`}
+                    </div>
+                    {/* Show 24hr change only in live mode and when data is available */}
+                    {customBitcoinPrice === null &&
+                      percentChange24hr !== null &&
+                      !bitcoinPriceLoading && (
+                        <div
+                          className={`text-xs font-medium ${
+                            percentChange24hr >= 0
+                              ? "text-lightgreen"
+                              : "text-lightcoral"
+                          }`}
+                        >
+                          {percentChange24hr >= 0 ? "+" : ""}
+                          {percentChange24hr.toFixed(2)}% (24h)
+                        </div>
+                      )}
                   </div>
                 )}
               </div>

@@ -8,6 +8,8 @@ const API_HOST: &str = "http://localhost:3000";
 pub struct BitcoinPriceResponse {
     pub success: bool,
     pub price: Option<f64>,
+    #[serde(rename = "percentChange24hr")]                                                                                                             
+    pub percent_change_24hr: Option<f64>,  
     pub cached: Option<bool>,
     #[serde(rename = "cacheAge")]
     pub cache_age: Option<u64>,
@@ -29,23 +31,25 @@ pub async fn fetch_bitcoin_price() -> Result<BitcoinPriceResponse, String> {
         .user_agent("SatTracker/1.0")
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
-    
+
     let url = format!("{}/api/proxy/sat-tracker/bitcoin-price", API_HOST);
     let response = client
         .get(&url)
         .send()
         .await
         .map_err(|e| format!("Failed to fetch Bitcoin price: {}", e))?;
-    
+
     if !response.status().is_success() {
         return Err(format!("HTTP error: {}", response.status()));
     }
-    
+
     let price_data: BitcoinPriceResponse = response
         .json()
         .await
         .map_err(|e| format!("Failed to parse response: {}", e))?;
-    
+
+    println!("{:?}", price_data);
+
     Ok(price_data)
 }
 
@@ -55,22 +59,22 @@ pub async fn fetch_announcements() -> Result<AnnouncementsResponse, String> {
         .user_agent("SatTracker/1.0")
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
-    
+
     let url = format!("{}/api/proxy/sat-tracker/announcements", API_HOST);
     let response = client
         .get(&url)
         .send()
         .await
         .map_err(|e| format!("Failed to fetch announcements: {}", e))?;
-    
+
     if !response.status().is_success() {
         return Err(format!("HTTP error: {}", response.status()));
     }
-    
+
     let announcements_data: AnnouncementsResponse = response
         .json()
         .await
         .map_err(|e| format!("Failed to parse response: {}", e))?;
-    
+
     Ok(announcements_data)
 }
