@@ -5,7 +5,7 @@ import {
   PortfolioMetrics,
   DatabaseStatus,
 } from "./services/tauriService";
-import SatsHoldingsChart from "./components/SatsHoldingsChart";
+import SatsHoldingsChartSection from "./components/SatsHoldingsChartSection";
 import LumpsumModal from "./components/LumpsumModal";
 import DateTimeInput from "./components/DateTimeInput";
 import Announcements from "./components/Announcements";
@@ -383,7 +383,9 @@ const EventItem = React.memo(
 function App() {
   // Bitcoin price state - declare these first
   const [isEditingBitcoinPrice, setIsEditingBitcoinPrice] = useState(false);
-  const [customBitcoinPrice, setCustomBitcoinPrice] = useState<number | null>(null);
+  const [customBitcoinPrice, setCustomBitcoinPrice] = useState<number | null>(
+    null
+  );
   const [bitcoinPriceInput, setBitcoinPriceInput] = useState("");
 
   const {
@@ -393,10 +395,13 @@ function App() {
   } = useBitcoinPrice();
 
   // Use custom price if set, otherwise use live price
-  const bitcoinPrice = customBitcoinPrice !== null ? customBitcoinPrice : liveBitcoinPrice;
+  const bitcoinPrice =
+    customBitcoinPrice !== null ? customBitcoinPrice : liveBitcoinPrice;
 
   // Database initialization state
-  const [databaseStatus, setDatabaseStatus] = useState<DatabaseStatus | null>(null);
+  const [databaseStatus, setDatabaseStatus] = useState<DatabaseStatus | null>(
+    null
+  );
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [passwordError, setPasswordError] = useState<string>("");
   const [isValidatingPassword, setIsValidatingPassword] = useState(false);
@@ -421,10 +426,10 @@ function App() {
     frequency: "weekly" as "daily" | "weekly" | "monthly",
     memo: "",
   });
-  const [selectedAnalyticsPage, setSelectedAnalyticsPage] = useState<'buys-sells' | 'more-metrics'>('buys-sells');
+  const [selectedAnalyticsPage, setSelectedAnalyticsPage] = useState<
+    "buys-sells" | "more-metrics"
+  >("buys-sells");
   const [showAnalyticsDropdown, setShowAnalyticsDropdown] = useState(false);
-  const [selectedChartPage, setSelectedChartPage] = useState<'sat-balance' | 'coming-soon'>('sat-balance');
-  const [showChartDropdown, setShowChartDropdown] = useState(false);
   const [showEncryptionSettings, setShowEncryptionSettings] = useState(false);
 
   // Load portfolio metrics
@@ -437,11 +442,11 @@ function App() {
       console.log("📊 Portfolio Metrics:", metrics);
       console.log("📈 7-day metrics:", {
         sats_stacked_7d: metrics.sats_stacked_7d,
-        usd_invested_7d: metrics.usd_invested_7d_cents / 100
+        usd_invested_7d: metrics.usd_invested_7d_cents / 100,
       });
       console.log("📈 31-day metrics:", {
         sats_stacked_31d: metrics.sats_stacked_31d,
-        usd_invested_31d: metrics.usd_invested_31d_cents / 100
+        usd_invested_31d: metrics.usd_invested_31d_cents / 100,
       });
       setPortfolioMetrics(metrics);
     } catch (error) {
@@ -659,9 +664,9 @@ function App() {
   };
 
   const handleBitcoinPriceKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleBitcoinPriceBlur();
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       setIsEditingBitcoinPrice(false);
       setBitcoinPriceInput(bitcoinPrice.toString());
     }
@@ -762,20 +767,19 @@ function App() {
   // Close analytics dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (showAnalyticsDropdown || showChartDropdown) {
+      if (showAnalyticsDropdown) {
         const target = event.target as Element;
-        if (!target.closest('.relative')) {
+        if (!target.closest(".relative")) {
           setShowAnalyticsDropdown(false);
-          setShowChartDropdown(false);
         }
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [showAnalyticsDropdown, showChartDropdown]);
+  }, [showAnalyticsDropdown]);
 
   // Database initialization functions
   const checkDatabaseStatusAndInitialize = async () => {
@@ -783,9 +787,9 @@ function App() {
       console.log("🔍 Checking database status...");
       const status = await TauriService.checkDatabaseStatus();
       console.log("📊 Database status:", status);
-      
+
       setDatabaseStatus(status);
-      
+
       if (status.needs_password) {
         console.log("🔐 Password required, showing prompt");
         setShowPasswordPrompt(true);
@@ -805,7 +809,7 @@ function App() {
       console.log("🚀 Initializing database...");
       await TauriService.initializeDatabaseWithPassword(password);
       console.log("✅ Database initialized successfully");
-      
+
       setIsDatabaseInitialized(true);
       setShowPasswordPrompt(false);
       setPasswordError("");
@@ -825,8 +829,10 @@ function App() {
       if (databaseStatus.is_encrypted) {
         // Validate password for encrypted database
         console.log("🔐 Validating password...");
-        const validation = await TauriService.validateDatabasePassword(password);
-        
+        const validation = await TauriService.validateDatabasePassword(
+          password
+        );
+
         if (!validation.is_valid) {
           setPasswordError(validation.error_message || "Invalid password");
           setIsValidatingPassword(false);
@@ -863,10 +869,10 @@ function App() {
     if (isDatabaseInitialized) {
       loadInitialEvents();
       loadPortfolioMetrics(true); // Show loading on initial load
-      
+
       // Update menu to show full options now that database is unlocked
       TauriService.updateMenuForDatabaseStatus(true).catch(console.error);
-      
+
       // Set up menu event listeners
       const setupMenuListeners = async () => {
         await listen("menu-import-v1", async () => {
@@ -895,7 +901,6 @@ function App() {
     }
   }, [isDatabaseInitialized]);
 
-
   // Don't render main app until database is initialized
   if (!isDatabaseInitialized) {
     return (
@@ -903,10 +908,12 @@ function App() {
         <div className="text-center">
           <div className="text-2xl text-[#F7F3E3] mb-4">🗄️ Sat Tracker</div>
           <div className="text-sm text-[rgba(247,243,227,0.6)]">
-            {databaseStatus === null ? "Checking database..." : "Initializing..."}
+            {databaseStatus === null
+              ? "Checking database..."
+              : "Initializing..."}
           </div>
         </div>
-        
+
         <PasswordPromptModal
           isOpen={showPasswordPrompt}
           onPasswordSubmit={handlePasswordSubmit}
@@ -935,14 +942,13 @@ function App() {
                   <span className="text-[#F7F3E3]">.me</span>
                 </span>
               </h1>
-              
-              
+
               <div className="flex-1 min-w-0">
                 <Announcements />
               </div>
             </div>
           </div>
-          
+
           {/* Overview Metrics Strip */}
           <div className="p-4 pb-2 shrink-0 border-b border-[rgba(247,243,227,0.1)]">
             <div className="grid grid-cols-5 gap-3 mb-3">
@@ -957,7 +963,11 @@ function App() {
                         ? "bg-[rgba(144,238,144,0.2)] hover:bg-[rgba(144,238,144,0.3)] text-lightgreen"
                         : "bg-[rgba(255,165,0,0.2)] hover:bg-[rgba(255,165,0,0.3)] text-orange"
                     }`}
-                    title={customBitcoinPrice === null ? "Switch to manual mode" : "Switch to live mode"}
+                    title={
+                      customBitcoinPrice === null
+                        ? "Switch to manual mode"
+                        : "Switch to live mode"
+                    }
                   >
                     {customBitcoinPrice === null ? "Live" : "Manual"}
                   </button>
@@ -979,16 +989,20 @@ function App() {
                     autoFocus
                   />
                 ) : (
-                  <div 
+                  <div
                     className={`text-sm text-[#61dafb] font-medium rounded px-1 py-0 ${
-                      customBitcoinPrice !== null 
-                        ? "cursor-pointer hover:bg-[rgba(97,218,251,0.1)]" 
+                      customBitcoinPrice !== null
+                        ? "cursor-pointer hover:bg-[rgba(97,218,251,0.1)]"
                         : "cursor-default"
                     }`}
                     onClick={handleBitcoinPriceClick}
-                    title={customBitcoinPrice !== null ? "Click to edit price" : "Click 'Live' to enter manual mode"}
+                    title={
+                      customBitcoinPrice !== null
+                        ? "Click to edit price"
+                        : "Click 'Live' to enter manual mode"
+                    }
                   >
-                    {(bitcoinPriceLoading && customBitcoinPrice === null)
+                    {bitcoinPriceLoading && customBitcoinPrice === null
                       ? "..."
                       : `$${bitcoinPrice.toLocaleString()}`}
                   </div>
@@ -1092,49 +1106,9 @@ function App() {
                 </div>
               </div>
             </div>
-
-            {/* Chart Header */}
-            <div className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-[#F7F3E3]">
-                Sats Holdings Over Time
-              </h2>
-              <div className="relative">
-                <button
-                  onClick={() => setShowChartDropdown(!showChartDropdown)}
-                  className="text-xs text-[rgba(247,243,227,0.5)] bg-[rgba(247,243,227,0.1)] px-2 py-1 rounded hover:bg-[rgba(247,243,227,0.15)] flex items-center gap-1"
-                >
-                  {selectedChartPage === 'sat-balance' ? 'Sat Balance' : 'Coming Soon'}
-                  <span className="text-[10px]">▼</span>
-                </button>
-                {showChartDropdown && (
-                  <div className="absolute right-0 top-full mt-1 bg-[#2A2633] border border-[rgba(247,243,227,0.3)] rounded shadow-lg z-10 min-w-[120px]">
-                    <button
-                      onClick={() => {
-                        setSelectedChartPage('sat-balance');
-                        setShowChartDropdown(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 text-xs hover:bg-[rgba(247,243,227,0.1)] ${
-                        selectedChartPage === 'sat-balance' ? 'text-[#F7F3E3] bg-[rgba(247,243,227,0.05)]' : 'text-[rgba(247,243,227,0.7)]'
-                      }`}
-                    >
-                      Sat Balance
-                    </button>
-                    <button
-                      disabled
-                      className="w-full text-left px-3 py-2 text-xs text-[rgba(247,243,227,0.4)] cursor-not-allowed opacity-50"
-                    >
-                      Coming Soon
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
 
-          {/* Chart Area */}
-          <div className="flex-1 p-4">
-            <SatsHoldingsChart events={events} />
-          </div>
+          <SatsHoldingsChartSection events={events} />
         </div>
 
         {/* Right Column - Metrics + Events (35%) */}
@@ -1148,32 +1122,40 @@ function App() {
                 </h2>
                 <div className="relative">
                   <button
-                    onClick={() => setShowAnalyticsDropdown(!showAnalyticsDropdown)}
+                    onClick={() =>
+                      setShowAnalyticsDropdown(!showAnalyticsDropdown)
+                    }
                     className="text-xs text-[rgba(247,243,227,0.5)] bg-[rgba(247,243,227,0.1)] px-2 py-1 rounded hover:bg-[rgba(247,243,227,0.15)] flex items-center gap-1"
                   >
-                    {selectedAnalyticsPage === 'buys-sells' ? 'Buys/Sells' : 'More Metrics'}
+                    {selectedAnalyticsPage === "buys-sells"
+                      ? "Buys/Sells"
+                      : "More Metrics"}
                     <span className="text-[10px]">▼</span>
                   </button>
                   {showAnalyticsDropdown && (
                     <div className="absolute right-0 top-full mt-1 bg-[#2A2633] border border-[rgba(247,243,227,0.3)] rounded shadow-lg z-10 min-w-[120px]">
                       <button
                         onClick={() => {
-                          setSelectedAnalyticsPage('buys-sells');
+                          setSelectedAnalyticsPage("buys-sells");
                           setShowAnalyticsDropdown(false);
                         }}
                         className={`w-full text-left px-3 py-2 text-xs hover:bg-[rgba(247,243,227,0.1)] ${
-                          selectedAnalyticsPage === 'buys-sells' ? 'text-[#F7F3E3] bg-[rgba(247,243,227,0.05)]' : 'text-[rgba(247,243,227,0.7)]'
+                          selectedAnalyticsPage === "buys-sells"
+                            ? "text-[#F7F3E3] bg-[rgba(247,243,227,0.05)]"
+                            : "text-[rgba(247,243,227,0.7)]"
                         }`}
                       >
                         Buys/Sells
                       </button>
                       <button
                         onClick={() => {
-                          setSelectedAnalyticsPage('more-metrics');
+                          setSelectedAnalyticsPage("more-metrics");
                           setShowAnalyticsDropdown(false);
                         }}
                         className={`w-full text-left px-3 py-2 text-xs hover:bg-[rgba(247,243,227,0.1)] ${
-                          selectedAnalyticsPage === 'more-metrics' ? 'text-[#F7F3E3] bg-[rgba(247,243,227,0.05)]' : 'text-[rgba(247,243,227,0.7)]'
+                          selectedAnalyticsPage === "more-metrics"
+                            ? "text-[#F7F3E3] bg-[rgba(247,243,227,0.05)]"
+                            : "text-[rgba(247,243,227,0.7)]"
                         }`}
                       >
                         More Metrics
@@ -1184,7 +1166,7 @@ function App() {
               </div>
             </div>
             <div className="flex-1 px-4 pb-2 overflow-y-auto">
-              {selectedAnalyticsPage === 'buys-sells' ? (
+              {selectedAnalyticsPage === "buys-sells" ? (
                 <div className="space-y-3">
                   {/* Existing Buys Section */}
                   <div>
@@ -1220,8 +1202,8 @@ function App() {
                             {metricsLoading
                               ? "..."
                               : `$${(
-                                  (portfolioMetrics?.total_invested_cents || 0) /
-                                  100
+                                  (portfolioMetrics?.total_invested_cents ||
+                                    0) / 100
                                 ).toLocaleString(undefined, {
                                   minimumFractionDigits: 0,
                                   maximumFractionDigits: 0,
@@ -1278,8 +1260,8 @@ function App() {
                             {metricsLoading
                               ? "..."
                               : `$${(
-                                  (portfolioMetrics?.fiat_extracted_cents || 0) /
-                                  100
+                                  (portfolioMetrics?.fiat_extracted_cents ||
+                                    0) / 100
                                 ).toLocaleString(undefined, {
                                   minimumFractionDigits: 0,
                                   maximumFractionDigits: 0,
@@ -1318,7 +1300,8 @@ function App() {
                           <div className="text-xs text-[#61dafb] font-medium">
                             {metricsLoading
                               ? "..."
-                              : portfolioMetrics?.sats_stacked_7d?.toLocaleString() || "0"}
+                              : portfolioMetrics?.sats_stacked_7d?.toLocaleString() ||
+                                "0"}
                           </div>
                         </div>
                         <div className="text-center p-1.5 bg-[rgba(97,218,251,0.1)] border border-[rgba(97,218,251,0.2)] rounded">
@@ -1329,7 +1312,8 @@ function App() {
                             {metricsLoading
                               ? "..."
                               : `$${(
-                                  (portfolioMetrics?.usd_invested_7d_cents || 0) / 100
+                                  (portfolioMetrics?.usd_invested_7d_cents ||
+                                    0) / 100
                                 ).toLocaleString(undefined, {
                                   minimumFractionDigits: 0,
                                   maximumFractionDigits: 0,
@@ -1354,7 +1338,8 @@ function App() {
                           <div className="text-xs text-[gold] font-medium">
                             {metricsLoading
                               ? "..."
-                              : portfolioMetrics?.sats_stacked_31d?.toLocaleString() || "0"}
+                              : portfolioMetrics?.sats_stacked_31d?.toLocaleString() ||
+                                "0"}
                           </div>
                         </div>
                         <div className="text-center p-1.5 bg-[rgba(255,215,0,0.1)] border border-[rgba(255,215,0,0.2)] rounded">
@@ -1365,7 +1350,8 @@ function App() {
                             {metricsLoading
                               ? "..."
                               : `$${(
-                                  (portfolioMetrics?.usd_invested_31d_cents || 0) / 100
+                                  (portfolioMetrics?.usd_invested_31d_cents ||
+                                    0) / 100
                                 ).toLocaleString(undefined, {
                                   minimumFractionDigits: 0,
                                   maximumFractionDigits: 0,
@@ -1470,7 +1456,9 @@ function App() {
           <div className="bg-[#2A2633] border border-[rgba(247,243,227,0.3)] rounded-lg w-[500px] max-h-[80vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-[#F7F3E3]">Database Encryption</h2>
+                <h2 className="text-xl font-semibold text-[#F7F3E3]">
+                  Database Encryption
+                </h2>
                 <button
                   onClick={() => setShowEncryptionSettings(false)}
                   className="text-[rgba(247,243,227,0.6)] hover:text-[#F7F3E3] text-xl"
