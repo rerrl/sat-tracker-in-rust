@@ -2,10 +2,6 @@ use sqlx::{SqlitePool, migrate::MigrateDatabase, Sqlite};
 use std::path::PathBuf;
 use rusqlite;
 
-pub async fn init_database() -> Result<SqlitePool, sqlx::Error> {
-    init_database_with_password(None).await
-}
-
 pub async fn init_database_with_password(password: Option<String>) -> Result<SqlitePool, sqlx::Error> {
     let db_path = get_database_path();
     let db_url = format!("sqlite:{}", db_path.display());

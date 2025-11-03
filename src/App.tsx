@@ -920,7 +920,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#090C08]">
+    <div className="min-h-screen bg-[#090C08] overflow-hidden">
       {/* Main Content - Two Columns */}
       <div className="flex h-screen">
         {/* Left Column - Chart Area (65%) */}

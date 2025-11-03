@@ -1,8 +1,7 @@
-use rusqlite::{Connection, Result as SqliteResult};
+use rusqlite::{Connection};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use tauri::{command, AppHandle, State, Manager};
-use sqlx::SqlitePool;
+use tauri::{command, AppHandle, Manager};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DatabaseStatus {
@@ -188,14 +187,14 @@ pub async fn encrypt_database(password: String) -> Result<String, String> {
     }
     
     // Open original database
-    let mut source_conn = Connection::open(&db_path)
+    let source_conn = Connection::open(&db_path)
         .map_err(|e| format!("Failed to open source database: {}", e))?;
     
     // Create encrypted database path
     let encrypted_path = db_path.with_extension("db.encrypted");
     
     // Create encrypted database
-    let mut encrypted_conn = Connection::open(&encrypted_path)
+    let encrypted_conn = Connection::open(&encrypted_path)
         .map_err(|e| format!("Failed to create encrypted database: {}", e))?;
     
     // Set encryption key on new database
@@ -211,7 +210,7 @@ pub async fn encrypt_database(password: String) -> Result<String, String> {
         .map_err(|e| format!("Failed to replace database: {}", e))?;
     
     // Now initialize the encrypted database with SQLx (this will run migrations)
-    let pool = crate::database::init_database_with_password(Some(password.clone())).await
+    let _pool = crate::database::init_database_with_password(Some(password.clone())).await
         .map_err(|e| format!("Failed to initialize encrypted database: {}", e))?;
     
     println!("📋 Starting data copy from backup to encrypted database...");
