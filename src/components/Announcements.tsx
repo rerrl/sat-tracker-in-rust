@@ -7,6 +7,7 @@ import packageJson from "../../package.json";
 const Announcements: React.FC = () => {
   const staticAnnouncements = [
     "🔒 Your data stays local - no cloud sync, no tracking, complete privacy",
+    "📡 Only fetches Bitcoin price & app updates",
   ];
 
   const [announcements, setAnnouncements] =
@@ -21,7 +22,10 @@ const Announcements: React.FC = () => {
 
     // First pass: handle links
     const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
-    const linkParts: (string | { type: 'link'; url: string; text: string; key: number })[] = [];
+    const linkParts: (
+      | string
+      | { type: "link"; url: string; text: string; key: number }
+    )[] = [];
     let lastIndex = 0;
     let match: RegExpExecArray | null;
 
@@ -33,10 +37,10 @@ const Announcements: React.FC = () => {
 
       // Add the link placeholder
       linkParts.push({
-        type: 'link',
+        type: "link",
         url: match[2],
         text: match[1], // This will contain the raw text including ** markers
-        key: elementKey++
+        key: elementKey++,
       });
 
       lastIndex = match.index + match[0].length;
@@ -54,7 +58,7 @@ const Announcements: React.FC = () => {
 
     // Second pass: handle bold text in each part
     linkParts.forEach((part) => {
-      if (typeof part === 'string') {
+      if (typeof part === "string") {
         // Parse bold text in string parts
         const boldRegex = /\*\*([^*]+)\*\*/g;
         const boldParts: (string | JSX.Element)[] = [];
@@ -118,7 +122,8 @@ const Announcements: React.FC = () => {
         }
 
         // If no bold found, use original text
-        const finalLinkContent = linkContent.length > 0 ? linkContent : [linkText];
+        const finalLinkContent =
+          linkContent.length > 0 ? linkContent : [linkText];
 
         parts.push(
           <a
@@ -148,23 +153,26 @@ const Announcements: React.FC = () => {
       try {
         const response = await TauriService.fetchAnnouncements();
         const allAnnouncements = [];
-        
+
         // Create welcome message with version info
         let welcomeMessage = `🎉 Welcome to Sat Tracker (v${packageJson.version}) - A free, open source, local-first Bitcoin portfolio tracker!`;
-        
+
         // Check for version update and modify welcome message
-        if (response.latest_version && response.latest_version !== packageJson.version) {
+        if (
+          response.latest_version &&
+          response.latest_version !== packageJson.version
+        ) {
           welcomeMessage = `🎉 Welcome to Sat Tracker (v${packageJson.version}) - [**New version v${response.latest_version} available!**](https://dprogram.me/tools/sat-tracker) - A free, open source, local-first Bitcoin portfolio tracker!`;
         }
-        
+
         allAnnouncements.push(welcomeMessage);
         allAnnouncements.push(...staticAnnouncements);
-        
+
         // Add remote announcements
         if (response.announcements && response.announcements.length > 0) {
           allAnnouncements.push(...response.announcements);
         }
-        
+
         setAnnouncements(allAnnouncements);
       } catch (error) {
         console.warn("Failed to fetch announcements, using fallback:", error);

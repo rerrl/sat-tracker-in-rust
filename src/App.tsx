@@ -77,6 +77,8 @@ function App() {
     memo: "",
   });
   const [showEncryptionSettings, setShowEncryptionSettings] = useState(false);
+  const [selectedTool, setSelectedTool] = useState("overview");
+  const [showToolDropdown, setShowToolDropdown] = useState(false);
 
   // Load portfolio metrics
   async function loadPortfolioMetrics(showLoading = false) {
@@ -411,6 +413,23 @@ function App() {
     };
   }, [editingEventId, isCreatingNew, showLumpsumModal]); // Dependencies to ensure we have current state
 
+  // Close tool dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showToolDropdown) {
+        const target = event.target as Element;
+        if (!target.closest(".tool-dropdown")) {
+          setShowToolDropdown(false);
+        }
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showToolDropdown]);
+
   // Database initialization functions
   const checkDatabaseStatusAndInitialize = async () => {
     try {
@@ -558,29 +577,101 @@ function App() {
 
   return (
     <div className="min-h-screen bg-[#090C08] overflow-hidden">
-      {/* Main Content - Two Columns */}
-      <div className="flex h-screen">
-        {/* Left Column - Chart Area (65%) */}
-        <div className="w-[65%] bg-[rgba(9,12,8,0.8)] flex flex-col">
-          {/* App Title, Menu, and Announcements */}
-          <div className="bg-[#2A2633] border-b border-[rgba(247,243,227,0.2)] px-6 py-3 shrink-0">
-            <div className="flex items-center gap-6">
-              <h1 className="text-xl font-bold text-[#F7F3E3] whitespace-nowrap">
-                Sat Tracker{" "}
-                <span className="text-sm font-normal">
-                  by <span className="text-[#E16036]">dprogram</span>
-                  <span className="text-[#F7F3E3]">.me</span>
-                </span>
-              </h1>
+      <div className="flex flex-col h-screen">
+        {/* App Title, Menu, and Announcements - Split Layout */}
+        <div className="bg-[#2A2633] border-b border-[rgba(247,243,227,0.2)] shrink-0 flex">
+          {/* Left side - Title and Announcements (65%) */}
+          <div className="w-[65%] px-6 py-3 flex items-center gap-6">
+            <h1 className="text-xl font-bold text-[#F7F3E3] whitespace-nowrap">
+              Sat Tracker{" "}
+              <span className="text-sm font-normal">
+                by <span className="text-[#E16036]">dprogram</span>
+                <span className="text-[#F7F3E3]">.me</span>
+              </span>
+            </h1>
 
-              <div className="flex-1 min-w-0">
-                <Announcements />
-              </div>
+            <div className="flex-1 min-w-0">
+              <Announcements />
             </div>
           </div>
 
-          {/* Overview Metrics Strip */}
-          <div className="p-4 pb-2 shrink-0 border-b border-[rgba(247,243,227,0.1)]">
+          {/* Right side - Tool Selector (35%) */}
+          <div className="w-[35%] px-6 py-3 flex items-center justify-between">
+            {/* Update Available Button */}
+            <button className="text-xs text-[#F7F3E3] bg-[rgba(247,147,26,0.2)] border border-[rgba(247,147,26,0.3)] px-2 py-1 rounded hover:bg-[rgba(247,147,26,0.3)] flex items-center gap-1">
+              <span className="text-[10px]">🔄</span>
+              Update Available
+            </button>
+
+            {/* Tool Selector Dropdown */}
+            <div className="relative tool-dropdown">
+              <button
+                onClick={() => setShowToolDropdown(!showToolDropdown)}
+                className="text-sm text-[#F7F3E3] bg-[rgba(97,218,251,0.15)] border border-[rgba(97,218,251,0.3)] px-3 py-1.5 rounded hover:bg-[rgba(97,218,251,0.2)] flex items-center gap-2 font-medium"
+              >
+                {selectedTool === "overview" && "Overview"}
+                {selectedTool === "focus" && "Focus"}
+                {selectedTool === "trends" && "Trends"}
+                {selectedTool === "activity" && "Activity"}
+                <span className="text-xs">▼</span>
+              </button>
+              {showToolDropdown && (
+                <div className="absolute right-0 top-full mt-1 bg-[#2A2633] border border-[rgba(247,243,227,0.3)] rounded shadow-lg z-10 min-w-[120px]">
+                  <button
+                    onClick={() => {
+                      setSelectedTool("overview");
+                      setShowToolDropdown(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 text-xs hover:bg-[rgba(247,243,227,0.1)] ${
+                      selectedTool === "overview"
+                        ? "text-[#F7F3E3] bg-[rgba(247,243,227,0.05)]"
+                        : "text-[rgba(247,243,227,0.7)]"
+                    }`}
+                  >
+                    Overview
+                  </button>
+                  <button
+                    onClick={() => {
+                      // setSelectedTool("focus");
+                      // setShowToolDropdown(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs text-[rgba(247,243,227,0.4)] cursor-not-allowed"
+                    disabled
+                  >
+                    Focus
+                  </button>
+                  <button
+                    onClick={() => {
+                      // setSelectedTool("trends");
+                      // setShowToolDropdown(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs text-[rgba(247,243,227,0.4)] cursor-not-allowed"
+                    disabled
+                  >
+                    Trends
+                  </button>
+                  <button
+                    onClick={() => {
+                      // setSelectedTool("activity");
+                      // setShowToolDropdown(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs text-[rgba(247,243,227,0.4)] cursor-not-allowed"
+                    disabled
+                  >
+                    Activity
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content - Two Columns */}
+        <div className="flex flex-1 min-h-0">
+          {/* Left Column - Chart Area (65%) */}
+          <div className="w-[65%] bg-[rgba(9,12,8,0.8)] flex flex-col">
+            {/* Overview Metrics Strip */}
+            <div className="p-4 pb-2 shrink-0 border-b border-[rgba(247,243,227,0.1)]">
             <div className="grid grid-cols-5 gap-3 mb-3">
               {/* Bitcoin Price */}
               <div className="text-center p-2 bg-[rgba(97,218,251,0.1)] border border-[rgba(97,218,251,0.2)] rounded relative">
@@ -755,11 +846,11 @@ function App() {
             </div>
           </div>
 
-          <SatsHoldingsChartSection events={events} />
-        </div>
+            <SatsHoldingsChartSection events={events} />
+          </div>
 
-        {/* Right Column - Metrics + Events (35%) */}
-        <div className="w-[35%] border-l border-[rgba(247,243,227,0.2)] bg-[#2A2633] flex flex-col">
+          {/* Right Column - Metrics + Events (35%) */}
+          <div className="w-[35%] border-l border-[rgba(247,243,227,0.2)] bg-[#2A2633] flex flex-col">
           {/* Top Half - Analytics with Page Selection (50%) */}
           <AnalyticsSection
             portfolioMetrics={portfolioMetrics}
@@ -783,6 +874,7 @@ function App() {
             onCancelNewEvent={handleCancelNewEvent}
             onNewEventDataChange={handleNewEventDataChange}
           />
+          </div>
         </div>
       </div>
 
