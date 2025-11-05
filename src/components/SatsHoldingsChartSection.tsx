@@ -7,25 +7,7 @@ interface SatsHoldingsChartSectionProps {
 }
 
 const SatsHoldingsChartSection: React.FC<SatsHoldingsChartSectionProps> = ({ events }) => {
-  const [selectedChartPage, setSelectedChartPage] = useState<'sat-balance' | 'coming-soon'>('sat-balance');
-  const [showChartDropdown, setShowChartDropdown] = useState(false);
-
-  // Close dropdown when clicking outside
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (showChartDropdown) {
-        const target = event.target as Element;
-        if (!target.closest('.chart-dropdown')) {
-          setShowChartDropdown(false);
-        }
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showChartDropdown]);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   return (
     <>
@@ -35,33 +17,26 @@ const SatsHoldingsChartSection: React.FC<SatsHoldingsChartSectionProps> = ({ eve
           <h2 className="text-lg font-semibold text-[#F7F3E3]">
             Sats Holdings Over Time
           </h2>
-          <div className="relative chart-dropdown">
+          <div 
+            className="relative"
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+          >
             <button
-              onClick={() => setShowChartDropdown(!showChartDropdown)}
-              className="text-xs text-[rgba(247,243,227,0.5)] bg-[rgba(247,243,227,0.1)] px-2 py-1 rounded hover:bg-[rgba(247,243,227,0.15)] flex items-center gap-1"
+              disabled
+              className="text-xs text-[rgba(247,243,227,0.6)] bg-[rgba(247,243,227,0.1)] border border-[rgba(247,243,227,0.2)] px-3 py-1 rounded cursor-not-allowed opacity-60 flex items-center gap-2"
             >
-              {selectedChartPage === 'sat-balance' ? 'Sat Balance' : 'Coming Soon'}
-              <span className="text-[10px]">▼</span>
+              <div className="w-3 h-3 border border-[rgba(247,243,227,0.4)] rounded-sm bg-[rgba(247,243,227,0.05)] flex items-center justify-center">
+                {/* Empty checkbox - would show checkmark when enabled */}
+              </div>
+              <span>Show USD Overlay</span>
             </button>
-            {showChartDropdown && (
-              <div className="absolute right-0 top-full mt-1 bg-[#2A2633] border border-[rgba(247,243,227,0.3)] rounded shadow-lg z-10 min-w-[120px]">
-                <button
-                  onClick={() => {
-                    setSelectedChartPage('sat-balance');
-                    setShowChartDropdown(false);
-                  }}
-                  className={`w-full text-left px-3 py-2 text-xs hover:bg-[rgba(247,243,227,0.1)] ${
-                    selectedChartPage === 'sat-balance' ? 'text-[#F7F3E3] bg-[rgba(247,243,227,0.05)]' : 'text-[rgba(247,243,227,0.7)]'
-                  }`}
-                >
-                  Sat Balance
-                </button>
-                <button
-                  disabled
-                  className="w-full text-left px-3 py-2 text-xs text-[rgba(247,243,227,0.4)] cursor-not-allowed opacity-50"
-                >
-                  Coming Soon
-                </button>
+            {showTooltip && (
+              <div 
+                className="absolute right-0 top-full mt-1 bg-orange-600 text-white px-2 py-1 rounded text-xs whitespace-nowrap z-[9999]"
+                style={{ position: 'absolute', zIndex: 9999 }}
+              >
+                Premium Feature
               </div>
             )}
           </div>
