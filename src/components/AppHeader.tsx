@@ -85,6 +85,19 @@ const AppHeader: React.FC<AppHeaderProps> = ({
               </button>
               <button
                 onClick={() => {
+                  setSelectedTool("activity");
+                  setShowToolDropdown(false);
+                }}
+                className={`w-full text-left px-3 py-2 text-xs hover:bg-[rgba(247,243,227,0.1)] ${
+                  selectedTool === "activity"
+                    ? "text-[#F7F3E3] bg-[rgba(247,243,227,0.05)]"
+                    : "text-[rgba(247,243,227,0.7)]"
+                }`}
+              >
+                Activity
+              </button>
+              <button
+                onClick={() => {
                   // setSelectedTool("focus");
                   // setShowToolDropdown(false);
                 }}
@@ -102,16 +115,6 @@ const AppHeader: React.FC<AppHeaderProps> = ({
                 disabled
               >
                 Trends
-              </button>
-              <button
-                onClick={() => {
-                  // setSelectedTool("activity");
-                  // setShowToolDropdown(false);
-                }}
-                className="w-full text-left px-3 py-2 text-xs text-[rgba(247,243,227,0.4)] cursor-not-allowed"
-                disabled
-              >
-                Activity
               </button>
             </div>
           )}

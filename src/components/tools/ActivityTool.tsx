@@ -4,13 +4,12 @@ import {
   BalanceChangeEvent,
   PortfolioMetrics,
 } from '../../services/tauriService';
-import SatsHoldingsChartSection from '../SatsHoldingsChartSection';
-import AnalyticsSection from '../AnalyticsSection';
 import MainLayout from '../layouts/MainLayout';
 import { useBitcoinPrice } from '../../hooks/useBitcoinPrice';
+import ActivityHeatmap from '../ActivityHeatmap';
 
-const OverviewTool: React.FC = () => {
-  // Bitcoin price state
+const ActivityTool: React.FC = () => {
+  // Bitcoin price state (same as overview for consistency)
   const [isEditingBitcoinPrice, setIsEditingBitcoinPrice] = useState(false);
   const [customBitcoinPrice, setCustomBitcoinPrice] = useState<number | null>(null);
   const [bitcoinPriceInput, setBitcoinPriceInput] = useState("");
@@ -29,16 +28,16 @@ const OverviewTool: React.FC = () => {
       customBitcoinPrice === null &&
       !bitcoinPriceLoading
     ) {
-      setCustomBitcoinPrice(100000); // Default fallback price
+      setCustomBitcoinPrice(100000);
     }
   }, [liveBitcoinPrice, customBitcoinPrice, bitcoinPriceLoading]);
 
-  // Use custom price if set, otherwise use live price (with fallback)
   const bitcoinPrice =
     customBitcoinPrice !== null
       ? customBitcoinPrice
       : liveBitcoinPrice || 100000;
 
+  // Data state
   const [events, setEvents] = useState<BalanceChangeEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
@@ -56,15 +55,6 @@ const OverviewTool: React.FC = () => {
     }
     try {
       const metrics = await TauriService.getPortfolioMetrics();
-      console.log("📊 Portfolio Metrics:", metrics);
-      console.log("📈 7-day metrics:", {
-        sats_stacked_7d: metrics.sats_stacked_7d,
-        usd_invested_7d: metrics.usd_invested_7d_cents / 100,
-      });
-      console.log("📈 31-day metrics:", {
-        sats_stacked_31d: metrics.sats_stacked_31d,
-        usd_invested_31d: metrics.usd_invested_31d_cents / 100,
-      });
       setPortfolioMetrics(metrics);
     } catch (error) {
       console.error("Error loading portfolio metrics:", error);
@@ -75,7 +65,7 @@ const OverviewTool: React.FC = () => {
     }
   }
 
-  // Load initial events - load ALL events for accurate chart data
+  // Load initial events
   async function loadInitialEvents() {
     setLoading(true);
     try {
@@ -84,30 +74,19 @@ const OverviewTool: React.FC = () => {
       let hasMore = true;
       let totalCount = 0;
 
-      // Keep loading until we have all events
       while (hasMore) {
         const result = await TauriService.getBalanceChangeEvents(
           currentPage,
           1000
-        ); // Load 1000 at a time
+        );
         allEvents = [...allEvents, ...result.events];
         hasMore = result.has_more;
         totalCount = result.total_count;
         currentPage++;
-
-        console.log(
-          `Loaded page ${currentPage - 1}, total events so far: ${
-            allEvents.length
-          }, has more: ${hasMore}`
-        );
       }
 
       setEvents(allEvents);
       setTotalCount(totalCount);
-
-      console.log(
-        `✅ Loaded all ${allEvents.length} events for complete chart data`
-      );
     } catch (error) {
       console.error("Error loading initial events:", error);
     } finally {
@@ -121,7 +100,7 @@ const OverviewTool: React.FC = () => {
     loadPortfolioMetrics(true);
   }, []);
 
-  // All the event handling functions
+  // Event handling functions (same as overview)
   const handleEditEvent = (event: BalanceChangeEvent) => {
     setIsCreatingNew(false);
     setNewEventData(null);
@@ -158,7 +137,6 @@ const OverviewTool: React.FC = () => {
         )
       );
 
-      console.log("Event updated successfully:", updatedEvent);
       loadPortfolioMetrics();
     } catch (error) {
       console.error("Error updating event:", error);
@@ -179,7 +157,6 @@ const OverviewTool: React.FC = () => {
       );
 
       setTotalCount((prevCount) => prevCount - 1);
-      console.log("Event deleted successfully");
       loadPortfolioMetrics();
     } catch (error) {
       console.error("Error deleting event:", error);
@@ -232,7 +209,6 @@ const OverviewTool: React.FC = () => {
 
       setEvents((prevEvents) => [createdEvent, ...prevEvents]);
       setTotalCount((prevCount) => prevCount + 1);
-      console.log("Event created successfully:", createdEvent);
       loadPortfolioMetrics();
     } catch (error) {
       console.error("Error creating event:", error);
@@ -254,7 +230,7 @@ const OverviewTool: React.FC = () => {
     }));
   };
 
-  // Bitcoin price handling functions
+  // Bitcoin price handling functions (same as overview)
   const handleBitcoinPriceClick = () => {
     if (customBitcoinPrice !== null) {
       setIsEditingBitcoinPrice(true);
@@ -309,10 +285,11 @@ const OverviewTool: React.FC = () => {
     };
   }, [editingEventId, isCreatingNew]);
 
-  const overviewMetrics = (
+  // Activity-specific metrics (same layout as overview)
+  const activityMetrics = (
     <div className="p-4 pb-2 shrink-0 border-b border-[rgba(247,243,227,0.1)]">
       <div className="grid grid-cols-5 gap-3 mb-3">
-        {/* Bitcoin Price */}
+        {/* Bitcoin Price - same as overview */}
         <div className="text-center p-2 bg-[rgba(97,218,251,0.1)] border border-[rgba(97,218,251,0.2)] rounded relative">
           <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1 flex items-center justify-center gap-1">
             Bitcoin Price
@@ -384,128 +361,94 @@ const OverviewTool: React.FC = () => {
           )}
         </div>
 
-        {/* Portfolio Value */}
+        {/* Current Streak */}
         <div className="text-center p-2 bg-[rgba(247,147,26,0.1)] border border-[rgba(247,147,26,0.2)] rounded">
           <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
-            Portfolio Value
+            Current Streak
           </div>
           <div className="text-sm text-[#f7931a] font-medium">
-            {metricsLoading
-              ? "..."
-              : `$${(
-                  ((portfolioMetrics?.current_sats || 0) / 100_000_000) *
-                  bitcoinPrice
-                ).toLocaleString(undefined, {
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
-                })}`}
+            7 days
           </div>
         </div>
 
-        {/* Current Sats */}
+        {/* Longest Streak */}
         <div className="text-center p-2 bg-[rgba(247,147,26,0.1)] border border-[rgba(247,147,26,0.2)] rounded">
           <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
-            Current Sats
+            Longest Streak
           </div>
           <div className="text-sm text-[#f7931a] font-medium">
-            {metricsLoading
-              ? "..."
-              : portfolioMetrics?.current_sats.toLocaleString() || "0"}
+            23 days
           </div>
         </div>
 
-        {/* Current BTC */}
+        {/* Active Days */}
         <div className="text-center p-2 bg-[rgba(247,147,26,0.1)] border border-[rgba(247,147,26,0.2)] rounded">
           <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
-            Current BTC
+            Active Days
           </div>
           <div className="text-sm text-[#f7931a] font-medium">
-            {metricsLoading
-              ? "..."
-              : portfolioMetrics?.current_sats
-              ? (portfolioMetrics.current_sats / 100_000_000).toFixed(8)
-              : "0.00000000"}
+            156 / 365
           </div>
         </div>
 
-        {/* Unrealized Gain */}
+        {/* Habit Score */}
         <div className="text-center p-2 bg-[rgba(144,238,144,0.1)] border border-[rgba(144,238,144,0.2)] rounded">
           <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
-            Unrealized Gain
+            Habit Score
           </div>
-          <div
-            className={`text-sm font-medium ${(() => {
-              if (
-                metricsLoading ||
-                !portfolioMetrics?.current_sats ||
-                !portfolioMetrics?.total_invested_cents
-              ) {
-                return "text-lightgreen";
-              }
-              const currentValue =
-                ((portfolioMetrics.current_sats || 0) / 100_000_000) *
-                bitcoinPrice;
-              const totalInvested =
-                (portfolioMetrics.total_invested_cents || 0) / 100;
-              const unrealizedGain = currentValue - totalInvested;
-              return unrealizedGain >= 0
-                ? "text-lightgreen"
-                : "text-lightcoral";
-            })()}`}
-          >
-            {metricsLoading
-              ? "..."
-              : portfolioMetrics?.current_sats &&
-                portfolioMetrics?.total_invested_cents
-              ? (() => {
-                  const currentValue =
-                    ((portfolioMetrics.current_sats || 0) / 100_000_000) *
-                    bitcoinPrice;
-                  const totalInvested =
-                    (portfolioMetrics.total_invested_cents || 0) / 100;
-                  const unrealizedGain = currentValue - totalInvested;
-                  return unrealizedGain >= 0
-                    ? `+$${unrealizedGain.toLocaleString(undefined, {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      })}`
-                    : `-$${Math.abs(unrealizedGain).toLocaleString(
-                        undefined,
-                        {
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        }
-                      )}`;
-                })()
-              : "-"}
+          <div className="text-sm text-lightgreen font-medium">
+            8.2/10
           </div>
         </div>
       </div>
     </div>
   );
 
-  const overviewChart = (
-    <SatsHoldingsChartSection events={events} />
+  // Activity heatmap
+  const activityHeatmap = (
+    <div className="flex-1 overflow-y-auto bg-[rgba(9,12,8,0.8)]">
+      <ActivityHeatmap events={events} />
+    </div>
   );
 
-  const overviewLeftContent = (
+  const activityLeftContent = (
     <>
-      {overviewMetrics}
-      {overviewChart}
+      {activityMetrics}
+      {activityHeatmap}
     </>
   );
 
-  const overviewAnalytics = (
-    <AnalyticsSection
-      portfolioMetrics={portfolioMetrics}
-      metricsLoading={metricsLoading}
-    />
+  // Activity-specific analytics
+  const activityAnalytics = (
+    <div className="p-4 border-b border-[rgba(247,243,227,0.1)] flex-shrink-0">
+      <h3 className="text-sm font-medium text-[#F7F3E3] mb-3">Activity Insights</h3>
+      
+      <div className="space-y-3">
+        <div className="bg-[rgba(247,243,227,0.05)] p-3 rounded border border-[rgba(247,243,227,0.1)]">
+          <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">Best Stacking Day</div>
+          <div className="text-sm text-[#F7F3E3]">Tuesday</div>
+          <div className="text-xs text-[rgba(247,243,227,0.5)]">42% of your purchases</div>
+        </div>
+
+        <div className="bg-[rgba(247,243,227,0.05)] p-3 rounded border border-[rgba(247,243,227,0.1)]">
+          <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">Consistency Rating</div>
+          <div className="text-sm text-lightgreen">Excellent</div>
+          <div className="text-xs text-[rgba(247,243,227,0.5)]">Top 15% of stackers</div>
+        </div>
+
+        <div className="bg-[rgba(247,243,227,0.05)] p-3 rounded border border-[rgba(247,243,227,0.1)]">
+          <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">Next Milestone</div>
+          <div className="text-sm text-[#f7931a]">30-day streak</div>
+          <div className="text-xs text-[rgba(247,243,227,0.5)]">7 days to go</div>
+        </div>
+      </div>
+    </div>
   );
 
   return (
     <MainLayout
-      leftContent={overviewLeftContent}
-      analyticsContent={overviewAnalytics}
+      leftContent={activityLeftContent}
+      analyticsContent={activityAnalytics}
       events={events}
       totalCount={totalCount}
       editingEventId={editingEventId}
@@ -525,4 +468,4 @@ const OverviewTool: React.FC = () => {
   );
 };
 
-export default OverviewTool;
+export default ActivityTool;

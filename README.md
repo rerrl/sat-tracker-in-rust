@@ -16,12 +16,7 @@ yarn start:dev
 
 - TODO: csv importing. (no duplicates - coinbase, river)
 - TODO: remove import v1 data button before release
-
-- TODO: add announcement at top (reminder) to encrypt db
-
 - TODO: btc <-> sats in events/charts (low priority)
-- TODO: work on adding more charts
-- TODO: ability to turn off announcements + all premium features to not annoy free users (coming soon)
 
 ## App Architecture & Tool System
 
@@ -44,6 +39,7 @@ The app uses a contextual tool system where each tool makes intelligent use of t
 ### **Design Philosophy**
 
 This architecture allows unlimited expansion in any direction based on user needs:
+
 - **Bitcoin data platform**, not just a chart viewer
 - **Contextual intelligence** - each tool provides relevant insights
 - **Premium-ready** - easy integration of advanced features without UI redesign
@@ -64,10 +60,3 @@ This architecture allows unlimited expansion in any direction based on user need
 - **Free**: Full-featured tools with generic insights and pattern recognition
 - **Premium**: Advanced AI insights, historical price analysis, and specialized tools
 - **No feature gating** - free users get complete value, premium adds intelligence
-
-### android development (no focus on mobile, keeping this for future reference)
-
-```bash
-yarn tauri android init
-yarn tauri android dev
-```

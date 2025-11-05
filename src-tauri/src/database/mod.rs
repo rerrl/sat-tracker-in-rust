@@ -45,8 +45,13 @@ pub async fn init_database_with_password(password: Option<String>) -> Result<Sql
         
         // Run migrations
         println!("🚀 Running migrations...");
-        sqlx::migrate!("./migrations").run(&pool).await?;
-        println!("✅ Migrations completed");
+        match sqlx::migrate!("./migrations").run(&pool).await {
+            Ok(_) => println!("✅ Migrations completed"),
+            Err(e) => {
+                println!("❌ Migration failed: {}", e);
+                return Err(e.into());
+            }
+        }
         
         println!("🎉 Encrypted database initialization complete!");
         Ok(pool)
@@ -66,8 +71,13 @@ pub async fn init_database_with_password(password: Option<String>) -> Result<Sql
         
         // Run migrations
         println!("🚀 Running migrations...");
-        sqlx::migrate!("./migrations").run(&pool).await?;
-        println!("✅ Migrations completed");
+        match sqlx::migrate!("./migrations").run(&pool).await {
+            Ok(_) => println!("✅ Migrations completed"),
+            Err(e) => {
+                println!("❌ Migration failed: {}", e);
+                return Err(e.into());
+            }
+        }
         
         println!("🎉 Database initialization complete!");
         Ok(pool)
