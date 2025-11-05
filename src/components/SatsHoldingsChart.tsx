@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef, useEffect } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -29,6 +29,26 @@ interface SatsHoldingsChartProps {
 }
 
 export default function SatsHoldingsChart({ events }: SatsHoldingsChartProps) {
+  const chartRef = useRef<any>(null);
+
+  // Force chart resize when container changes
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver(() => {
+      if (chartRef.current) {
+        chartRef.current.resize();
+      }
+    });
+
+    const chartContainer = chartRef.current?.canvas?.parentElement;
+    if (chartContainer) {
+      resizeObserver.observe(chartContainer);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
   const chartData = useMemo(() => {
     if (!events || events.length === 0) {
       return {
@@ -195,6 +215,7 @@ export default function SatsHoldingsChart({ events }: SatsHoldingsChartProps) {
   return (
     <div className="w-full h-full">
       <Line 
+        ref={chartRef}
         key={events.length + events.map(e => e.id).join(',')} 
         data={chartData} 
         options={chartOptions} 

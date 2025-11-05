@@ -69,8 +69,10 @@ const SatsHoldingsChartSection: React.FC<SatsHoldingsChartSectionProps> = ({ eve
       </div>
 
       {/* Chart Area */}
-      <div className="flex-1 p-4">
-        <SatsHoldingsChart events={events} />
+      <div className="flex-1 p-4 min-h-0 overflow-hidden">
+        <div className="w-full h-full">
+          <SatsHoldingsChart events={events} />
+        </div>
       </div>
     </>
   );

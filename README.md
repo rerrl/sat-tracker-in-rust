@@ -16,80 +16,47 @@ yarn start:dev
 
 - TODO: csv importing. (no duplicates - coinbase, river)
 - TODO: remove import v1 data button before release
-
-- TODO: add announcement at top (reminder) to encrypt db
-- TODO: pull announcements from server
-
 - TODO: btc <-> sats in events/charts (low priority)
-- TODO: work on adding more charts
-- TODO: ability to turn off announcements + all premium features to not annoy free users (coming soon)
 
-## Chart Ideas & Features
+## App Architecture & Tool System
 
-### FREE Charts (No External Data Required)
+### **Flexible Tool-Based Design**
 
-- **Interactive Sat Balance Chart Enhancements:**
+The app uses a contextual tool system where each tool makes intelligent use of the available screen sections:
 
-  - Hover tooltips showing exact date, sat balance
-  - Zoom and pan functionality for different time ranges
-  - Highlight buy/sell events as dots on the line with different colors
-  - Time range selectors (7D, 30D, 90D, 1Y, All)
-  - Toggle between sat balance and event count views
+- **🔧 Tool Selector**: Single dropdown to switch between different analysis modes
+- **📊 Chart Section**: Visual representation changes based on selected tool
+- **📋 Insights Section**: Contextual analytics and patterns (scrollable, with future premium insights)
+- **📝 Events Section**: Always visible transaction list for cross-referencing data
 
-- **Buy/Sell Activity Chart:**
+### **Current Tools**
 
-  - Bar chart showing buy vs sell volume over time
-  - Color-coded bars (green for buys, red for sells)
-  - Shows trading frequency and patterns
+- **📊 Overview**: Portfolio dashboard with key metrics and balance chart
+- **🔥 Activity**: GitHub-style stacking heatmap with habit insights and streak tracking
+- **📈 Trends**: Time-based growth analysis and patterns
+- **🎯 Focus**: Deep-dive analysis tools for specific aspects
 
-- **Monthly Stacking Summary:**
+### **Design Philosophy**
 
-  - Bar chart of sats accumulated per month
-  - Shows consistency of stacking habits
-  - Could include event count per month as secondary bars
+This architecture allows unlimited expansion in any direction based on user needs:
 
-- **Stacking Frequency Heatmap:**
+- **Bitcoin data platform**, not just a chart viewer
+- **Contextual intelligence** - each tool provides relevant insights
+- **Premium-ready** - easy integration of advanced features without UI redesign
+- **User-driven growth** - tools can evolve based on actual usage patterns
 
-  - Calendar-style heatmap showing buy frequency
-  - Darker colors = more activity that day/week
-  - Great for visualizing DCA consistency
+### **Future Expansion Possibilities**
 
-- **Event Type Distribution:**
-  - Pie chart showing percentage of buys vs sells vs fees
-  - Bar chart of total sats by event type
+- Tax reporting and export tools
+- Hardware wallet integration
+- Lightning network tracking
+- Social comparison features
+- Market timing analysis
+- Goal setting and milestone tracking
+- AI-powered insights and recommendations
 
-### PREMIUM Charts (Requires External/Historical Price Data)
+### **Free vs Premium Strategy**
 
-- **Dollar Cost Average Performance:**
-
-  - Line showing your average buy price over time
-  - Compare against Bitcoin's actual price at those times
-  - Shows if you're buying the dips or peaks
-
-- **Price vs Your Buys Scatter Plot:**
-
-  - Each buy plotted as a dot (Bitcoin price vs date)
-  - Shows if you tend to buy at high or low prices
-  - Bitcoin price line in background
-
-- **Profit/Loss Timeline:**
-
-  - Shows unrealized gains/losses over time
-  - Based on your average cost basis vs historical Bitcoin prices
-  - Color-coded areas (green for profit, red for loss)
-
-- **USD Value Chart:**
-
-  - Toggle between sat balance and USD value views
-  - Requires historical Bitcoin price data for accurate USD values at each point
-
-- **Performance vs Bitcoin:**
-  - Compare your portfolio growth vs just holding Bitcoin
-  - Show if your DCA strategy outperformed lump sum buying
-
-### android development (no focus on mobile, keeping this for future reference)
-
-```bash
-yarn tauri android init
-yarn tauri android dev
-```
+- **Free**: Full-featured tools with generic insights and pattern recognition
+- **Premium**: Advanced AI insights, historical price analysis, and specialized tools
+- **No feature gating** - free users get complete value, premium adds intelligence
