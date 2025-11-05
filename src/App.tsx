@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { TauriService, DatabaseStatus } from "./services/tauriService";
+import { TauriService, DatabaseStatus, BalanceChangeEvent, PortfolioMetrics } from "./services/tauriService";
 import AppHeader from "./components/AppHeader";
 import ToolContainer from "./components/ToolContainer";
 import LumpsumModal from "./components/LumpsumModal";
@@ -24,6 +24,17 @@ function App() {
   const [showLumpsumModal, setShowLumpsumModal] = useState(false);
   const [showEncryptionSettings, setShowEncryptionSettings] = useState(false);
 
+  // Shared data state
+  const [events, setEvents] = useState<BalanceChangeEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [editData, setEditData] = useState<any>(null);
+  const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [newEventData, setNewEventData] = useState<any>(null);
+  const [portfolioMetrics, setPortfolioMetrics] = useState<PortfolioMetrics | null>(null);
+  const [metricsLoading, setMetricsLoading] = useState(false);
+
   // Lumpsum modal state
   const [lumpsumData, setLumpsumData] = useState({
     start_date: "",
@@ -33,6 +44,180 @@ function App() {
     frequency: "weekly" as "daily" | "weekly" | "monthly",
     memo: "",
   });
+
+  // Shared data functions
+  const loadPortfolioMetrics = async (showLoading = false) => {
+    if (showLoading) {
+      setMetricsLoading(true);
+    }
+    try {
+      const metrics = await TauriService.getPortfolioMetrics();
+      setPortfolioMetrics(metrics);
+    } catch (error) {
+      console.error("Error loading portfolio metrics:", error);
+    } finally {
+      if (showLoading) {
+        setMetricsLoading(false);
+      }
+    }
+  };
+
+  const loadInitialEvents = async () => {
+    setEventsLoading(true);
+    try {
+      let allEvents: BalanceChangeEvent[] = [];
+      let currentPage = 0;
+      let hasMore = true;
+      let totalCount = 0;
+
+      while (hasMore) {
+        const result = await TauriService.getBalanceChangeEvents(
+          currentPage,
+          1000
+        );
+        allEvents = [...allEvents, ...result.events];
+        hasMore = result.has_more;
+        totalCount = result.total_count;
+        currentPage++;
+      }
+
+      setEvents(allEvents);
+      setTotalCount(totalCount);
+    } catch (error) {
+      console.error("Error loading initial events:", error);
+    } finally {
+      setEventsLoading(false);
+    }
+  };
+
+  const handleEditEvent = (event: BalanceChangeEvent) => {
+    setIsCreatingNew(false);
+    setNewEventData(null);
+    setEditingEventId(event.id);
+    setEditData({
+      event_type: event.event_type,
+      amount_sats: event.amount_sats,
+      value_cents: event.value_cents,
+      memo: event.memo,
+      timestamp: event.timestamp,
+    });
+  };
+
+  const handleSaveEvent = async () => {
+    if (!editingEventId || !editData) return;
+
+    try {
+      const updateRequest = {
+        amount_sats: editData.amount_sats,
+        value_cents: editData.value_cents,
+        event_type: editData.event_type as "Buy" | "Sell" | "Fee",
+        memo: editData.memo,
+        timestamp: editData.timestamp,
+      };
+
+      const updatedEvent = await TauriService.updateBalanceChangeEvent(
+        editingEventId,
+        updateRequest
+      );
+
+      setEvents((prevEvents) =>
+        prevEvents.map((event) =>
+          event.id === editingEventId ? updatedEvent : event
+        )
+      );
+
+      loadPortfolioMetrics();
+    } catch (error) {
+      console.error("Error updating event:", error);
+    } finally {
+      setEditingEventId(null);
+      setEditData(null);
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!editingEventId) return;
+
+    try {
+      await TauriService.deleteBalanceChangeEvent(editingEventId);
+
+      setEvents((prevEvents) =>
+        prevEvents.filter((event) => event.id !== editingEventId)
+      );
+
+      setTotalCount((prevCount) => prevCount - 1);
+      loadPortfolioMetrics();
+    } catch (error) {
+      console.error("Error deleting event:", error);
+    } finally {
+      setEditingEventId(null);
+      setEditData(null);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingEventId(null);
+    setEditData(null);
+  };
+
+  const handleEditDataChange = (field: string, value: any) => {
+    setEditData((prev: any) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleAddNewEvent = () => {
+    setIsCreatingNew(true);
+    setNewEventData({
+      event_type: "Buy",
+      amount_sats: 0,
+      value_cents: null,
+      memo: null,
+      timestamp: new Date().toISOString(),
+    });
+    setEditingEventId(null);
+    setEditData(null);
+  };
+
+  const handleSaveNewEvent = async () => {
+    if (!newEventData) return;
+
+    try {
+      const createRequest = {
+        amount_sats: newEventData.amount_sats,
+        value_cents: newEventData.value_cents,
+        event_type: newEventData.event_type as "Buy" | "Sell" | "Fee",
+        memo: newEventData.memo,
+        timestamp: newEventData.timestamp,
+      };
+
+      const createdEvent = await TauriService.createBalanceChangeEvent(
+        createRequest
+      );
+
+      setEvents((prevEvents) => [createdEvent, ...prevEvents]);
+      setTotalCount((prevCount) => prevCount + 1);
+      loadPortfolioMetrics();
+    } catch (error) {
+      console.error("Error creating event:", error);
+    } finally {
+      setIsCreatingNew(false);
+      setNewEventData(null);
+    }
+  };
+
+  const handleCancelNewEvent = () => {
+    setIsCreatingNew(false);
+    setNewEventData(null);
+  };
+
+  const handleNewEventDataChange = (field: string, value: any) => {
+    setNewEventData((prev: any) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
   // Database initialization functions
 
@@ -163,6 +348,32 @@ function App() {
     checkDatabaseStatusAndInitialize();
   }, []);
 
+  // Load shared data when database is initialized
+  useEffect(() => {
+    if (isDatabaseInitialized) {
+      loadInitialEvents();
+      loadPortfolioMetrics(true);
+    }
+  }, [isDatabaseInitialized]);
+
+  // Keyboard event listener for shared state
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        if (editingEventId) {
+          handleCancelEdit();
+        } else if (isCreatingNew) {
+          handleCancelNewEvent();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [editingEventId, isCreatingNew]);
+
   // Set up menu event listeners once database is initialized
   useEffect(() => {
     if (isDatabaseInitialized) {
@@ -228,7 +439,27 @@ function App() {
           setShowToolDropdown={setShowToolDropdown}
         />
 
-        <ToolContainer selectedTool={selectedTool} />
+        <ToolContainer 
+          selectedTool={selectedTool}
+          events={events}
+          eventsLoading={eventsLoading}
+          totalCount={totalCount}
+          editingEventId={editingEventId}
+          editData={editData}
+          isCreatingNew={isCreatingNew}
+          newEventData={newEventData}
+          portfolioMetrics={portfolioMetrics}
+          metricsLoading={metricsLoading}
+          onAddNewEvent={handleAddNewEvent}
+          onEditEvent={handleEditEvent}
+          onSaveEvent={handleSaveEvent}
+          onDeleteEvent={handleDeleteEvent}
+          onCancelEdit={handleCancelEdit}
+          onEditDataChange={handleEditDataChange}
+          onSaveNewEvent={handleSaveNewEvent}
+          onCancelNewEvent={handleCancelNewEvent}
+          onNewEventDataChange={handleNewEventDataChange}
+        />
       </div>
 
       <LumpsumModal
