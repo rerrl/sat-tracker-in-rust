@@ -8,6 +8,7 @@ import SatsHoldingsChartSection from '../SatsHoldingsChartSection';
 import AnalyticsSection from '../AnalyticsSection';
 import MainLayout from '../layouts/MainLayout';
 import { useBitcoinPrice } from '../../hooks/useBitcoinPrice';
+import MetricsGrid, { MetricItem, BitcoinPriceMetric } from '../MetricsGrid';
 
 const OverviewTool: React.FC = () => {
   // Bitcoin price state
@@ -309,179 +310,83 @@ const OverviewTool: React.FC = () => {
     };
   }, [editingEventId, isCreatingNew]);
 
-  const overviewMetrics = (
-    <div className="p-4 pb-2 shrink-0 border-b border-[rgba(247,243,227,0.1)]">
-      <div className="grid grid-cols-5 gap-3 mb-3">
-        {/* Bitcoin Price */}
-        <div className="text-center p-2 bg-[rgba(97,218,251,0.1)] border border-[rgba(97,218,251,0.2)] rounded relative">
-          <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1 flex items-center justify-center gap-1">
-            Bitcoin Price
-            <button
-              onClick={handleModeToggle}
-              className={`text-[10px] px-1 rounded ${
-                customBitcoinPrice === null
-                  ? "bg-[rgba(144,238,144,0.2)] hover:bg-[rgba(144,238,144,0.3)] text-lightgreen"
-                  : "bg-[rgba(255,165,0,0.2)] hover:bg-[rgba(255,165,0,0.3)] text-orange"
-              }`}
-              title={
-                customBitcoinPrice === null
-                  ? "Switch to manual mode"
-                  : "Switch to live mode"
-              }
-            >
-              {customBitcoinPrice === null ? "Live" : "Manual"}
-            </button>
-          </div>
-          {isEditingBitcoinPrice ? (
-            <input
-              type="text"
-              value={bitcoinPriceInput}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value === "" || /^[0-9]*\.?[0-9]*$/.test(value)) {
-                  setBitcoinPriceInput(value);
-                }
-              }}
-              onBlur={handleBitcoinPriceBlur}
-              onKeyDown={handleBitcoinPriceKeyDown}
-              className="w-full bg-[rgba(9,12,8,0.8)] border border-[rgba(97,218,251,0.5)] text-[#61dafb] text-sm font-medium text-center px-1 py-0 rounded"
-              autoFocus
-            />
-          ) : (
-            <div className="flex flex-col items-center">
-              <div
-                className={`text-sm text-[#61dafb] font-medium rounded px-1 py-0 ${
-                  customBitcoinPrice !== null
-                    ? "cursor-pointer hover:bg-[rgba(97,218,251,0.1)]"
-                    : "cursor-default"
-                }`}
-                onClick={handleBitcoinPriceClick}
-                title={
-                  customBitcoinPrice !== null
-                    ? "Click to edit price"
-                    : "Click 'Live' to enter manual mode"
-                }
-              >
-                {bitcoinPriceLoading && customBitcoinPrice === null
-                  ? "..."
-                  : `$${bitcoinPrice.toLocaleString()}`}
-              </div>
-              {customBitcoinPrice === null &&
-                percentChange24hr !== null &&
-                !bitcoinPriceLoading && (
-                  <div
-                    className={`text-xs font-medium ${
-                      percentChange24hr >= 0
-                        ? "text-lightgreen"
-                        : "text-lightcoral"
-                    }`}
-                  >
-                    {percentChange24hr >= 0 ? "+" : ""}
-                    {percentChange24hr.toFixed(2)}% (24h)
-                  </div>
-                )}
-            </div>
-          )}
-        </div>
+  const bitcoinPriceMetric: BitcoinPriceMetric = {
+    price: bitcoinPrice,
+    percentChange24hr,
+    isLoading: bitcoinPriceLoading,
+    isManualMode: customBitcoinPrice !== null,
+    isEditing: isEditingBitcoinPrice,
+    inputValue: bitcoinPriceInput,
+    onModeToggle: handleModeToggle,
+    onPriceClick: handleBitcoinPriceClick,
+    onInputChange: setBitcoinPriceInput,
+    onInputBlur: handleBitcoinPriceBlur,
+    onInputKeyDown: handleBitcoinPriceKeyDown,
+  };
 
-        {/* Portfolio Value */}
-        <div className="text-center p-2 bg-[rgba(247,147,26,0.1)] border border-[rgba(247,147,26,0.2)] rounded">
-          <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
-            Portfolio Value
-          </div>
-          <div className="text-sm text-[#f7931a] font-medium">
-            {metricsLoading
-              ? "..."
-              : `$${(
-                  ((portfolioMetrics?.current_sats || 0) / 100_000_000) *
-                  bitcoinPrice
-                ).toLocaleString(undefined, {
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
-                })}`}
-          </div>
-        </div>
+  const overviewMetrics: MetricItem[] = [
+    {
+      label: 'Portfolio Value',
+      value: metricsLoading
+        ? "..."
+        : `$${(
+            ((portfolioMetrics?.current_sats || 0) / 100_000_000) *
+            bitcoinPrice
+          ).toLocaleString(undefined, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+          })}`,
+      color: 'orange'
+    },
+    {
+      label: 'Current Sats',
+      value: metricsLoading
+        ? "..."
+        : portfolioMetrics?.current_sats.toLocaleString() || "0",
+      color: 'orange'
+    },
+    {
+      label: 'Current BTC',
+      value: metricsLoading
+        ? "..."
+        : portfolioMetrics?.current_sats
+        ? (portfolioMetrics.current_sats / 100_000_000).toFixed(8)
+        : "0.00000000",
+      color: 'orange'
+    },
+    {
+      label: 'Unrealized Gain',
+      value: (() => {
+        if (
+          metricsLoading ||
+          !portfolioMetrics?.current_sats ||
+          !portfolioMetrics?.total_invested_cents
+        ) {
+          return "...";
+        }
+        const currentValue =
+          ((portfolioMetrics.current_sats || 0) / 100_000_000) * bitcoinPrice;
+        const totalInvested = (portfolioMetrics.total_invested_cents || 0) / 100;
+        const unrealizedGain = currentValue - totalInvested;
+        return unrealizedGain >= 0
+          ? `+$${unrealizedGain.toLocaleString(undefined, {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0,
+            })}`
+          : `-$${Math.abs(unrealizedGain).toLocaleString(undefined, {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0,
+            })}`;
+      })(),
+      color: 'green'
+    }
+  ];
 
-        {/* Current Sats */}
-        <div className="text-center p-2 bg-[rgba(247,147,26,0.1)] border border-[rgba(247,147,26,0.2)] rounded">
-          <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
-            Current Sats
-          </div>
-          <div className="text-sm text-[#f7931a] font-medium">
-            {metricsLoading
-              ? "..."
-              : portfolioMetrics?.current_sats.toLocaleString() || "0"}
-          </div>
-        </div>
-
-        {/* Current BTC */}
-        <div className="text-center p-2 bg-[rgba(247,147,26,0.1)] border border-[rgba(247,147,26,0.2)] rounded">
-          <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
-            Current BTC
-          </div>
-          <div className="text-sm text-[#f7931a] font-medium">
-            {metricsLoading
-              ? "..."
-              : portfolioMetrics?.current_sats
-              ? (portfolioMetrics.current_sats / 100_000_000).toFixed(8)
-              : "0.00000000"}
-          </div>
-        </div>
-
-        {/* Unrealized Gain */}
-        <div className="text-center p-2 bg-[rgba(144,238,144,0.1)] border border-[rgba(144,238,144,0.2)] rounded">
-          <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
-            Unrealized Gain
-          </div>
-          <div
-            className={`text-sm font-medium ${(() => {
-              if (
-                metricsLoading ||
-                !portfolioMetrics?.current_sats ||
-                !portfolioMetrics?.total_invested_cents
-              ) {
-                return "text-lightgreen";
-              }
-              const currentValue =
-                ((portfolioMetrics.current_sats || 0) / 100_000_000) *
-                bitcoinPrice;
-              const totalInvested =
-                (portfolioMetrics.total_invested_cents || 0) / 100;
-              const unrealizedGain = currentValue - totalInvested;
-              return unrealizedGain >= 0
-                ? "text-lightgreen"
-                : "text-lightcoral";
-            })()}`}
-          >
-            {metricsLoading
-              ? "..."
-              : portfolioMetrics?.current_sats &&
-                portfolioMetrics?.total_invested_cents
-              ? (() => {
-                  const currentValue =
-                    ((portfolioMetrics.current_sats || 0) / 100_000_000) *
-                    bitcoinPrice;
-                  const totalInvested =
-                    (portfolioMetrics.total_invested_cents || 0) / 100;
-                  const unrealizedGain = currentValue - totalInvested;
-                  return unrealizedGain >= 0
-                    ? `+$${unrealizedGain.toLocaleString(undefined, {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      })}`
-                    : `-$${Math.abs(unrealizedGain).toLocaleString(
-                        undefined,
-                        {
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        }
-                      )}`;
-                })()
-              : "-"}
-          </div>
-        </div>
-      </div>
-    </div>
+  const overviewMetricsComponent = (
+    <MetricsGrid 
+      bitcoinPrice={bitcoinPriceMetric}
+      metrics={overviewMetrics}
+    />
   );
 
   const overviewChart = (
@@ -490,7 +395,7 @@ const OverviewTool: React.FC = () => {
 
   const overviewLeftContent = (
     <>
-      {overviewMetrics}
+      {overviewMetricsComponent}
       {overviewChart}
     </>
   );

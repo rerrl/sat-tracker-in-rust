@@ -97,24 +97,10 @@ const AppHeader: React.FC<AppHeaderProps> = ({
                 Activity
               </button>
               <button
-                onClick={() => {
-                  // setSelectedTool("focus");
-                  // setShowToolDropdown(false);
-                }}
                 className="w-full text-left px-3 py-2 text-xs text-[rgba(247,243,227,0.4)] cursor-not-allowed"
                 disabled
               >
-                Focus
-              </button>
-              <button
-                onClick={() => {
-                  // setSelectedTool("trends");
-                  // setShowToolDropdown(false);
-                }}
-                className="w-full text-left px-3 py-2 text-xs text-[rgba(247,243,227,0.4)] cursor-not-allowed"
-                disabled
-              >
-                Trends
+                More coming soon...
               </button>
             </div>
           )}
