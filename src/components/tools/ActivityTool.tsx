@@ -51,7 +51,9 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
 }) => {
   // Bitcoin price state (same as overview for consistency)
   const [isEditingBitcoinPrice, setIsEditingBitcoinPrice] = useState(false);
-  const [customBitcoinPrice, setCustomBitcoinPrice] = useState<number | null>(null);
+  const [customBitcoinPrice, setCustomBitcoinPrice] = useState<number | null>(
+    null
+  );
   const [bitcoinPriceInput, setBitcoinPriceInput] = useState("");
 
   const {
@@ -76,7 +78,6 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
     customBitcoinPrice !== null
       ? customBitcoinPrice
       : liveBitcoinPrice || 100000;
-
 
   // Bitcoin price handling functions (same as overview)
   const handleBitcoinPriceClick = () => {
@@ -115,7 +116,6 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
     }
   };
 
-
   const bitcoinPriceMetric: BitcoinPriceMetric = {
     price: bitcoinPrice,
     percentChange24hr,
@@ -132,32 +132,33 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
 
   const activityMetrics: MetricItem[] = [
     {
-      label: 'Current Streak',
-      value: '2 weeks',
-      color: 'orange'
+      label: "Current Streak",
+      value: "2 weeks",
+      color: "orange",
+      hint: "Number of consecutive days with Bitcoin purchases",
     },
     {
-      label: 'Longest Streak',
-      value: '7 weeks',
-      color: 'orange'
+      label: "Longest Streak",
+      value: "7 weeks",
+      color: "orange",
+      hint: "Your longest streak of consecutive stacking days",
     },
     {
-      label: 'Recommendation',
-      value: 'Stack on Fridays',
-      color: 'blue'
+      label: "Stacked This Year",
+      value: "100,000 sats",
+      color: "orange",
+      hint: "Total satoshis accumulated in the current year",
     },
     {
-      label: 'Consistency Score',
-      value: '82%',
-      color: 'green'
-    }
+      label: "Consistency Score",
+      value: "82%",
+      color: "green",
+      hint: "Percentage of days you've stacked sats this month",
+    },
   ];
 
   const activityMetricsComponent = (
-    <MetricsGrid 
-      bitcoinPrice={bitcoinPriceMetric}
-      metrics={activityMetrics}
-    />
+    <MetricsGrid bitcoinPrice={bitcoinPriceMetric} metrics={activityMetrics} />
   );
 
   // Activity heatmap
@@ -176,25 +177,39 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
 
   const activityAnalytics = (
     <div className="p-4 border-b border-[rgba(247,243,227,0.1)] flex-shrink-0">
-      <h3 className="text-sm font-medium text-[#F7F3E3] mb-3">Activity Insights</h3>
-      
+      <h3 className="text-sm font-medium text-[#F7F3E3] mb-3">
+        Activity Insights
+      </h3>
+
       <div className="space-y-3">
         <div className="bg-[rgba(247,243,227,0.05)] p-3 rounded border border-[rgba(247,243,227,0.1)]">
-          <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">Best Stacking Day</div>
+          <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
+            Best Stacking Day
+          </div>
           <div className="text-sm text-[#F7F3E3]">Tuesday</div>
-          <div className="text-xs text-[rgba(247,243,227,0.5)]">42% of your purchases</div>
+          <div className="text-xs text-[rgba(247,243,227,0.5)]">
+            42% of your purchases
+          </div>
         </div>
 
         <div className="bg-[rgba(247,243,227,0.05)] p-3 rounded border border-[rgba(247,243,227,0.1)]">
-          <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">Consistency Rating</div>
+          <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
+            Consistency Rating
+          </div>
           <div className="text-sm text-lightgreen">Excellent</div>
-          <div className="text-xs text-[rgba(247,243,227,0.5)]">Top 15% of stackers</div>
+          <div className="text-xs text-[rgba(247,243,227,0.5)]">
+            Top 15% of stackers
+          </div>
         </div>
 
         <div className="bg-[rgba(247,243,227,0.05)] p-3 rounded border border-[rgba(247,243,227,0.1)]">
-          <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">Next Milestone</div>
+          <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
+            Next Milestone
+          </div>
           <div className="text-sm text-[#f7931a]">30-day streak</div>
-          <div className="text-xs text-[rgba(247,243,227,0.5)]">7 days to go</div>
+          <div className="text-xs text-[rgba(247,243,227,0.5)]">
+            7 days to go
+          </div>
         </div>
       </div>
     </div>

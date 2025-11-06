@@ -6,6 +6,7 @@ export interface MetricItem {
   color: 'orange' | 'green' | 'blue';
   subValue?: string;
   subValueColor?: 'green' | 'red';
+  hint?: string;
 }
 
 export interface BitcoinPriceMetric {
@@ -137,6 +138,7 @@ const MetricsGrid: React.FC<MetricsGridProps> = ({ bitcoinPrice, metrics }) => {
             <div
               key={index}
               className={`text-center p-2 ${colorClasses.bg} border ${colorClasses.border} rounded`}
+              title={metric.hint}
             >
               <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
                 {metric.label}
