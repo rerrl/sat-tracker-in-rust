@@ -1,50 +1,27 @@
-import { useState, useEffect } from 'react';
-import { TauriService, PortfolioMetrics } from '../services/tauriService';
+import { useQuery } from "@tanstack/react-query";
+import { TauriService, PortfolioMetrics } from "../services/tauriService";
 
-export const usePortfolioMetrics = (events: any[], isDatabaseInitialized: boolean) => {
-  const [portfolioMetrics, setPortfolioMetrics] = useState<PortfolioMetrics | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadPortfolioMetrics = async (showLoading = false) => {
-    if (!isDatabaseInitialized) return;
-    
-    if (showLoading) {
-      setLoading(true);
-    }
-    setError(null);
-    
-    try {
-      const metrics = await TauriService.getPortfolioMetrics();
-      setPortfolioMetrics(metrics);
-    } catch (err) {
-      console.error("Error loading portfolio metrics:", err);
-      setError(err instanceof Error ? err.message : 'Failed to load metrics');
-    } finally {
-      if (showLoading) {
-        setLoading(false);
-      }
-    }
-  };
-
-  // Load metrics when database is initialized
-  useEffect(() => {
-    if (isDatabaseInitialized) {
-      loadPortfolioMetrics(true);
-    }
-  }, [isDatabaseInitialized]);
-
-  // Refresh metrics when events change
-  useEffect(() => {
-    if (isDatabaseInitialized && events.length > 0) {
-      loadPortfolioMetrics(false);
-    }
-  }, [events, isDatabaseInitialized]);
+export const usePortfolioMetrics = (isDatabaseInitialized: boolean) => {
+  const {
+    data: portfolioMetrics,
+    isLoading: loading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ['portfolioMetrics'],
+    queryFn: async (): Promise<PortfolioMetrics> => {
+      console.log("Fetching portfolio metrics");
+      return await TauriService.getPortfolioMetrics();
+    },
+    enabled: isDatabaseInitialized,
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 30,
+  });
 
   return {
-    portfolioMetrics,
+    portfolioMetrics: portfolioMetrics || null,
     loading,
-    error,
-    refetch: () => loadPortfolioMetrics(true)
+    error: error ? (error instanceof Error ? error.message : "Failed to load metrics") : null,
+    refetch: () => refetch(),
   };
 };

@@ -1,50 +1,27 @@
-import { useState, useEffect } from 'react';
-import { TauriService, ActivityMetrics } from '../services/tauriService';
+import { useQuery } from "@tanstack/react-query";
+import { TauriService, ActivityMetrics } from "../services/tauriService";
 
-export const useActivityMetrics = (events: any[], isDatabaseInitialized: boolean) => {
-  const [activityMetrics, setActivityMetrics] = useState<ActivityMetrics | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadActivityMetrics = async (showLoading = false) => {
-    if (!isDatabaseInitialized) return;
-    
-    if (showLoading) {
-      setLoading(true);
-    }
-    setError(null);
-    
-    try {
-      const metrics = await TauriService.getActivityMetrics();
-      setActivityMetrics(metrics);
-    } catch (err) {
-      console.error("Error loading activity metrics:", err);
-      setError(err instanceof Error ? err.message : 'Failed to load activity metrics');
-    } finally {
-      if (showLoading) {
-        setLoading(false);
-      }
-    }
-  };
-
-  // Load metrics when database is initialized
-  useEffect(() => {
-    if (isDatabaseInitialized) {
-      loadActivityMetrics(true);
-    }
-  }, [isDatabaseInitialized]);
-
-  // Refresh metrics when events change
-  useEffect(() => {
-    if (isDatabaseInitialized && events.length > 0) {
-      loadActivityMetrics(false);
-    }
-  }, [events, isDatabaseInitialized]);
+export const useActivityMetrics = (isDatabaseInitialized: boolean) => {
+  const {
+    data: activityMetrics,
+    isLoading: loading,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ['activityMetrics'],
+    queryFn: async (): Promise<ActivityMetrics> => {
+      console.log("Fetching activity metrics");
+      return await TauriService.getActivityMetrics();
+    },
+    enabled: isDatabaseInitialized,
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 30,
+  });
 
   return {
-    activityMetrics,
+    activityMetrics: activityMetrics || null,
     loading,
-    error,
-    refetch: () => loadActivityMetrics(true)
+    error: error ? (error instanceof Error ? error.message : "Failed to load activity metrics") : null,
+    refetch: () => refetch(),
   };
 };

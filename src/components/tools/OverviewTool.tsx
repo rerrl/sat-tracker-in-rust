@@ -46,7 +46,6 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
 }) => {
   // Add the hook call right after the component function signature
   const { portfolioMetrics, loading: metricsLoading } = usePortfolioMetrics(
-    events,
     true
   );
   // Bitcoin price state

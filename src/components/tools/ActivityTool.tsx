@@ -47,7 +47,7 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
   onNewEventDataChange,
 }) => {
   // Load activity metrics
-  const { activityMetrics, loading: activityLoading } = useActivityMetrics(events, true);
+  const { activityMetrics, loading: activityLoading } = useActivityMetrics(true);
 
   // Bitcoin price state (same as overview for consistency)
   const [isEditingBitcoinPrice, setIsEditingBitcoinPrice] = useState(false);

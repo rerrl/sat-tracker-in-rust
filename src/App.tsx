@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { TauriService, DatabaseStatus, BalanceChangeEvent, PortfolioMetrics } from "./services/tauriService";
+import { useEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from "./hooks/useEvents";
+import { useQueryClient } from "@tanstack/react-query";
 import AppHeader from "./components/AppHeader";
 import ToolContainer from "./components/ToolContainer";
 import LumpsumModal from "./components/LumpsumModal";
@@ -24,10 +26,14 @@ function App() {
   const [showLumpsumModal, setShowLumpsumModal] = useState(false);
   const [showEncryptionSettings, setShowEncryptionSettings] = useState(false);
 
-  // Shared data state
-  const [events, setEvents] = useState<BalanceChangeEvent[]>([]);
-  const [eventsLoading, setEventsLoading] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
+  // Replace event state with hooks
+  const { events, totalCount, loading: eventsLoading } = useEvents(isDatabaseInitialized);
+  const createEventMutation = useCreateEvent();
+  const updateEventMutation = useUpdateEvent();
+  const deleteEventMutation = useDeleteEvent();
+  const queryClient = useQueryClient();
+
+  // UI state for editing (keep these)
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [editData, setEditData] = useState<any>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
@@ -43,36 +49,7 @@ function App() {
     memo: "",
   });
 
-  // Shared data functions
-
-  const loadInitialEvents = async () => {
-    setEventsLoading(true);
-    try {
-      let allEvents: BalanceChangeEvent[] = [];
-      let currentPage = 0;
-      let hasMore = true;
-      let totalCount = 0;
-
-      while (hasMore) {
-        const result = await TauriService.getBalanceChangeEvents(
-          currentPage,
-          1000
-        );
-        allEvents = [...allEvents, ...result.events];
-        hasMore = result.has_more;
-        totalCount = result.total_count;
-        currentPage++;
-      }
-
-      setEvents(allEvents);
-      setTotalCount(totalCount);
-    } catch (error) {
-      console.error("Error loading initial events:", error);
-    } finally {
-      setEventsLoading(false);
-    }
-  };
-
+  // Simplified event handlers
   const handleEditEvent = (event: BalanceChangeEvent) => {
     setIsCreatingNew(false);
     setNewEventData(null);
@@ -90,24 +67,16 @@ function App() {
     if (!editingEventId || !editData) return;
 
     try {
-      const updateRequest = {
-        amount_sats: editData.amount_sats,
-        value_cents: editData.value_cents,
-        event_type: editData.event_type as "Buy" | "Sell" | "Fee",
-        memo: editData.memo,
-        timestamp: editData.timestamp,
-      };
-
-      const updatedEvent = await TauriService.updateBalanceChangeEvent(
-        editingEventId,
-        updateRequest
-      );
-
-      setEvents((prevEvents) =>
-        prevEvents.map((event) =>
-          event.id === editingEventId ? updatedEvent : event
-        )
-      );
+      await updateEventMutation.mutateAsync({
+        id: editingEventId,
+        request: {
+          amount_sats: editData.amount_sats,
+          value_cents: editData.value_cents,
+          event_type: editData.event_type as "Buy" | "Sell" | "Fee",
+          memo: editData.memo,
+          timestamp: editData.timestamp,
+        },
+      });
     } catch (error) {
       console.error("Error updating event:", error);
     } finally {
@@ -120,13 +89,7 @@ function App() {
     if (!editingEventId) return;
 
     try {
-      await TauriService.deleteBalanceChangeEvent(editingEventId);
-
-      setEvents((prevEvents) =>
-        prevEvents.filter((event) => event.id !== editingEventId)
-      );
-
-      setTotalCount((prevCount) => prevCount - 1);
+      await deleteEventMutation.mutateAsync(editingEventId);
     } catch (error) {
       console.error("Error deleting event:", error);
     } finally {
@@ -164,20 +127,13 @@ function App() {
     if (!newEventData) return;
 
     try {
-      const createRequest = {
+      await createEventMutation.mutateAsync({
         amount_sats: newEventData.amount_sats,
         value_cents: newEventData.value_cents,
         event_type: newEventData.event_type as "Buy" | "Sell" | "Fee",
         memo: newEventData.memo,
         timestamp: newEventData.timestamp,
-      };
-
-      const createdEvent = await TauriService.createBalanceChangeEvent(
-        createRequest
-      );
-
-      setEvents((prevEvents) => [createdEvent, ...prevEvents]);
-      setTotalCount((prevCount) => prevCount + 1);
+      });
     } catch (error) {
       console.error("Error creating event:", error);
     } finally {
@@ -304,6 +260,11 @@ function App() {
       const createdEvents = await TauriService.createUndocumentedLumpsumEvents(
         request
       );
+      
+      // Invalidate all queries to refetch
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['portfolioMetrics'] });
+      queryClient.invalidateQueries({ queryKey: ['activityMetrics'] });
 
       setShowLumpsumModal(false);
       setLumpsumData({
@@ -327,12 +288,6 @@ function App() {
     checkDatabaseStatusAndInitialize();
   }, []);
 
-  // Load shared data when database is initialized
-  useEffect(() => {
-    if (isDatabaseInitialized) {
-      loadInitialEvents();
-    }
-  }, [isDatabaseInitialized]);
 
   // Keyboard event listener for shared state
   useEffect(() => {
@@ -362,6 +317,12 @@ function App() {
           try {
             const result = await TauriService.importSatTrackerV1Data();
             console.log("Import result:", result);
+            
+            // Invalidate all queries to refetch after import
+            queryClient.invalidateQueries({ queryKey: ['events'] });
+            queryClient.invalidateQueries({ queryKey: ['portfolioMetrics'] });
+            queryClient.invalidateQueries({ queryKey: ['activityMetrics'] });
+            
             alert(`Import completed: ${result}`);
           } catch (error) {
             console.error("Import failed:", error);

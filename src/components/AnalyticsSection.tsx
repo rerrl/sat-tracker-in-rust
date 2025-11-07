@@ -9,7 +9,6 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
   portfolioMetrics,
   metricsLoading,
 }) => {
-  console.log(portfolioMetrics);
   return (
     <div className="p-4 border-b border-[rgba(247,243,227,0.1)] flex-shrink-0">
       <h3 className="text-sm font-medium text-[#F7F3E3] mb-3">
