@@ -266,6 +266,17 @@ fn calculate_next_weekly_milestone(current_streak: i32) -> (Option<i32>, Option<
         }
     }
     
-    // If past all milestones, suggest next year milestone
+    // If past all initial milestones, calculate next yearly milestone
+    if current_streak >= 52 {
+        let current_year = (current_streak / 52) + 1;
+        let next_year = current_year + 1;
+        let weeks_into_current_year = current_streak % 52;
+        let weeks_to_next_year = 52 - weeks_into_current_year;
+        
+        let description = format!("{}-year streak", next_year);
+        return (Some(weeks_to_next_year), Some(description));
+    }
+    
+    // Fallback (shouldn't reach here)
     (Some(52 - (current_streak % 52)), Some("Next yearly milestone".to_string()))
 }
