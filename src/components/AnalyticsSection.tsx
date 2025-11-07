@@ -1,8 +1,7 @@
 import React from "react";
-import { PortfolioMetrics } from "../services/tauriService";
 
 interface AnalyticsSectionProps {
-  portfolioMetrics: PortfolioMetrics | null;
+  portfolioMetrics: any;
   metricsLoading: boolean;
 }
 

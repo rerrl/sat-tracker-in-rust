@@ -32,8 +32,6 @@ function App() {
   const [editData, setEditData] = useState<any>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [newEventData, setNewEventData] = useState<any>(null);
-  const [portfolioMetrics, setPortfolioMetrics] = useState<PortfolioMetrics | null>(null);
-  const [metricsLoading, setMetricsLoading] = useState(false);
 
   // Lumpsum modal state
   const [lumpsumData, setLumpsumData] = useState({
@@ -46,21 +44,6 @@ function App() {
   });
 
   // Shared data functions
-  const loadPortfolioMetrics = async (showLoading = false) => {
-    if (showLoading) {
-      setMetricsLoading(true);
-    }
-    try {
-      const metrics = await TauriService.getPortfolioMetrics();
-      setPortfolioMetrics(metrics);
-    } catch (error) {
-      console.error("Error loading portfolio metrics:", error);
-    } finally {
-      if (showLoading) {
-        setMetricsLoading(false);
-      }
-    }
-  };
 
   const loadInitialEvents = async () => {
     setEventsLoading(true);
@@ -125,8 +108,6 @@ function App() {
           event.id === editingEventId ? updatedEvent : event
         )
       );
-
-      loadPortfolioMetrics();
     } catch (error) {
       console.error("Error updating event:", error);
     } finally {
@@ -146,7 +127,6 @@ function App() {
       );
 
       setTotalCount((prevCount) => prevCount - 1);
-      loadPortfolioMetrics();
     } catch (error) {
       console.error("Error deleting event:", error);
     } finally {
@@ -198,7 +178,6 @@ function App() {
 
       setEvents((prevEvents) => [createdEvent, ...prevEvents]);
       setTotalCount((prevCount) => prevCount + 1);
-      loadPortfolioMetrics();
     } catch (error) {
       console.error("Error creating event:", error);
     } finally {
@@ -352,7 +331,6 @@ function App() {
   useEffect(() => {
     if (isDatabaseInitialized) {
       loadInitialEvents();
-      loadPortfolioMetrics(true);
     }
   }, [isDatabaseInitialized]);
 
@@ -448,8 +426,6 @@ function App() {
           editData={editData}
           isCreatingNew={isCreatingNew}
           newEventData={newEventData}
-          portfolioMetrics={portfolioMetrics}
-          metricsLoading={metricsLoading}
           onAddNewEvent={handleAddNewEvent}
           onEditEvent={handleEditEvent}
           onSaveEvent={handleSaveEvent}

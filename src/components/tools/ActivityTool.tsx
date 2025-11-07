@@ -16,8 +16,6 @@ interface ActivityToolProps {
   editData: any;
   isCreatingNew: boolean;
   newEventData: any;
-  portfolioMetrics: PortfolioMetrics | null;
-  metricsLoading: boolean;
   onAddNewEvent: () => void;
   onEditEvent: (event: BalanceChangeEvent) => void;
   onSaveEvent: () => Promise<void>;
@@ -37,8 +35,6 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
   editData,
   isCreatingNew,
   newEventData,
-  portfolioMetrics,
-  metricsLoading,
   onAddNewEvent,
   onEditEvent,
   onSaveEvent,

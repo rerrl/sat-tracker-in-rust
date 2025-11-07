@@ -12,8 +12,6 @@ interface ToolContainerProps {
   editData: any;
   isCreatingNew: boolean;
   newEventData: any;
-  portfolioMetrics: PortfolioMetrics | null;
-  metricsLoading: boolean;
   onAddNewEvent: () => void;
   onEditEvent: (event: BalanceChangeEvent) => void;
   onSaveEvent: () => Promise<void>;
@@ -34,8 +32,6 @@ const ToolContainer: React.FC<ToolContainerProps> = ({
   editData,
   isCreatingNew,
   newEventData,
-  portfolioMetrics,
-  metricsLoading,
   onAddNewEvent,
   onEditEvent,
   onSaveEvent,
@@ -54,8 +50,6 @@ const ToolContainer: React.FC<ToolContainerProps> = ({
     editData,
     isCreatingNew,
     newEventData,
-    portfolioMetrics,
-    metricsLoading,
     onAddNewEvent,
     onEditEvent,
     onSaveEvent,

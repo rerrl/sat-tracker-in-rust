@@ -1,13 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import {
-  BalanceChangeEvent,
-  PortfolioMetrics,
-} from '../../services/tauriService';
-import SatsHoldingsChartSection from '../SatsHoldingsChartSection';
-import AnalyticsSection from '../AnalyticsSection';
-import MainLayout from '../layouts/MainLayout';
-import { useBitcoinPrice } from '../../hooks/useBitcoinPrice';
-import MetricsGrid, { MetricItem, BitcoinPriceMetric } from '../MetricsGrid';
+import React, { useState, useEffect } from "react";
+import { BalanceChangeEvent } from "../../services/tauriService";
+import SatsHoldingsChartSection from "../SatsHoldingsChartSection";
+import AnalyticsSection from "../AnalyticsSection";
+import MainLayout from "../layouts/MainLayout";
+import { useBitcoinPrice } from "../../hooks/useBitcoinPrice";
+import { usePortfolioMetrics } from "../../hooks/usePortfolioMetrics";
+import MetricsGrid, { MetricItem, BitcoinPriceMetric } from "../MetricsGrid";
 
 interface OverviewToolProps {
   events: BalanceChangeEvent[];
@@ -17,8 +15,6 @@ interface OverviewToolProps {
   editData: any;
   isCreatingNew: boolean;
   newEventData: any;
-  portfolioMetrics: PortfolioMetrics | null;
-  metricsLoading: boolean;
   onAddNewEvent: () => void;
   onEditEvent: (event: BalanceChangeEvent) => void;
   onSaveEvent: () => Promise<void>;
@@ -38,8 +34,6 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
   editData,
   isCreatingNew,
   newEventData,
-  portfolioMetrics,
-  metricsLoading,
   onAddNewEvent,
   onEditEvent,
   onSaveEvent,
@@ -50,9 +44,16 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
   onCancelNewEvent,
   onNewEventDataChange,
 }) => {
+  // Add the hook call right after the component function signature
+  const { portfolioMetrics, loading: metricsLoading } = usePortfolioMetrics(
+    events,
+    true
+  );
   // Bitcoin price state
   const [isEditingBitcoinPrice, setIsEditingBitcoinPrice] = useState(false);
-  const [customBitcoinPrice, setCustomBitcoinPrice] = useState<number | null>(null);
+  const [customBitcoinPrice, setCustomBitcoinPrice] = useState<number | null>(
+    null
+  );
   const [bitcoinPriceInput, setBitcoinPriceInput] = useState("");
 
   const {
@@ -78,7 +79,6 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
     customBitcoinPrice !== null
       ? customBitcoinPrice
       : liveBitcoinPrice || 100000;
-
 
   // Bitcoin price handling functions
   const handleBitcoinPriceClick = () => {
@@ -117,7 +117,6 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
     }
   };
 
-
   const bitcoinPriceMetric: BitcoinPriceMetric = {
     price: bitcoinPrice,
     percentChange24hr,
@@ -134,7 +133,7 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
 
   const overviewMetrics: MetricItem[] = [
     {
-      label: 'Portfolio Value',
+      label: "Portfolio Value",
       value: metricsLoading
         ? "..."
         : `$${(
@@ -144,26 +143,26 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
           })}`,
-      color: 'orange'
+      color: "orange",
     },
     {
-      label: 'Current Sats',
+      label: "Current Sats",
       value: metricsLoading
         ? "..."
         : portfolioMetrics?.current_sats.toLocaleString() || "0",
-      color: 'orange'
+      color: "orange",
     },
     {
-      label: 'Current BTC',
+      label: "Current BTC",
       value: metricsLoading
         ? "..."
         : portfolioMetrics?.current_sats
         ? (portfolioMetrics.current_sats / 100_000_000).toFixed(8)
         : "0.00000000",
-      color: 'orange'
+      color: "orange",
     },
     {
-      label: 'Unrealized Gain',
+      label: "Unrealized Gain",
       value: (() => {
         if (
           metricsLoading ||
@@ -174,7 +173,8 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
         }
         const currentValue =
           ((portfolioMetrics.current_sats || 0) / 100_000_000) * bitcoinPrice;
-        const totalInvested = (portfolioMetrics.total_invested_cents || 0) / 100;
+        const totalInvested =
+          (portfolioMetrics.total_invested_cents || 0) / 100;
         const unrealizedGain = currentValue - totalInvested;
         return unrealizedGain >= 0
           ? `+$${unrealizedGain.toLocaleString(undefined, {
@@ -186,20 +186,15 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
               maximumFractionDigits: 0,
             })}`;
       })(),
-      color: 'green'
-    }
+      color: "green",
+    },
   ];
 
   const overviewMetricsComponent = (
-    <MetricsGrid 
-      bitcoinPrice={bitcoinPriceMetric}
-      metrics={overviewMetrics}
-    />
+    <MetricsGrid bitcoinPrice={bitcoinPriceMetric} metrics={overviewMetrics} />
   );
 
-  const overviewChart = (
-    <SatsHoldingsChartSection events={events} />
-  );
+  const overviewChart = <SatsHoldingsChartSection events={events} />;
 
   const overviewLeftContent = (
     <>
