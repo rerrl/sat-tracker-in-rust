@@ -1,19 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Marquee from "react-fast-marquee";
-import { TauriService } from "../services/tauriService";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import packageJson from "../../package.json";
+import { useAnnouncements } from "../hooks/useAnnouncements";
 
 const Announcements: React.FC = () => {
-  const staticAnnouncements = [
-    "🔒 Your data stays local - no cloud sync, no tracking, complete privacy",
-    "📡 Only fetches Bitcoin price & app updates",
-  ];
-
-  const [announcements, setAnnouncements] =
-    useState<string[]>(staticAnnouncements);
-  const [isLoading, setIsLoading] = useState(true);
   const [speed, setSpeed] = useState(50);
+  const { announcements, isLoading } = useAnnouncements();
 
   // Function to parse simple markdown links and bold text
   const parseMarkdown = (text: string) => {
@@ -148,44 +140,6 @@ const Announcements: React.FC = () => {
     return parts.length > 0 ? parts : [text];
   };
 
-  useEffect(() => {
-    const fetchAnnouncements = async () => {
-      try {
-        const response = await TauriService.fetchAnnouncements();
-        const allAnnouncements = [];
-
-        // Create welcome message with version info
-        let welcomeMessage = `🎉 Welcome to Sat Tracker (v${packageJson.version}) - A free, open source, local-first Bitcoin portfolio tracker!`;
-
-        // Check for version update and modify welcome message
-        if (
-          response.latest_version &&
-          response.latest_version !== packageJson.version
-        ) {
-          welcomeMessage = `🎉 Welcome to Sat Tracker (v${packageJson.version}) - [**New version v${response.latest_version} available!**](https://dprogram.me/tools/sat-tracker) - A free, open source, local-first Bitcoin portfolio tracker!`;
-        }
-
-        allAnnouncements.push(welcomeMessage);
-        allAnnouncements.push(...staticAnnouncements);
-
-        // Add remote announcements
-        if (response.announcements && response.announcements.length > 0) {
-          allAnnouncements.push(...response.announcements);
-        }
-
-        setAnnouncements(allAnnouncements);
-      } catch (error) {
-        console.warn("Failed to fetch announcements, using fallback:", error);
-        // Fallback welcome message with current version
-        const fallbackWelcome = `🎉 Welcome to Sat Tracker (v${packageJson.version}) - A free, open source, local-first Bitcoin portfolio tracker!`;
-        setAnnouncements([fallbackWelcome, ...staticAnnouncements]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAnnouncements();
-  }, []);
 
   return (
     <div className="bg-linear-to-r from-[#E16036] to-[#f7931a] text-white py-1 px-2 rounded overflow-hidden relative max-w-full">

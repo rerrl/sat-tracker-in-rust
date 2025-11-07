@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import Announcements from "./Announcements";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { useAnnouncements } from "../hooks/useAnnouncements";
 
 interface AppHeaderProps {
   selectedTool: string;
@@ -15,6 +16,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   showToolDropdown,
   setShowToolDropdown,
 }) => {
+  const { isUpdateAvailable, latestVersion } = useAnnouncements();
   // Close tool dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -50,21 +52,23 @@ const AppHeader: React.FC<AppHeaderProps> = ({
       </div>
 
       {/* Right side - Tool Selector (35%) */}
-      <div className="w-[35%] px-6 py-3 flex items-center justify-between">
-        {/* Update Available Button */}
-        <button 
-          className="text-xs text-[#F7F3E3] bg-[rgba(247,147,26,0.2)] border border-[rgba(247,147,26,0.3)] px-2 py-1 rounded hover:bg-[rgba(247,147,26,0.3)] flex items-center gap-1 cursor-pointer"
-          onClick={async () => {
-            try {
-              await openUrl("https://dprogram.me/tools/sat-tracker");
-            } catch (error) {
-              console.error("Failed to open link:", error);
-            }
-          }}
-        >
-          <span className="text-[10px]">🔄</span>
-          Update Available
-        </button>
+      <div className={`w-[35%] px-6 py-3 flex items-center ${isUpdateAvailable ? 'justify-between' : 'justify-end'}`}>
+        {/* Update Available Button - Only show if update is available */}
+        {isUpdateAvailable && (
+          <button
+            className="text-xs text-[#F7F3E3] bg-[rgba(247,147,26,0.2)] border border-[rgba(247,147,26,0.3)] px-2 py-1 rounded hover:bg-[rgba(247,147,26,0.3)] flex items-center gap-1 cursor-pointer"
+            onClick={async () => {
+              try {
+                await openUrl("https://dprogram.me/tools/sat-tracker");
+              } catch (error) {
+                console.error("Failed to open link:", error);
+              }
+            }}
+          >
+            <span className="text-[10px]">🔄</span>
+            Update Available {latestVersion && `(v${latestVersion})`}
+          </button>
+        )}
 
         {/* Tool Selector Dropdown */}
         <div className="relative tool-dropdown">
