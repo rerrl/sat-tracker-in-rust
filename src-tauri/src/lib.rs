@@ -6,6 +6,7 @@ use commands::balance_change_event::{create_balance_change_event, get_balance_ch
 use commands::import::import_sat_tracker_v1_data;
 use commands::api::{fetch_bitcoin_price, fetch_announcements};
 use commands::encryption::{check_database_status, validate_database_password, encrypt_database, change_database_password, initialize_database_with_password};
+use commands::activity_metrics::get_activity_metrics;
 use tauri::{Emitter, menu::{Menu, MenuItem, Submenu, PredefinedMenuItem}, AppHandle};
 
 // Add these helper functions before the main run() function
@@ -95,7 +96,8 @@ pub fn run() {
             encrypt_database,
             change_database_password,
             initialize_database_with_password,
-            update_menu_for_database_status
+            update_menu_for_database_status,
+            get_activity_metrics
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

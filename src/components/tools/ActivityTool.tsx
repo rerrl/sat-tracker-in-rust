@@ -5,6 +5,7 @@ import {
 } from '../../services/tauriService';
 import MainLayout from '../layouts/MainLayout';
 import { useBitcoinPrice } from '../../hooks/useBitcoinPrice';
+import { useActivityMetrics } from '../../hooks/useActivityMetrics';
 import ActivityHeatmap from '../ActivityHeatmap';
 import MetricsGrid, { MetricItem, BitcoinPriceMetric } from '../MetricsGrid';
 
@@ -45,6 +46,9 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
   onCancelNewEvent,
   onNewEventDataChange,
 }) => {
+  // Load activity metrics
+  const { activityMetrics, loading: activityLoading } = useActivityMetrics(events, true);
+
   // Bitcoin price state (same as overview for consistency)
   const [isEditingBitcoinPrice, setIsEditingBitcoinPrice] = useState(false);
   const [customBitcoinPrice, setCustomBitcoinPrice] = useState<number | null>(
@@ -126,35 +130,51 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
     onInputKeyDown: handleBitcoinPriceKeyDown,
   };
 
-  const activityMetrics: MetricItem[] = [
+  const activityMetricsItems: MetricItem[] = [
     {
       label: "Current Streak",
-      value: "2 weeks",
+      value: activityLoading 
+        ? "..." 
+        : activityMetrics?.current_streak_weeks 
+          ? `${activityMetrics.current_streak_weeks} week${activityMetrics.current_streak_weeks !== 1 ? 's' : ''}`
+          : "0 weeks",
       color: "orange",
-      hint: "Number of consecutive days with Bitcoin purchases",
+      hint: "Number of consecutive weeks with Bitcoin purchases",
     },
     {
-      label: "Longest Streak",
-      value: "7 weeks",
+      label: "Longest Streak", 
+      value: activityLoading
+        ? "..."
+        : activityMetrics?.longest_streak_weeks
+          ? `${activityMetrics.longest_streak_weeks} week${activityMetrics.longest_streak_weeks !== 1 ? 's' : ''}`
+          : "0 weeks",
       color: "orange",
-      hint: "Your longest streak of consecutive stacking days",
+      hint: "Your longest streak of consecutive stacking weeks",
     },
     {
       label: "Stacked This Year",
-      value: "100,000 sats",
-      color: "orange",
+      value: activityLoading
+        ? "..."
+        : activityMetrics?.sats_stacked_this_year
+          ? `${activityMetrics.sats_stacked_this_year.toLocaleString()} sats`
+          : "0 sats",
+      color: "orange", 
       hint: "Total satoshis accumulated in the current year",
     },
     {
       label: "Consistency Score",
-      value: "82%",
+      value: activityLoading
+        ? "..."
+        : activityMetrics?.consistency_score_percent
+          ? `${activityMetrics.consistency_score_percent.toFixed(0)}%`
+          : "0%",
       color: "green",
-      hint: "Percentage of days you've stacked sats this month",
+      hint: "Weighted consistency score over rolling 52-week period (recent weeks count more)",
     },
   ];
 
   const activityMetricsComponent = (
-    <MetricsGrid bitcoinPrice={bitcoinPriceMetric} metrics={activityMetrics} />
+    <MetricsGrid bitcoinPrice={bitcoinPriceMetric} metrics={activityMetricsItems} />
   );
 
   // Activity heatmap
@@ -182,9 +202,17 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
           <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
             Best Stacking Day
           </div>
-          <div className="text-sm text-[#F7F3E3]">Tuesday</div>
+          <div className="text-sm text-[#F7F3E3]">
+            {activityLoading 
+              ? "..." 
+              : activityMetrics?.best_stacking_day || "No data"}
+          </div>
           <div className="text-xs text-[rgba(247,243,227,0.5)]">
-            42% of your purchases
+            {activityLoading
+              ? "..."
+              : activityMetrics?.best_day_percentage
+                ? `${activityMetrics.best_day_percentage.toFixed(0)}% of your purchases`
+                : "No purchases yet"}
           </div>
         </div>
 
@@ -192,9 +220,13 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
           <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
             Consistency Rating
           </div>
-          <div className="text-sm text-lightgreen">Excellent</div>
+          <div className="text-sm text-lightgreen">
+            {activityLoading
+              ? "..."
+              : activityMetrics?.consistency_rating || "No data"}
+          </div>
           <div className="text-xs text-[rgba(247,243,227,0.5)]">
-            Top 15% of stackers
+            Based on recent activity
           </div>
         </div>
 
@@ -202,9 +234,17 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
           <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
             Next Milestone
           </div>
-          <div className="text-sm text-[#f7931a]">30-day streak</div>
+          <div className="text-sm text-[#f7931a]">
+            {activityLoading
+              ? "..."
+              : activityMetrics?.next_milestone_description || "Keep stacking!"}
+          </div>
           <div className="text-xs text-[rgba(247,243,227,0.5)]">
-            7 days to go
+            {activityLoading
+              ? "..."
+              : activityMetrics?.weeks_to_next_milestone
+                ? `${activityMetrics.weeks_to_next_milestone} week${activityMetrics.weeks_to_next_milestone !== 1 ? 's' : ''} to go`
+                : "You're doing great!"}
           </div>
         </div>
       </div>

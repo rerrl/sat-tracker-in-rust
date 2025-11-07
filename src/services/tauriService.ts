@@ -74,6 +74,18 @@ export interface AnnouncementsResponse {
   announcements: string[];
 }
 
+export interface ActivityMetrics {
+  current_streak_weeks: number;
+  longest_streak_weeks: number;
+  sats_stacked_this_year: number;
+  consistency_score_percent: number;
+  best_stacking_day: string | null;
+  best_day_percentage: number;
+  consistency_rating: string;
+  weeks_to_next_milestone: number | null;
+  next_milestone_description: string | null;
+}
+
 export class TauriService {
   // Create a new balance change event
   static async createBalanceChangeEvent(
@@ -161,6 +173,11 @@ export class TauriService {
   // Fetch announcements from API
   static async fetchAnnouncements(): Promise<AnnouncementsResponse> {
     return await invoke("fetch_announcements");
+  }
+
+  // Get activity metrics
+  static async getActivityMetrics(): Promise<ActivityMetrics> {
+    return await invoke("get_activity_metrics");
   }
 }
 
