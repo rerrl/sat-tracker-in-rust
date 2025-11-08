@@ -233,6 +233,7 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
     <AnalyticsSection
       portfolioMetrics={portfolioMetrics}
       metricsLoading={metricsLoading}
+      toolType="overview"
     />
   );
 

@@ -6,8 +6,10 @@ import {
 import MainLayout from "../layouts/MainLayout";
 import { useBitcoinPrice } from "../../hooks/useBitcoinPrice";
 import { useActivityMetrics } from "../../hooks/useActivityMetrics";
+import { usePortfolioMetrics } from "../../hooks/usePortfolioMetrics";
 import ActivityHeatmap from "../ActivityHeatmap";
 import MetricsGrid, { MetricItem, BitcoinPriceMetric } from "../MetricsGrid";
+import AnalyticsSection from "../AnalyticsSection";
 
 interface ActivityToolProps {
   events: BalanceChangeEvent[];
@@ -49,6 +51,10 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
   // Load activity metrics
   const { activityMetrics, loading: activityLoading } =
     useActivityMetrics(true);
+
+  // Load portfolio metrics for AnalyticsSection
+  const { portfolioMetrics, loading: metricsLoading } =
+    usePortfolioMetrics(true);
 
   // Bitcoin price state (same as overview for consistency)
   const [isEditingBitcoinPrice, setIsEditingBitcoinPrice] = useState(false);
@@ -180,14 +186,27 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
 
   // Create a stable reference using deep comparison of the actual data content
   const stableHeatmapData = useMemo(() => {
-    console.log("[ActivityTool] Stabilizing heatmap data, activityMetrics:", !!activityMetrics);
-    console.log("[ActivityTool] Raw heatmap_data reference:", activityMetrics?.heatmap_data);
+    console.log(
+      "[ActivityTool] Stabilizing heatmap data, activityMetrics:",
+      !!activityMetrics
+    );
+    console.log(
+      "[ActivityTool] Raw heatmap_data reference:",
+      activityMetrics?.heatmap_data
+    );
     return activityMetrics?.heatmap_data;
   }, [JSON.stringify(activityMetrics?.heatmap_data)]);
 
   const activityHeatmap = useMemo(() => {
-    console.log("[ActivityTool] Creating activity heatmap with data:", stableHeatmapData?.length, "years");
-    console.log("[ActivityTool] Stable heatmap data reference:", stableHeatmapData);
+    console.log(
+      "[ActivityTool] Creating activity heatmap with data:",
+      stableHeatmapData?.length,
+      "years"
+    );
+    console.log(
+      "[ActivityTool] Stable heatmap data reference:",
+      stableHeatmapData
+    );
     return (
       <div className="flex-1 overflow-y-auto bg-[rgba(9,12,8,0.8)]">
         <ActivityHeatmap heatmapData={stableHeatmapData} />
@@ -206,67 +225,11 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
   );
 
   const activityAnalytics = (
-    <div className="p-4 border-b border-[rgba(247,243,227,0.1)] flex-shrink-0">
-      <h3 className="text-sm font-medium text-[#F7F3E3] mb-3">
-        Activity Insights
-      </h3>
-
-      <div className="space-y-3">
-        <div className="bg-[rgba(247,243,227,0.05)] p-3 rounded border border-[rgba(247,243,227,0.1)]">
-          <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
-            Best Stacking Day
-          </div>
-          <div className="text-sm text-[#F7F3E3]">
-            {activityLoading
-              ? "..."
-              : activityMetrics?.best_stacking_day || "No data"}
-          </div>
-          <div className="text-xs text-[rgba(247,243,227,0.5)]">
-            {activityLoading
-              ? "..."
-              : activityMetrics?.best_day_percentage
-              ? `${activityMetrics.best_day_percentage.toFixed(
-                  0
-                )}% of your purchases`
-              : "No purchases yet"}
-          </div>
-        </div>
-
-        <div className="bg-[rgba(247,243,227,0.05)] p-3 rounded border border-[rgba(247,243,227,0.1)]">
-          <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
-            Consistency Rating
-          </div>
-          <div className="text-sm text-lightgreen">
-            {activityLoading
-              ? "..."
-              : activityMetrics?.consistency_rating || "No data"}
-          </div>
-          <div className="text-xs text-[rgba(247,243,227,0.5)]">
-            Based on recent activity
-          </div>
-        </div>
-
-        <div className="bg-[rgba(247,243,227,0.05)] p-3 rounded border border-[rgba(247,243,227,0.1)]">
-          <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
-            Next Milestone
-          </div>
-          <div className="text-sm text-[#f7931a]">
-            {activityLoading
-              ? "..."
-              : activityMetrics?.next_milestone_description || "Keep stacking!"}
-          </div>
-          <div className="text-xs text-[rgba(247,243,227,0.5)]">
-            {activityLoading
-              ? "..."
-              : activityMetrics?.weeks_to_next_milestone
-              ? `${activityMetrics.weeks_to_next_milestone} week${
-                  activityMetrics.weeks_to_next_milestone !== 1 ? "s" : ""
-                } to go`
-              : "You're doing great!"}
-          </div>
-        </div>
-      </div>
-    </div>
+    <AnalyticsSection
+      portfolioMetrics={portfolioMetrics}
+      metricsLoading={metricsLoading}
+      toolType="activity"
+    />
   );
 
   return (

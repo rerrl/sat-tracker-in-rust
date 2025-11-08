@@ -7,7 +7,7 @@ interface SatsHoldingsChartSectionProps {
 }
 
 const SatsHoldingsChartSection: React.FC<SatsHoldingsChartSectionProps> = ({ events }) => {
-  const [showTooltip, setShowTooltip] = useState(false);
+  const [showPremiumTag, setShowPremiumTag] = useState(false);
 
   return (
     <>
@@ -19,9 +19,14 @@ const SatsHoldingsChartSection: React.FC<SatsHoldingsChartSectionProps> = ({ eve
           </h2>
           <div 
             className="relative"
-            onMouseEnter={() => setShowTooltip(true)}
-            onMouseLeave={() => setShowTooltip(false)}
+            onMouseEnter={() => setShowPremiumTag(true)}
+            onMouseLeave={() => setShowPremiumTag(false)}
           >
+            {showPremiumTag && (
+              <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 text-xs bg-gradient-to-r from-[#f7931a] to-[#61dafb] text-black px-2 py-0.5 rounded font-medium whitespace-nowrap">
+                PREMIUM
+              </span>
+            )}
             <button
               disabled
               className="text-xs text-[rgba(247,243,227,0.6)] bg-[rgba(247,243,227,0.1)] border border-[rgba(247,243,227,0.2)] px-3 py-1 rounded cursor-not-allowed opacity-60 flex items-center gap-2"
@@ -31,14 +36,6 @@ const SatsHoldingsChartSection: React.FC<SatsHoldingsChartSectionProps> = ({ eve
               </div>
               <span>Show USD Overlay</span>
             </button>
-            {showTooltip && (
-              <div 
-                className="absolute right-0 top-full mt-1 bg-orange-600 text-white px-2 py-1 rounded text-xs whitespace-nowrap z-[9999]"
-                style={{ position: 'absolute', zIndex: 9999 }}
-              >
-                Premium Feature
-              </div>
-            )}
           </div>
         </div>
       </div>

@@ -55,8 +55,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 
       {/* Right Column - Analytics + Events (35%) */}
       <div className="w-[35%] border-l border-[rgba(247,243,227,0.2)] bg-[#2A2633] flex flex-col">
-        {analyticsContent}
+        {/* Analytics Section - Fixed 50% height with scroll */}
+        <div className="h-1/2 overflow-y-auto flex-shrink-0">
+          {analyticsContent}
+        </div>
 
+        {/* Events List - Remaining 50% height */}
         <EventsList
           events={events}
           totalCount={totalCount}
