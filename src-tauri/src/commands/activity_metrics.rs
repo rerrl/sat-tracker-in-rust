@@ -1,7 +1,121 @@
-use crate::models::activity_metrics::ActivityMetrics;
-use chrono::{Utc, DateTime, Datelike, Weekday, Duration, IsoWeek};
+use crate::models::activity_metrics::{ActivityMetrics, YearHeatmapData, WeekData, DayData};
+use chrono::{Utc, DateTime, Datelike, Weekday, Duration, IsoWeek, TimeZone};
 use sqlx::{SqlitePool, Row};
 use tauri::State;
+use std::collections::{HashMap, HashSet};
+
+fn calculate_heatmap_data(buy_events: &[sqlx::sqlite::SqliteRow]) -> Vec<YearHeatmapData> {
+    let mut years_data: HashMap<i32, Vec<(DateTime<Utc>, i64)>> = HashMap::new();
+    
+    // Group events by year
+    for row in buy_events {
+        let timestamp: DateTime<Utc> = row.get("timestamp");
+        let amount_sats: i64 = row.get("amount_sats");
+        let year = timestamp.year();
+        
+        years_data.entry(year).or_insert_with(Vec::new).push((timestamp, amount_sats));
+    }
+    
+    // Add current year if no events
+    let current_year = Utc::now().year();
+    if !years_data.contains_key(&current_year) {
+        years_data.insert(current_year, Vec::new());
+    }
+    
+    let mut result = Vec::new();
+    
+    for (year, events) in years_data {
+        let heatmap_data = generate_year_heatmap_data(year, &events);
+        result.push(heatmap_data);
+    }
+    
+    // Sort by year descending (most recent first)
+    result.sort_by(|a, b| b.year.cmp(&a.year));
+    
+    result
+}
+
+fn generate_year_heatmap_data(year: i32, events: &[(DateTime<Utc>, i64)]) -> YearHeatmapData {
+    // Calculate daily sats for this year
+    let mut daily_sats: HashMap<String, i64> = HashMap::new();
+    
+    for (timestamp, amount_sats) in events {
+        if timestamp.year() == year {
+            // Use local date components to avoid timezone issues
+            let date_key = format!("{:04}-{:02}-{:02}", 
+                timestamp.year(), 
+                timestamp.month(), 
+                timestamp.day()
+            );
+            *daily_sats.entry(date_key).or_insert(0) += amount_sats;
+        }
+    }
+    
+    // Find max sats for intensity calculation
+    let max_sats = daily_sats.values().max().copied().unwrap_or(1);
+    
+    // Generate 52 weeks of data
+    let mut weeks = Vec::new();
+    
+    // Start from January 1st of the year
+    let start_date = Utc.with_ymd_and_hms(year, 1, 1, 0, 0, 0).unwrap();
+    
+    // Find the first Sunday (or use Jan 1 if it's Sunday)
+    let mut first_sunday = start_date;
+    while first_sunday.weekday() != Weekday::Sun {
+        first_sunday = first_sunday - Duration::days(1);
+    }
+    
+    for week in 0..52 {
+        let mut week_data = WeekData { days: Vec::new() };
+        
+        for day in 0..7 {
+            let current_date = first_sunday + Duration::weeks(week) + Duration::days(day);
+            let date_key = format!("{:04}-{:02}-{:02}", 
+                current_date.year(), 
+                current_date.month(), 
+                current_date.day()
+            );
+            
+            let sats = daily_sats.get(&date_key).copied().unwrap_or(0);
+            let level = get_intensity_level(sats, max_sats);
+            
+            week_data.days.push(DayData {
+                date: date_key,
+                sats,
+                level,
+            });
+        }
+        
+        weeks.push(week_data);
+    }
+    
+    YearHeatmapData {
+        year,
+        weeks,
+        max_sats,
+    }
+}
+
+fn get_intensity_level(sats: i64, max_sats: i64) -> i32 {
+    if sats == 0 {
+        return 0;
+    }
+    if max_sats == 0 {
+        return 1;
+    }
+    
+    let ratio = sats as f64 / max_sats as f64;
+    if ratio <= 0.25 {
+        1
+    } else if ratio <= 0.5 {
+        2
+    } else if ratio <= 0.75 {
+        3
+    } else {
+        4
+    }
+}
 
 #[tauri::command]
 pub async fn get_activity_metrics(
@@ -29,6 +143,7 @@ pub async fn get_activity_metrics(
             consistency_rating: "No Data".to_string(),
             weeks_to_next_milestone: None,
             next_milestone_description: None,
+            heatmap_data: Vec::new(),
         });
     }
 
@@ -68,6 +183,9 @@ pub async fn get_activity_metrics(
     // Calculate next milestone
     let (weeks_to_milestone, milestone_desc) = calculate_next_weekly_milestone(current_streak);
 
+    // Calculate heatmap data
+    let heatmap_data = calculate_heatmap_data(&buy_events);
+
     Ok(ActivityMetrics {
         current_streak_weeks: current_streak,
         longest_streak_weeks: longest_streak,
@@ -78,6 +196,7 @@ pub async fn get_activity_metrics(
         consistency_rating,
         weeks_to_next_milestone: weeks_to_milestone,
         next_milestone_description: milestone_desc,
+        heatmap_data,
     })
 }
 

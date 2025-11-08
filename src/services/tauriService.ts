@@ -5,7 +5,7 @@ export interface BalanceChangeEvent {
   id: string;
   amount_sats: number;
   value_cents: number | null;
-  event_type: 'Buy' | 'Sell' | 'Fee';
+  event_type: "Buy" | "Sell" | "Fee";
   memo: string | null;
   timestamp: string; // ISO date string from Rust
   created_at: string; // ISO date string from Rust
@@ -14,7 +14,7 @@ export interface BalanceChangeEvent {
 export interface CreateBalanceChangeEventRequest {
   amount_sats: number;
   value_cents: number | null;
-  event_type: 'Buy' | 'Sell' | 'Fee';
+  event_type: "Buy" | "Sell" | "Fee";
   memo: string | null;
   timestamp: string; // ISO date string
 }
@@ -22,7 +22,7 @@ export interface CreateBalanceChangeEventRequest {
 export interface UpdateBalanceChangeEventRequest {
   amount_sats: number;
   value_cents: number | null;
-  event_type: 'Buy' | 'Sell' | 'Fee';
+  event_type: "Buy" | "Sell" | "Fee";
   memo: string | null;
   timestamp: string; // ISO date string
 }
@@ -55,7 +55,7 @@ export interface CreateUndocumentedLumpsumRequest {
   end_date: string;
   total_sats: number;
   total_usd_cents: number;
-  frequency: 'daily' | 'weekly' | 'monthly';
+  frequency: "daily" | "weekly" | "monthly";
   memo?: string;
 }
 
@@ -84,6 +84,23 @@ export interface ActivityMetrics {
   consistency_rating: string;
   weeks_to_next_milestone: number | null;
   next_milestone_description: string | null;
+  heatmap_data: YearHeatmapData[];
+}
+
+export interface YearHeatmapData {
+  year: number;
+  weeks: WeekData[];
+  max_sats: number;
+}
+
+export interface WeekData {
+  days: DayData[];
+}
+
+export interface DayData {
+  date: string; // ISO date string (YYYY-MM-DD)
+  sats: number;
+  level: number; // 0-4 for color intensity
 }
 
 export class TauriService {
@@ -99,9 +116,9 @@ export class TauriService {
     page: number = 0,
     pageSize: number = 100
   ): Promise<PaginatedBalanceChangeEvents> {
-    return await invoke("get_balance_change_events", { 
-      page, 
-      pageSize 
+    return await invoke("get_balance_change_events", {
+      page,
+      pageSize,
     });
   }
 
@@ -138,7 +155,7 @@ export class TauriService {
       totalSats: request.total_sats,
       totalUsdCents: request.total_usd_cents,
       frequency: request.frequency,
-      memo: request.memo
+      memo: request.memo,
     });
   }
 
@@ -147,7 +164,9 @@ export class TauriService {
     return await invoke("check_database_status");
   }
 
-  static async validateDatabasePassword(password: string): Promise<PasswordValidationResult> {
+  static async validateDatabasePassword(
+    password: string
+  ): Promise<PasswordValidationResult> {
     return await invoke("validate_database_password", { password });
   }
 
@@ -155,14 +174,19 @@ export class TauriService {
     return await invoke("encrypt_database", { password });
   }
 
-  static async changeDatabasePassword(oldPassword: string, newPassword: string): Promise<string> {
-    return await invoke("change_database_password", { 
-      oldPassword, 
-      newPassword 
+  static async changeDatabasePassword(
+    oldPassword: string,
+    newPassword: string
+  ): Promise<string> {
+    return await invoke("change_database_password", {
+      oldPassword,
+      newPassword,
     });
   }
 
-  static async initializeDatabaseWithPassword(password?: string): Promise<string> {
+  static async initializeDatabaseWithPassword(
+    password?: string
+  ): Promise<string> {
     return await invoke("initialize_database_with_password", { password });
   }
 
@@ -177,6 +201,7 @@ export class TauriService {
 
   // Get activity metrics
   static async getActivityMetrics(): Promise<ActivityMetrics> {
+    console.log("Fetching activity metrics");
     return await invoke("get_activity_metrics");
   }
 }
@@ -189,5 +214,5 @@ export const {
   deleteBalanceChangeEvent,
   getPortfolioMetrics,
   importSatTrackerV1Data,
-  createUndocumentedLumpsumEvents
+  createUndocumentedLumpsumEvents,
 } = TauriService;

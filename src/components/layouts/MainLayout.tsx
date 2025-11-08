@@ -1,14 +1,14 @@
-import React from 'react';
-import EventsList from '../EventsList';
-import { BalanceChangeEvent } from '../../services/tauriService';
+import React from "react";
+import EventsList from "../EventsList";
+import { BalanceChangeEvent } from "../../services/tauriService";
 
 interface MainLayoutProps {
   // Left side content
   leftContent: React.ReactNode;
-  
+
   // Right side analytics content
   analyticsContent: React.ReactNode;
-  
+
   // Events list props (since this seems consistent across tools)
   events: BalanceChangeEvent[];
   totalCount: number;

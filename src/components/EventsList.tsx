@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { BalanceChangeEvent } from "../services/tauriService";
 import DateTimeInput from "./DateTimeInput";
 
@@ -402,20 +402,67 @@ const EventsList: React.FC<EventsListProps> = ({
   onCancelNewEvent,
   onNewEventDataChange,
 }) => {
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(0);
+  const pageSize = 50;
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(events.length / pageSize);
+  const startIndex = currentPage * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, events.length);
+  const visibleEvents = events.slice(startIndex, endIndex);
+  
+  const handlePrevPage = () => {
+    setCurrentPage(prev => Math.max(0, prev - 1));
+  };
+  
+  const handleNextPage = () => {
+    setCurrentPage(prev => Math.min(totalPages - 1, prev + 1));
+  };
   return (
     <div className="h-1/2 flex flex-col">
       {/* Header */}
       <div className="px-4 py-3 border-b border-[rgba(247,243,227,0.2)] bg-[rgba(42,38,51,0.8)] shrink-0">
         <div className="flex justify-between items-center">
-          <h2 className="text-md font-semibold text-[#F7F3E3]">
-            Events ({events.length} of {totalCount})
-          </h2>
-          <button
-            onClick={onAddNewEvent}
-            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-xs rounded"
-          >
-            Add Event
-          </button>
+          <div>
+            <h2 className="text-md font-semibold text-[#F7F3E3]">
+              Events ({events.length} of {totalCount})
+            </h2>
+            {events.length > pageSize && (
+              <div className="text-xs text-[rgba(247,243,227,0.6)] mt-1">
+                Showing {startIndex + 1}-{endIndex} of {events.length} loaded events
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {events.length > pageSize && (
+              <div className="flex items-center gap-1 mr-3">
+                <button
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 0}
+                  className="bg-[rgba(247,243,227,0.1)] hover:bg-[rgba(247,243,227,0.2)] disabled:opacity-50 disabled:cursor-not-allowed text-[#F7F3E3] px-2 py-1 text-xs rounded"
+                >
+                  ←
+                </button>
+                <span className="text-xs text-[rgba(247,243,227,0.6)] px-2">
+                  {currentPage + 1} / {totalPages}
+                </span>
+                <button
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages - 1}
+                  className="bg-[rgba(247,243,227,0.1)] hover:bg-[rgba(247,243,227,0.2)] disabled:opacity-50 disabled:cursor-not-allowed text-[#F7F3E3] px-2 py-1 text-xs rounded"
+                >
+                  →
+                </button>
+              </div>
+            )}
+            <button
+              onClick={onAddNewEvent}
+              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-xs rounded"
+            >
+              Add Event
+            </button>
+          </div>
         </div>
         {/* Column Headers */}
         <div
@@ -451,7 +498,7 @@ const EventsList: React.FC<EventsListProps> = ({
           />
         )}
 
-        {events.map((event) => (
+        {visibleEvents.map((event) => (
           <EventItem
             key={event.id}
             event={event}
@@ -466,10 +513,13 @@ const EventsList: React.FC<EventsListProps> = ({
           />
         ))}
 
-        {events.length > 0 && (
+        {visibleEvents.length > 0 && (
           <div className="text-center py-4">
             <div className="text-xs text-[rgba(247,243,227,0.5)]">
-              All events loaded
+              {events.length > pageSize 
+                ? `Page ${currentPage + 1} of ${totalPages} • ${events.length} total events loaded`
+                : "All events loaded"
+              }
             </div>
           </div>
         )}

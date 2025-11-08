@@ -17,6 +17,7 @@ yarn start:dev
 - TODO: csv importing. (no duplicates - coinbase, river)
 - TODO: remove import v1 data button before release
 - TODO: btc <-> sats in events/charts (low priority)
+- TODO: Add React.memo() to remaining components for performance optimization (MetricsGrid, SatsHoldingsChartSection, ActivityHeatmap, AnalyticsSection, MainLayout, etc.)
 
 ## App Architecture & Tool System
 

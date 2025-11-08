@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { TauriService, ActivityMetrics } from "../services/tauriService";
 
 export const useActivityMetrics = (isDatabaseInitialized: boolean) => {
@@ -18,10 +19,11 @@ export const useActivityMetrics = (isDatabaseInitialized: boolean) => {
     gcTime: 1000 * 60 * 30,
   });
 
-  return {
+  // Memoize the return object so it only changes when the actual data changes
+  return useMemo(() => ({
     activityMetrics: activityMetrics || null,
     loading,
     error: error ? (error instanceof Error ? error.message : "Failed to load activity metrics") : null,
-    refetch: () => refetch(),
-  };
+    refetch,
+  }), [activityMetrics, loading, error, refetch]);
 };

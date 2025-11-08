@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { TauriService, DatabaseStatus, BalanceChangeEvent, PortfolioMetrics } from "./services/tauriService";
 import { useEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from "./hooks/useEvents";
 import { useQueryClient } from "@tanstack/react-query";
@@ -49,8 +49,8 @@ function App() {
     memo: "",
   });
 
-  // Simplified event handlers
-  const handleEditEvent = (event: BalanceChangeEvent) => {
+  // Memoized event handlers
+  const handleEditEvent = useCallback((event: BalanceChangeEvent) => {
     setIsCreatingNew(false);
     setNewEventData(null);
     setEditingEventId(event.id);
@@ -61,9 +61,9 @@ function App() {
       memo: event.memo,
       timestamp: event.timestamp,
     });
-  };
+  }, []);
 
-  const handleSaveEvent = async () => {
+  const handleSaveEvent = useCallback(async () => {
     if (!editingEventId || !editData) return;
 
     try {
@@ -83,9 +83,9 @@ function App() {
       setEditingEventId(null);
       setEditData(null);
     }
-  };
+  }, [editingEventId, editData, updateEventMutation]);
 
-  const handleDeleteEvent = async () => {
+  const handleDeleteEvent = useCallback(async () => {
     if (!editingEventId) return;
 
     try {
@@ -96,21 +96,21 @@ function App() {
       setEditingEventId(null);
       setEditData(null);
     }
-  };
+  }, [editingEventId, deleteEventMutation]);
 
-  const handleCancelEdit = () => {
+  const handleCancelEdit = useCallback(() => {
     setEditingEventId(null);
     setEditData(null);
-  };
+  }, []);
 
-  const handleEditDataChange = (field: string, value: any) => {
+  const handleEditDataChange = useCallback((field: string, value: any) => {
     setEditData((prev: any) => ({
       ...prev,
       [field]: value,
     }));
-  };
+  }, []);
 
-  const handleAddNewEvent = () => {
+  const handleAddNewEvent = useCallback(() => {
     setIsCreatingNew(true);
     setNewEventData({
       event_type: "Buy",
@@ -121,9 +121,9 @@ function App() {
     });
     setEditingEventId(null);
     setEditData(null);
-  };
+  }, []);
 
-  const handleSaveNewEvent = async () => {
+  const handleSaveNewEvent = useCallback(async () => {
     if (!newEventData) return;
 
     try {
@@ -140,19 +140,19 @@ function App() {
       setIsCreatingNew(false);
       setNewEventData(null);
     }
-  };
+  }, [newEventData, createEventMutation]);
 
-  const handleCancelNewEvent = () => {
+  const handleCancelNewEvent = useCallback(() => {
     setIsCreatingNew(false);
     setNewEventData(null);
-  };
+  }, []);
 
-  const handleNewEventDataChange = (field: string, value: any) => {
+  const handleNewEventDataChange = useCallback((field: string, value: any) => {
     setNewEventData((prev: any) => ({
       ...prev,
       [field]: value,
     }));
-  };
+  }, []);
 
   // Database initialization functions
 

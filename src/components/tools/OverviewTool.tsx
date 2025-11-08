@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { BalanceChangeEvent } from "../../services/tauriService";
 import SatsHoldingsChartSection from "../SatsHoldingsChartSection";
 import AnalyticsSection from "../AnalyticsSection";
@@ -44,10 +44,11 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
   onCancelNewEvent,
   onNewEventDataChange,
 }) => {
+  console.log('[OverviewTool] Component rendering, events count:', events.length, 'eventsLoading:', eventsLoading);
+  
   // Add the hook call right after the component function signature
-  const { portfolioMetrics, loading: metricsLoading } = usePortfolioMetrics(
-    true
-  );
+  const { portfolioMetrics, loading: metricsLoading } =
+    usePortfolioMetrics(true);
   // Bitcoin price state
   const [isEditingBitcoinPrice, setIsEditingBitcoinPrice] = useState(false);
   const [customBitcoinPrice, setCustomBitcoinPrice] = useState<number | null>(
@@ -64,14 +65,28 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
 
   // Auto-switch to manual mode if live price is null
   useEffect(() => {
+    console.log('[OverviewTool] Bitcoin price effect triggered:', {
+      liveBitcoinPrice,
+      customBitcoinPrice,
+      bitcoinPriceLoading
+    });
     if (
       liveBitcoinPrice === null &&
       customBitcoinPrice === null &&
       !bitcoinPriceLoading
     ) {
+      console.log('[OverviewTool] Setting default bitcoin price to 100000');
       setCustomBitcoinPrice(100000); // Default fallback price
     }
   }, [liveBitcoinPrice, customBitcoinPrice, bitcoinPriceLoading]);
+
+  // Log portfolio metrics changes
+  useEffect(() => {
+    console.log('[OverviewTool] Portfolio metrics effect:', {
+      portfolioMetrics,
+      metricsLoading
+    });
+  }, [portfolioMetrics, metricsLoading]);
 
   // Use custom price if set, otherwise use live price (with fallback)
   const bitcoinPrice =
@@ -116,7 +131,7 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
     }
   };
 
-  const bitcoinPriceMetric: BitcoinPriceMetric = {
+  const bitcoinPriceMetric: BitcoinPriceMetric = useMemo(() => ({
     price: bitcoinPrice,
     percentChange24hr,
     isLoading: bitcoinPriceLoading,
@@ -128,72 +143,84 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
     onInputChange: setBitcoinPriceInput,
     onInputBlur: handleBitcoinPriceBlur,
     onInputKeyDown: handleBitcoinPriceKeyDown,
-  };
+  }), [bitcoinPrice, percentChange24hr, bitcoinPriceLoading, customBitcoinPrice, isEditingBitcoinPrice, bitcoinPriceInput, handleModeToggle, handleBitcoinPriceClick, handleBitcoinPriceBlur, handleBitcoinPriceKeyDown]);
 
-  const overviewMetrics: MetricItem[] = [
-    {
-      label: "Portfolio Value",
-      value: metricsLoading
-        ? "..."
-        : `$${(
-            ((portfolioMetrics?.current_sats || 0) / 100_000_000) *
-            bitcoinPrice
-          ).toLocaleString(undefined, {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-          })}`,
-      color: "orange",
-    },
-    {
-      label: "Current Sats",
-      value: metricsLoading
-        ? "..."
-        : portfolioMetrics?.current_sats.toLocaleString() || "0",
-      color: "orange",
-    },
-    {
-      label: "Current BTC",
-      value: metricsLoading
-        ? "..."
-        : portfolioMetrics?.current_sats
-        ? (portfolioMetrics.current_sats / 100_000_000).toFixed(8)
-        : "0.00000000",
-      color: "orange",
-    },
-    {
-      label: "Unrealized Gain",
-      value: (() => {
-        if (
-          metricsLoading ||
-          !portfolioMetrics?.current_sats ||
-          !portfolioMetrics?.total_invested_cents
-        ) {
-          return "...";
-        }
-        const currentValue =
-          ((portfolioMetrics.current_sats || 0) / 100_000_000) * bitcoinPrice;
-        const totalInvested =
-          (portfolioMetrics.total_invested_cents || 0) / 100;
-        const unrealizedGain = currentValue - totalInvested;
-        return unrealizedGain >= 0
-          ? `+$${unrealizedGain.toLocaleString(undefined, {
+  const overviewMetrics: MetricItem[] = useMemo(() => {
+    console.log('[OverviewTool] Computing overview metrics with:', {
+      metricsLoading,
+      portfolioMetrics,
+      bitcoinPrice
+    });
+
+    return [
+      {
+        label: "Portfolio Value",
+        value: metricsLoading
+          ? "..."
+          : `$${(
+              ((portfolioMetrics?.current_sats || 0) / 100_000_000) *
+              bitcoinPrice
+            ).toLocaleString(undefined, {
               minimumFractionDigits: 0,
               maximumFractionDigits: 0,
-            })}`
-          : `-$${Math.abs(unrealizedGain).toLocaleString(undefined, {
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
-            })}`;
-      })(),
-      color: "green",
-    },
-  ];
+            })}`,
+        color: "orange",
+      },
+      {
+        label: "Current Sats",
+        value: metricsLoading
+          ? "..."
+          : portfolioMetrics?.current_sats.toLocaleString() || "0",
+        color: "orange",
+      },
+      {
+        label: "Current BTC",
+        value: metricsLoading
+          ? "..."
+          : portfolioMetrics?.current_sats
+          ? (portfolioMetrics.current_sats / 100_000_000).toFixed(8)
+          : "0.00000000",
+        color: "orange",
+      },
+      {
+        label: "Unrealized Gain",
+        value: (() => {
+          if (
+            metricsLoading ||
+            !portfolioMetrics?.current_sats ||
+            !portfolioMetrics?.total_invested_cents
+          ) {
+            return "...";
+          }
+          const currentValue =
+            ((portfolioMetrics.current_sats || 0) / 100_000_000) * bitcoinPrice;
+          const totalInvested =
+            (portfolioMetrics.total_invested_cents || 0) / 100;
+          const unrealizedGain = currentValue - totalInvested;
+          return unrealizedGain >= 0
+            ? `+$${unrealizedGain.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+              })}`
+            : `-$${Math.abs(unrealizedGain).toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+              })}`;
+        })(),
+        color: "green",
+      },
+    ];
+  }, [metricsLoading, portfolioMetrics, bitcoinPrice]);
 
-  const overviewMetricsComponent = (
-    <MetricsGrid bitcoinPrice={bitcoinPriceMetric} metrics={overviewMetrics} />
-  );
+  const overviewMetricsComponent = useMemo(() => {
+    console.log('[OverviewTool] Creating metrics component');
+    return <MetricsGrid bitcoinPrice={bitcoinPriceMetric} metrics={overviewMetrics} />;
+  }, [bitcoinPriceMetric, overviewMetrics]);
 
-  const overviewChart = <SatsHoldingsChartSection events={events} />;
+  const overviewChart = useMemo(() => {
+    console.log('[OverviewTool] Creating chart component with events:', events.length);
+    return <SatsHoldingsChartSection events={events} />;
+  }, [events]);
 
   const overviewLeftContent = (
     <>
@@ -232,4 +259,4 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
   );
 };
 
-export default OverviewTool;
+export default React.memo(OverviewTool);

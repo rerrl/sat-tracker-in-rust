@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from "react";
 import {
   BalanceChangeEvent,
   PortfolioMetrics,
-} from '../../services/tauriService';
-import MainLayout from '../layouts/MainLayout';
-import { useBitcoinPrice } from '../../hooks/useBitcoinPrice';
-import { useActivityMetrics } from '../../hooks/useActivityMetrics';
-import ActivityHeatmap from '../ActivityHeatmap';
-import MetricsGrid, { MetricItem, BitcoinPriceMetric } from '../MetricsGrid';
+} from "../../services/tauriService";
+import MainLayout from "../layouts/MainLayout";
+import { useBitcoinPrice } from "../../hooks/useBitcoinPrice";
+import { useActivityMetrics } from "../../hooks/useActivityMetrics";
+import ActivityHeatmap from "../ActivityHeatmap";
+import MetricsGrid, { MetricItem, BitcoinPriceMetric } from "../MetricsGrid";
 
 interface ActivityToolProps {
   events: BalanceChangeEvent[];
@@ -47,7 +47,8 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
   onNewEventDataChange,
 }) => {
   // Load activity metrics
-  const { activityMetrics, loading: activityLoading } = useActivityMetrics(true);
+  const { activityMetrics, loading: activityLoading } =
+    useActivityMetrics(true);
 
   // Bitcoin price state (same as overview for consistency)
   const [isEditingBitcoinPrice, setIsEditingBitcoinPrice] = useState(false);
@@ -133,21 +134,25 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
   const activityMetricsItems: MetricItem[] = [
     {
       label: "Current Streak",
-      value: activityLoading 
-        ? "..." 
-        : activityMetrics?.current_streak_weeks 
-          ? `${activityMetrics.current_streak_weeks} week${activityMetrics.current_streak_weeks !== 1 ? 's' : ''}`
-          : "0 weeks",
+      value: activityLoading
+        ? "..."
+        : activityMetrics?.current_streak_weeks
+        ? `${activityMetrics.current_streak_weeks} week${
+            activityMetrics.current_streak_weeks !== 1 ? "s" : ""
+          }`
+        : "0 weeks",
       color: "orange",
       hint: "Number of consecutive weeks with Bitcoin purchases",
     },
     {
-      label: "Longest Streak", 
+      label: "Longest Streak",
       value: activityLoading
         ? "..."
         : activityMetrics?.longest_streak_weeks
-          ? `${activityMetrics.longest_streak_weeks} week${activityMetrics.longest_streak_weeks !== 1 ? 's' : ''}`
-          : "0 weeks",
+        ? `${activityMetrics.longest_streak_weeks} week${
+            activityMetrics.longest_streak_weeks !== 1 ? "s" : ""
+          }`
+        : "0 weeks",
       color: "orange",
       hint: "Your longest streak of consecutive stacking weeks",
     },
@@ -156,9 +161,9 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
       value: activityLoading
         ? "..."
         : activityMetrics?.sats_stacked_this_year
-          ? `${activityMetrics.sats_stacked_this_year.toLocaleString()} sats`
-          : "0 sats",
-      color: "orange", 
+        ? `${activityMetrics.sats_stacked_this_year.toLocaleString()} sats`
+        : "0 sats",
+      color: "orange",
       hint: "Total satoshis accumulated in the current year",
     },
     {
@@ -166,27 +171,36 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
       value: activityLoading
         ? "..."
         : activityMetrics?.consistency_score_percent
-          ? `${activityMetrics.consistency_score_percent.toFixed(0)}%`
-          : "0%",
+        ? `${activityMetrics.consistency_score_percent.toFixed(0)}%`
+        : "0%",
       color: "green",
       hint: "Weighted consistency score over rolling 52-week period (recent weeks count more)",
     },
   ];
 
-  const activityMetricsComponent = (
-    <MetricsGrid bitcoinPrice={bitcoinPriceMetric} metrics={activityMetricsItems} />
-  );
+  // Create a stable reference using deep comparison of the actual data content
+  const stableHeatmapData = useMemo(() => {
+    console.log("[ActivityTool] Stabilizing heatmap data, activityMetrics:", !!activityMetrics);
+    console.log("[ActivityTool] Raw heatmap_data reference:", activityMetrics?.heatmap_data);
+    return activityMetrics?.heatmap_data;
+  }, [JSON.stringify(activityMetrics?.heatmap_data)]);
 
-  // Activity heatmap
-  const activityHeatmap = (
-    <div className="flex-1 overflow-y-auto bg-[rgba(9,12,8,0.8)]">
-      <ActivityHeatmap events={events} />
-    </div>
-  );
+  const activityHeatmap = useMemo(() => {
+    console.log("[ActivityTool] Creating activity heatmap with data:", stableHeatmapData?.length, "years");
+    console.log("[ActivityTool] Stable heatmap data reference:", stableHeatmapData);
+    return (
+      <div className="flex-1 overflow-y-auto bg-[rgba(9,12,8,0.8)]">
+        <ActivityHeatmap heatmapData={stableHeatmapData} />
+      </div>
+    );
+  }, [stableHeatmapData]);
 
   const activityLeftContent = (
     <>
-      {activityMetricsComponent}
+      <MetricsGrid
+        bitcoinPrice={bitcoinPriceMetric}
+        metrics={activityMetricsItems}
+      />
       {activityHeatmap}
     </>
   );
@@ -203,16 +217,18 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
             Best Stacking Day
           </div>
           <div className="text-sm text-[#F7F3E3]">
-            {activityLoading 
-              ? "..." 
+            {activityLoading
+              ? "..."
               : activityMetrics?.best_stacking_day || "No data"}
           </div>
           <div className="text-xs text-[rgba(247,243,227,0.5)]">
             {activityLoading
               ? "..."
               : activityMetrics?.best_day_percentage
-                ? `${activityMetrics.best_day_percentage.toFixed(0)}% of your purchases`
-                : "No purchases yet"}
+              ? `${activityMetrics.best_day_percentage.toFixed(
+                  0
+                )}% of your purchases`
+              : "No purchases yet"}
           </div>
         </div>
 
@@ -243,8 +259,10 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
             {activityLoading
               ? "..."
               : activityMetrics?.weeks_to_next_milestone
-                ? `${activityMetrics.weeks_to_next_milestone} week${activityMetrics.weeks_to_next_milestone !== 1 ? 's' : ''} to go`
-                : "You're doing great!"}
+              ? `${activityMetrics.weeks_to_next_milestone} week${
+                  activityMetrics.weeks_to_next_milestone !== 1 ? "s" : ""
+                } to go`
+              : "You're doing great!"}
           </div>
         </div>
       </div>
@@ -274,4 +292,4 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
   );
 };
 
-export default ActivityTool;
+export default React.memo(ActivityTool);
