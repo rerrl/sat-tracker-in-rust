@@ -17,11 +17,7 @@ const SatsHoldingsChartSection: React.FC<SatsHoldingsChartSectionProps> = ({ eve
           <h2 className="text-lg font-semibold text-[#F7F3E3]">
             Sats Holdings Over Time
           </h2>
-          <div 
-            className="relative"
-            onMouseEnter={() => setShowPremiumTag(true)}
-            onMouseLeave={() => setShowPremiumTag(false)}
-          >
+          <div className="relative">
             {showPremiumTag && (
               <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 text-xs bg-gradient-to-r from-[#f7931a] to-[#61dafb] text-black px-2 py-0.5 rounded font-medium whitespace-nowrap">
                 PREMIUM
