@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import Announcements from "./Announcements";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useAnnouncements } from "../hooks/useAnnouncements";
+import packageJson from "../../package.json";
 
 interface AppHeaderProps {
   selectedTool: string;
@@ -38,13 +39,18 @@ const AppHeader: React.FC<AppHeaderProps> = ({
     <div className="bg-[#2A2633] border-b border-[rgba(247,243,227,0.2)] shrink-0 flex">
       {/* Left side - Title and Announcements (65%) */}
       <div className="w-[65%] px-6 py-3 flex items-center gap-6">
-        <h1 className="text-xl font-bold text-[#F7F3E3] whitespace-nowrap">
-          Sat Tracker{" "}
-          <span className="text-sm font-normal">
-            by <span className="text-[#E16036]">dprogram</span>
-            <span className="text-[#F7F3E3]">.me</span>
-          </span>
-        </h1>
+        <div className="whitespace-nowrap">
+          <h1 className="text-xl font-bold text-[#F7F3E3]">
+            Sat Tracker{" "}
+            <span className="text-sm font-normal">
+              by <span className="text-[#E16036]">dprogram</span>
+              <span className="text-[#F7F3E3]">.me</span>
+            </span>
+          </h1>
+          <div className="text-xs text-[rgba(247,243,227,0.6)] -mt-1">
+            v{packageJson.version}
+          </div>
+        </div>
 
         <div className="flex-1 min-w-0">
           <Announcements />
