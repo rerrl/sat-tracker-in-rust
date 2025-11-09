@@ -1,140 +1,66 @@
 import React from "react";
 
+export interface AnalyticsMetric {
+  title: string;
+  value: string;
+  subtitle: string;
+  color?: 'default' | 'green' | 'orange' | 'blue';
+}
+
+export interface PremiumTeaseCard {
+  title: string;
+  value: string;
+  subtitle: string;
+  description: string;
+}
+
 interface AnalyticsSectionProps {
-  portfolioMetrics: any;
-  metricsLoading: boolean;
-  toolType?: "overview" | "activity";
+  sectionTitle: string;
+  metrics: AnalyticsMetric[];
+  premiumCards: PremiumTeaseCard[];
 }
 
 const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
-  portfolioMetrics,
-  metricsLoading,
-  toolType = "overview",
+  sectionTitle,
+  metrics,
+  premiumCards,
 }) => {
-  const getPremiumTeaseCards = () => {
-    if (toolType === "activity") {
-      return [
-        {
-          title: "Satoshi Maximizer",
-          value: "+18.7%",
-          subtitle: "more sats possible",
-          description:
-            "Discover which days you could have bought to maximize your stack using historical price data",
-        },
-        {
-          title: "Cycle Position Analysis",
-          value: "Early Bull",
-          subtitle: "market phase timing",
-          description:
-            "Where your buys fall within Bitcoin's 4-year halving cycles using historical price patterns",
-        },
-        {
-          title: "Opportunity Cost",
-          value: "$3,247",
-          subtitle: "vs weekly DCA",
-          description:
-            "How much more value you could have gained with consistent weekly buys at historical prices",
-        },
-      ];
-    } else {
-      return [
-        {
-          title: "Peak Performance",
-          value: "$127,340",
-          subtitle: "portfolio ATH value",
-          description: "Your portfolio's highest USD value using historical Bitcoin prices",
-        },
-        {
-          title: "Market Timing Score",
-          value: "73/100",
-          subtitle: "vs perfect timing",
-          description: "How well you timed the market compared to buying at historical lows",
-        },
-        {
-          title: "Dollar Cost Average Score",
-          value: "8.4/10",
-          subtitle: "vs lump sum timing",
-          description: "How your DCA strategy performed vs investing everything at historical optimal times",
-        },
-      ];
+  const getValueColor = (color?: string) => {
+    switch (color) {
+      case 'green':
+        return 'text-lightgreen';
+      case 'orange':
+        return 'text-[#f7931a]';
+      case 'blue':
+        return 'text-[#61dafb]';
+      default:
+        return 'text-[#F7F3E3]';
     }
   };
 
-  const premiumCards = getPremiumTeaseCards();
   return (
     <div className="p-4">
       <h3 className="text-sm font-medium text-[#F7F3E3] mb-3">
-        Portfolio Insights
+        {sectionTitle}
       </h3>
 
       <div className="space-y-3">
-        <div className="bg-[rgba(247,243,227,0.05)] p-3 rounded border border-[rgba(247,243,227,0.1)]">
-          <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
-            Average Buy Price
+        {metrics.map((metric, index) => (
+          <div
+            key={index}
+            className="bg-[rgba(247,243,227,0.05)] p-3 rounded border border-[rgba(247,243,227,0.1)]"
+          >
+            <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
+              {metric.title}
+            </div>
+            <div className={`text-sm ${getValueColor(metric.color)}`}>
+              {metric.value}
+            </div>
+            <div className="text-xs text-[rgba(247,243,227,0.5)]">
+              {metric.subtitle}
+            </div>
           </div>
-          <div className="text-sm text-lightgreen">
-            {metricsLoading
-              ? "..."
-              : portfolioMetrics?.avg_buy_price
-              ? `$${portfolioMetrics.avg_buy_price.toLocaleString(undefined, {
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
-                })}`
-              : "No buys yet"}
-          </div>
-          <div className="text-xs text-[rgba(247,243,227,0.5)]">
-            {metricsLoading
-              ? "..."
-              : `${(
-                  portfolioMetrics?.total_sats_stacked || 0
-                ).toLocaleString()} sats stacked`}
-          </div>
-        </div>
-
-        <div className="bg-[rgba(247,243,227,0.05)] p-3 rounded border border-[rgba(247,243,227,0.1)]">
-          <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
-            Total Invested
-          </div>
-          <div className="text-sm text-[#f7931a]">
-            {metricsLoading
-              ? "..."
-              : `$${(
-                  (portfolioMetrics?.total_invested_cents || 0) / 100
-                ).toLocaleString(undefined, {
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
-                })}`}
-          </div>
-          <div className="text-xs text-[rgba(247,243,227,0.5)]">
-            {metricsLoading
-              ? "..."
-              : portfolioMetrics?.avg_sell_price
-              ? `Avg sell: $${portfolioMetrics.avg_sell_price.toLocaleString(
-                  undefined,
-                  {
-                    minimumFractionDigits: 0,
-                    maximumFractionDigits: 0,
-                  }
-                )}`
-              : "No sells yet"}
-          </div>
-        </div>
-
-        <div className="bg-[rgba(247,243,227,0.05)] p-3 rounded border border-[rgba(247,243,227,0.1)]">
-          <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
-            Recent Activity
-          </div>
-          <div className="text-sm text-[#61dafb]">
-            {metricsLoading
-              ? "..."
-              : `${(
-                  portfolioMetrics?.sats_stacked_7d || 0
-                ).toLocaleString()} sats`}
-          </div>
-          <div className="text-xs text-[rgba(247,243,227,0.5)]">
-            Last 7 days
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Premium Tease Section */}

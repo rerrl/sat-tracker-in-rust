@@ -1,12 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
-import {
-  BalanceChangeEvent,
-  PortfolioMetrics,
-} from "../../services/tauriService";
+import { BalanceChangeEvent } from "../../services/tauriService";
 import MainLayout from "../layouts/MainLayout";
 import { useBitcoinPrice } from "../../hooks/useBitcoinPrice";
 import { useActivityMetrics } from "../../hooks/useActivityMetrics";
-import { usePortfolioMetrics } from "../../hooks/usePortfolioMetrics";
 import ActivityHeatmap from "../ActivityHeatmap";
 import MetricsGrid, { MetricItem, BitcoinPriceMetric } from "../MetricsGrid";
 import AnalyticsSection from "../AnalyticsSection";
@@ -51,10 +47,6 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
   // Load activity metrics
   const { activityMetrics, loading: activityLoading } =
     useActivityMetrics(true);
-
-  // Load portfolio metrics for AnalyticsSection
-  const { portfolioMetrics, loading: metricsLoading } =
-    usePortfolioMetrics(true);
 
   // Bitcoin price state (same as overview for consistency)
   const [isEditingBitcoinPrice, setIsEditingBitcoinPrice] = useState(false);
@@ -224,11 +216,72 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
     </>
   );
 
+  const activityAnalyticsMetrics = [
+    {
+      title: "Best Stacking Day",
+      value: activityLoading
+        ? "..."
+        : activityMetrics?.best_stacking_day || "No data",
+      subtitle: activityLoading
+        ? "..."
+        : activityMetrics?.best_day_percentage
+        ? `${activityMetrics.best_day_percentage.toFixed(0)}% of your purchases`
+        : "No purchases yet",
+      color: "default" as const,
+    },
+    {
+      title: "Consistency Rating",
+      value: activityLoading
+        ? "..."
+        : activityMetrics?.consistency_rating || "No data",
+      subtitle: "Based on recent activity",
+      color: "green" as const,
+    },
+    {
+      title: "Next Milestone",
+      value: activityLoading
+        ? "..."
+        : activityMetrics?.next_milestone_description || "Keep stacking!",
+      subtitle: activityLoading
+        ? "..."
+        : activityMetrics?.weeks_to_next_milestone
+        ? `${activityMetrics.weeks_to_next_milestone} week${
+            activityMetrics.weeks_to_next_milestone !== 1 ? "s" : ""
+          } to go`
+        : "You're doing great!",
+      color: "orange" as const,
+    },
+  ];
+
+  const activityPremiumCards = [
+    {
+      title: "Satoshi Maximizer",
+      value: "+18.7%",
+      subtitle: "more sats possible",
+      description:
+        "Discover which days you could have bought to maximize your stack using historical price data",
+    },
+    {
+      title: "Cycle Position Analysis",
+      value: "Early Bull",
+      subtitle: "market phase timing",
+      description:
+        "Where your buys fall within Bitcoin's 4-year halving cycles using historical price patterns",
+    },
+    {
+      title: "Opportunity Cost",
+      value: "$3,247",
+      subtitle: "vs weekly DCA",
+      description:
+        "How much more value you could have gained with consistent weekly buys at historical prices",
+    },
+  ];
+
   const activityAnalytics = (
     <AnalyticsSection
-      portfolioMetrics={portfolioMetrics}
-      metricsLoading={metricsLoading}
-      toolType="activity"
+      sectionTitle="Activity Insights"
+      metrics={activityAnalyticsMetrics}
+      premiumCards={activityPremiumCards}
     />
   );
 
