@@ -17,7 +17,8 @@ yarn start:dev
 - TODO: csv importing. (no duplicates - coinbase, river)
 - TODO: remove import v1 data button before release
 - TODO: btc <-> sats in events/charts (low priority)
-- TODO: Add React.memo() to remaining components for performance optimization (MetricsGrid, SatsHoldingsChartSection, ActivityHeatmap, AnalyticsSection, MainLayout, etc.)
+- TODO: speed up tool switching
+  - Add React.memo() to remaining components for performance optimization (MetricsGrid, SatsHoldingsChartSection, ActivityHeatmap, AnalyticsSection, MainLayout, etc.)
 
 ## App Architecture & Tool System
 
@@ -56,8 +57,9 @@ This architecture allows unlimited expansion in any direction based on user need
 - Goal setting and milestone tracking
 - AI-powered insights and recommendations
 
-### **Free vs Premium Strategy**
+## Installation on Linux
 
-- **Free**: Full-featured tools with generic insights and pattern recognition
-- **Premium**: Advanced AI insights, historical price analysis, and specialized tools
-- **No feature gating** - free users get complete value, premium adds intelligence
+- Download the latest release as a .AppImage file
+- make it executable: `chmod +x sat-tracker-in-rust-x86_64_0.1.0_amd64.AppImage`
+- add it to our users binaires and path: ~/.local/bin
+- make it availbale in applications: create a .desktop file in ~/.local/share/applications
