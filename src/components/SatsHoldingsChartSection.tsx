@@ -30,6 +30,8 @@ const SatsHoldingsChartSection: React.FC<SatsHoldingsChartSectionProps> = ({ eve
             <button
               disabled
               className="text-xs text-[rgba(247,243,227,0.6)] bg-[rgba(247,243,227,0.1)] border border-[rgba(247,243,227,0.2)] px-3 py-1 rounded cursor-not-allowed opacity-60 flex items-center gap-2"
+              onMouseEnter={() => setShowPremiumTag(true)}
+              onMouseLeave={() => setShowPremiumTag(false)}
             >
               <div className="w-3 h-3 border border-[rgba(247,243,227,0.4)] rounded-sm bg-[rgba(247,243,227,0.05)] flex items-center justify-center">
                 {/* Empty checkbox - would show checkmark when enabled */}
