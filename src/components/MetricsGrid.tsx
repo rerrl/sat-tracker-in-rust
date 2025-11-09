@@ -52,14 +52,12 @@ const MetricsGrid: React.FC<MetricsGridProps> = ({ bitcoinPrice, metrics }) => {
     }
   };
 
-  const totalColumns = (bitcoinPrice ? 1 : 0) + metrics.length;
-
   return (
     <div className="p-4 pb-2 shrink-0 border-b border-[rgba(247,243,227,0.1)]">
-      <div className={`grid grid-cols-${totalColumns} gap-3 mb-3`}>
+      <div className="flex gap-3 mb-3">
         {/* Bitcoin Price (if provided) */}
         {bitcoinPrice && (
-          <div className="text-center p-2 bg-[rgba(97,218,251,0.1)] border border-[rgba(97,218,251,0.2)] rounded relative">
+          <div className="flex-1 text-center p-2 bg-[rgba(97,218,251,0.1)] border border-[rgba(97,218,251,0.2)] rounded relative">
             <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1 flex items-center justify-center gap-1">
               Bitcoin Price
               <button
@@ -137,7 +135,7 @@ const MetricsGrid: React.FC<MetricsGridProps> = ({ bitcoinPrice, metrics }) => {
           return (
             <div
               key={index}
-              className={`text-center p-2 ${colorClasses.bg} border ${colorClasses.border} rounded`}
+              className={`flex-1 text-center p-2 ${colorClasses.bg} border ${colorClasses.border} rounded`}
               title={metric.hint}
             >
               <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
