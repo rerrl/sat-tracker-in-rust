@@ -1,7 +1,7 @@
 import React from "react";
 import OverviewTool from "./tools/OverviewTool";
 import ActivityTool from "./tools/ActivityTool";
-import { BalanceChangeEvent, PortfolioMetrics } from "../services/tauriService";
+import { BalanceChangeEvent } from "../services/tauriService";
 
 interface ToolContainerProps {
   selectedTool: string;
@@ -23,7 +23,7 @@ interface ToolContainerProps {
   onNewEventDataChange: (field: string, value: any) => void;
 }
 
-const ToolContainer: React.FC<ToolContainerProps> = ({ 
+const ToolContainer: React.FC<ToolContainerProps> = ({
   selectedTool,
   events,
   eventsLoading,

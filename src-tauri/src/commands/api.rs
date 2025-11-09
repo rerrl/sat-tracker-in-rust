@@ -1,8 +1,18 @@
 use serde::{Deserialize, Serialize};
 
-// API hostname configuration
-const API_HOST: &str = "http://localhost:3000";
-// const API_HOST: &str = "https://dprogram.me";
+fn get_api_host() -> &'static str {
+    #[cfg(debug_assertions)]
+    {
+        // Development: use localhost
+        "http://localhost:3000"
+    }
+    
+    #[cfg(not(debug_assertions))]
+    {
+        // Production: use production API
+        "https://dprogram.me"
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BitcoinPriceResponse {
@@ -32,7 +42,7 @@ pub async fn fetch_bitcoin_price() -> Result<BitcoinPriceResponse, String> {
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 
-    let url = format!("{}/api/proxy/sat-tracker/bitcoin-price", API_HOST);
+    let url = format!("{}/api/proxy/sat-tracker/bitcoin-price", get_api_host());
     let response = client
         .get(&url)
         .send()
@@ -60,7 +70,7 @@ pub async fn fetch_announcements() -> Result<AnnouncementsResponse, String> {
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 
-    let url = format!("{}/api/proxy/sat-tracker/announcements", API_HOST);
+    let url = format!("{}/api/proxy/sat-tracker/announcements", get_api_host());
     let response = client
         .get(&url)
         .send()

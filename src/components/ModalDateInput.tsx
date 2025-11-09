@@ -40,7 +40,6 @@ export default function ModalDateInput({
   }, [value, onChange, isStartDate]);
 
   // Parse the ISO timestamp
-  const date = new Date(value);
   const dateStr = value ? value.split('T')[0] : ""; // YYYY-MM-DD
   const parts = dateStr.split("-");
   const year = parts[0] || "";

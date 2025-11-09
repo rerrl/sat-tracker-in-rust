@@ -1,6 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
-import { TauriService, DatabaseStatus, BalanceChangeEvent, PortfolioMetrics } from "./services/tauriService";
-import { useEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from "./hooks/useEvents";
+import {
+  TauriService,
+  DatabaseStatus,
+  BalanceChangeEvent,
+} from "./services/tauriService";
+import {
+  useEvents,
+  useCreateEvent,
+  useUpdateEvent,
+  useDeleteEvent,
+} from "./hooks/useEvents";
 import { useQueryClient } from "@tanstack/react-query";
 import AppHeader from "./components/AppHeader";
 import ToolContainer from "./components/ToolContainer";
@@ -27,7 +36,11 @@ function App() {
   const [showEncryptionSettings, setShowEncryptionSettings] = useState(false);
 
   // Replace event state with hooks
-  const { events, totalCount, loading: eventsLoading } = useEvents(isDatabaseInitialized);
+  const {
+    events,
+    totalCount,
+    loading: eventsLoading,
+  } = useEvents(isDatabaseInitialized);
   const createEventMutation = useCreateEvent();
   const updateEventMutation = useUpdateEvent();
   const deleteEventMutation = useDeleteEvent();
@@ -260,11 +273,11 @@ function App() {
       const createdEvents = await TauriService.createUndocumentedLumpsumEvents(
         request
       );
-      
+
       // Invalidate all queries to refetch
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      queryClient.invalidateQueries({ queryKey: ['portfolioMetrics'] });
-      queryClient.invalidateQueries({ queryKey: ['activityMetrics'] });
+      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["portfolioMetrics"] });
+      queryClient.invalidateQueries({ queryKey: ["activityMetrics"] });
 
       setShowLumpsumModal(false);
       setLumpsumData({
@@ -287,7 +300,6 @@ function App() {
   useEffect(() => {
     checkDatabaseStatusAndInitialize();
   }, []);
-
 
   // Keyboard event listener for shared state
   useEffect(() => {
@@ -317,12 +329,12 @@ function App() {
           try {
             const result = await TauriService.importSatTrackerV1Data();
             console.log("Import result:", result);
-            
+
             // Invalidate all queries to refetch after import
-            queryClient.invalidateQueries({ queryKey: ['events'] });
-            queryClient.invalidateQueries({ queryKey: ['portfolioMetrics'] });
-            queryClient.invalidateQueries({ queryKey: ['activityMetrics'] });
-            
+            queryClient.invalidateQueries({ queryKey: ["events"] });
+            queryClient.invalidateQueries({ queryKey: ["portfolioMetrics"] });
+            queryClient.invalidateQueries({ queryKey: ["activityMetrics"] });
+
             alert(`Import completed: ${result}`);
           } catch (error) {
             console.error("Import failed:", error);
@@ -378,7 +390,7 @@ function App() {
           setShowToolDropdown={setShowToolDropdown}
         />
 
-        <ToolContainer 
+        <ToolContainer
           selectedTool={selectedTool}
           events={events}
           eventsLoading={eventsLoading}

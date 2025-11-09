@@ -44,8 +44,13 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
   onCancelNewEvent,
   onNewEventDataChange,
 }) => {
-  console.log('[OverviewTool] Component rendering, events count:', events.length, 'eventsLoading:', eventsLoading);
-  
+  console.log(
+    "[OverviewTool] Component rendering, events count:",
+    events.length,
+    "eventsLoading:",
+    eventsLoading
+  );
+
   // Add the hook call right after the component function signature
   const { portfolioMetrics, loading: metricsLoading } =
     usePortfolioMetrics(true);
@@ -60,31 +65,32 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
     price: liveBitcoinPrice,
     percentChange24hr,
     loading: bitcoinPriceLoading,
+    // @ts-ignore
     error: bitcoinPriceError,
   } = useBitcoinPrice();
 
   // Auto-switch to manual mode if live price is null
   useEffect(() => {
-    console.log('[OverviewTool] Bitcoin price effect triggered:', {
+    console.log("[OverviewTool] Bitcoin price effect triggered:", {
       liveBitcoinPrice,
       customBitcoinPrice,
-      bitcoinPriceLoading
+      bitcoinPriceLoading,
     });
     if (
       liveBitcoinPrice === null &&
       customBitcoinPrice === null &&
       !bitcoinPriceLoading
     ) {
-      console.log('[OverviewTool] Setting default bitcoin price to 100000');
+      console.log("[OverviewTool] Setting default bitcoin price to 100000");
       setCustomBitcoinPrice(100000); // Default fallback price
     }
   }, [liveBitcoinPrice, customBitcoinPrice, bitcoinPriceLoading]);
 
   // Log portfolio metrics changes
   useEffect(() => {
-    console.log('[OverviewTool] Portfolio metrics effect:', {
+    console.log("[OverviewTool] Portfolio metrics effect:", {
       portfolioMetrics,
-      metricsLoading
+      metricsLoading,
     });
   }, [portfolioMetrics, metricsLoading]);
 
@@ -131,25 +137,39 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
     }
   };
 
-  const bitcoinPriceMetric: BitcoinPriceMetric = useMemo(() => ({
-    price: bitcoinPrice,
-    percentChange24hr,
-    isLoading: bitcoinPriceLoading,
-    isManualMode: customBitcoinPrice !== null,
-    isEditing: isEditingBitcoinPrice,
-    inputValue: bitcoinPriceInput,
-    onModeToggle: handleModeToggle,
-    onPriceClick: handleBitcoinPriceClick,
-    onInputChange: setBitcoinPriceInput,
-    onInputBlur: handleBitcoinPriceBlur,
-    onInputKeyDown: handleBitcoinPriceKeyDown,
-  }), [bitcoinPrice, percentChange24hr, bitcoinPriceLoading, customBitcoinPrice, isEditingBitcoinPrice, bitcoinPriceInput, handleModeToggle, handleBitcoinPriceClick, handleBitcoinPriceBlur, handleBitcoinPriceKeyDown]);
+  const bitcoinPriceMetric: BitcoinPriceMetric = useMemo(
+    () => ({
+      price: bitcoinPrice,
+      percentChange24hr,
+      isLoading: bitcoinPriceLoading,
+      isManualMode: customBitcoinPrice !== null,
+      isEditing: isEditingBitcoinPrice,
+      inputValue: bitcoinPriceInput,
+      onModeToggle: handleModeToggle,
+      onPriceClick: handleBitcoinPriceClick,
+      onInputChange: setBitcoinPriceInput,
+      onInputBlur: handleBitcoinPriceBlur,
+      onInputKeyDown: handleBitcoinPriceKeyDown,
+    }),
+    [
+      bitcoinPrice,
+      percentChange24hr,
+      bitcoinPriceLoading,
+      customBitcoinPrice,
+      isEditingBitcoinPrice,
+      bitcoinPriceInput,
+      handleModeToggle,
+      handleBitcoinPriceClick,
+      handleBitcoinPriceBlur,
+      handleBitcoinPriceKeyDown,
+    ]
+  );
 
   const overviewMetrics: MetricItem[] = useMemo(() => {
-    console.log('[OverviewTool] Computing overview metrics with:', {
+    console.log("[OverviewTool] Computing overview metrics with:", {
       metricsLoading,
       portfolioMetrics,
-      bitcoinPrice
+      bitcoinPrice,
     });
 
     return [
@@ -213,12 +233,20 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
   }, [metricsLoading, portfolioMetrics, bitcoinPrice]);
 
   const overviewMetricsComponent = useMemo(() => {
-    console.log('[OverviewTool] Creating metrics component');
-    return <MetricsGrid bitcoinPrice={bitcoinPriceMetric} metrics={overviewMetrics} />;
+    console.log("[OverviewTool] Creating metrics component");
+    return (
+      <MetricsGrid
+        bitcoinPrice={bitcoinPriceMetric}
+        metrics={overviewMetrics}
+      />
+    );
   }, [bitcoinPriceMetric, overviewMetrics]);
 
   const overviewChart = useMemo(() => {
-    console.log('[OverviewTool] Creating chart component with events:', events.length);
+    console.log(
+      "[OverviewTool] Creating chart component with events:",
+      events.length
+    );
     return <SatsHoldingsChartSection events={events} />;
   }, [events]);
 
@@ -242,27 +270,31 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
         : "No buys yet",
       subtitle: metricsLoading
         ? "..."
-        : `${(portfolioMetrics?.total_sats_stacked || 0).toLocaleString()} sats stacked`,
+        : `${(
+            portfolioMetrics?.total_sats_stacked || 0
+          ).toLocaleString()} sats stacked`,
       color: "green" as const,
     },
     {
       title: "Total Invested",
       value: metricsLoading
         ? "..."
-        : `$${((portfolioMetrics?.total_invested_cents || 0) / 100).toLocaleString(
+        : `$${(
+            (portfolioMetrics?.total_invested_cents || 0) / 100
+          ).toLocaleString(undefined, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+          })}`,
+      subtitle: metricsLoading
+        ? "..."
+        : portfolioMetrics?.avg_sell_price
+        ? `Avg sell: $${portfolioMetrics.avg_sell_price.toLocaleString(
             undefined,
             {
               minimumFractionDigits: 0,
               maximumFractionDigits: 0,
             }
-          )}`,
-      subtitle: metricsLoading
-        ? "..."
-        : portfolioMetrics?.avg_sell_price
-        ? `Avg sell: $${portfolioMetrics.avg_sell_price.toLocaleString(undefined, {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-          })}`
+          )}`
         : "No sells yet",
       color: "orange" as const,
     },
@@ -281,19 +313,22 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
       title: "Peak Performance",
       value: "$127,340",
       subtitle: "portfolio ATH value",
-      description: "Your portfolio's highest USD value using historical Bitcoin prices",
+      description:
+        "Your portfolio's highest USD value using historical Bitcoin prices",
     },
     {
       title: "Market Timing Score",
       value: "73/100",
       subtitle: "vs perfect timing",
-      description: "How well you timed the market compared to buying at historical lows",
+      description:
+        "How well you timed the market compared to buying at historical lows",
     },
     {
       title: "Dollar Cost Average Score",
       value: "8.4/10",
       subtitle: "vs lump sum timing",
-      description: "How your DCA strategy performed vs investing everything at historical optimal times",
+      description:
+        "How your DCA strategy performed vs investing everything at historical optimal times",
     },
   ];
 

@@ -28,6 +28,7 @@ interface ActivityToolProps {
 
 const ActivityTool: React.FC<ActivityToolProps> = ({
   events,
+  // @ts-ignore
   eventsLoading,
   totalCount,
   editingEventId,
@@ -59,6 +60,7 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
     price: liveBitcoinPrice,
     percentChange24hr,
     loading: bitcoinPriceLoading,
+    // @ts-ignore
     error: bitcoinPriceError,
   } = useBitcoinPrice();
 
