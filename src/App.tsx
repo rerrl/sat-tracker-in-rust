@@ -16,6 +16,7 @@ import ToolContainer from "./components/ToolContainer";
 import LumpsumModal from "./components/LumpsumModal";
 import PasswordPromptModal from "./components/PasswordPromptModal";
 import EncryptionSettings from "./components/EncryptionSettings";
+import CsvImportModal from "./components/CsvImportModal";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
 
@@ -34,6 +35,7 @@ function App() {
   const [showToolDropdown, setShowToolDropdown] = useState(false);
   const [showLumpsumModal, setShowLumpsumModal] = useState(false);
   const [showEncryptionSettings, setShowEncryptionSettings] = useState(false);
+  const [showCsvImportModal, setShowCsvImportModal] = useState(false);
 
   // Replace event state with hooks
   const {
@@ -349,6 +351,10 @@ function App() {
         await listen("menu-encryption-settings", () => {
           setShowEncryptionSettings(true);
         });
+
+        await listen("menu-import-csv", () => {
+          setShowCsvImportModal(true);
+        });
       };
 
       setupMenuListeners().catch(console.error);
@@ -417,6 +423,19 @@ function App() {
         lumpsumData={lumpsumData}
         onLumpsumDataChange={handleLumpsumDataChange}
         onCreateEvents={handleCreateLumpsumEvents}
+      />
+
+      <CsvImportModal
+        isOpen={showCsvImportModal}
+        onClose={() => setShowCsvImportModal(false)}
+        onImportComplete={(events) => {
+          // Invalidate all queries to refetch after import
+          queryClient.invalidateQueries({ queryKey: ["events"] });
+          queryClient.invalidateQueries({ queryKey: ["portfolioMetrics"] });
+          queryClient.invalidateQueries({ queryKey: ["activityMetrics"] });
+          
+          alert(`Successfully imported ${events.length} events`);
+        }}
       />
 
       {showEncryptionSettings && (

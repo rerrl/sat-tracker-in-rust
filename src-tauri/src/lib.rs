@@ -7,11 +7,13 @@ use commands::import::import_sat_tracker_v1_data;
 use commands::api::{fetch_bitcoin_price, fetch_announcements};
 use commands::encryption::{check_database_status, validate_database_password, encrypt_database, change_database_password, initialize_database_with_password};
 use commands::activity_metrics::get_activity_metrics;
+use commands::csv_import::import_csv_data;
 use tauri::{Emitter, menu::{Menu, MenuItem, Submenu, PredefinedMenuItem}, AppHandle};
 
 // Add these helper functions before the main run() function
 fn create_full_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, Box<dyn std::error::Error>> {
     let import_item = MenuItem::with_id(app, "import_sat_tracker_v1", "Import Sat Tracker v1 Data", true, None::<&str>)?;
+    let csv_import_item = MenuItem::with_id(app, "import_csv", "Import CSV Data", true, None::<&str>)?;
     let lumpsum_item = MenuItem::with_id(app, "add_undocumented_lumpsum", "Add Undocumented Lumpsum", true, None::<&str>)?;
     let encryption_item = MenuItem::with_id(app, "encryption_settings", "Database Encryption...", true, None::<&str>)?;
     let separator = PredefinedMenuItem::separator(app)?;
@@ -19,6 +21,7 @@ fn create_full_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, Box<dyn std::er
 
     let file_menu = Submenu::with_items(app, "File", true, &[
         &import_item,
+        &csv_import_item,
         &lumpsum_item,
         &separator,
         &encryption_item,
@@ -51,6 +54,7 @@ async fn update_menu_for_database_status(app: AppHandle, is_unlocked: bool) -> R
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             // Set initial minimal menu
             let menu = create_minimal_menu(app.handle()).expect("Failed to create minimal menu");
@@ -68,6 +72,9 @@ pub fn run() {
             match event.id().as_ref() {
                 "import_sat_tracker_v1" => {
                     app.emit("menu-import-v1", ()).unwrap();
+                }
+                "import_csv" => {
+                    app.emit("menu-import-csv", ()).unwrap();
                 }
                 "add_undocumented_lumpsum" => {
                     app.emit("menu-add-lumpsum", ()).unwrap();
@@ -97,7 +104,8 @@ pub fn run() {
             change_database_password,
             initialize_database_with_password,
             update_menu_for_database_status,
-            get_activity_metrics
+            get_activity_metrics,
+            import_csv_data
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

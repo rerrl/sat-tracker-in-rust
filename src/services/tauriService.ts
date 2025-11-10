@@ -204,6 +204,11 @@ export class TauriService {
     console.log("Fetching activity metrics");
     return await invoke("get_activity_metrics");
   }
+
+  // Import CSV data
+  static async importCsvData(filePath: string): Promise<BalanceChangeEvent[]> {
+    return await invoke("import_csv_data", { filePath });
+  }
 }
 
 // Export individual functions for convenience
