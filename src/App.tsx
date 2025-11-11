@@ -11,6 +11,7 @@ import LumpsumModal from "./components/LumpsumModal";
 import PasswordPromptModal from "./components/PasswordPromptModal";
 import EncryptionSettings from "./components/EncryptionSettings";
 import CsvImportModal from "./components/CsvImportModal";
+import Modal from "./components/Modal";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
 import { 
@@ -444,30 +445,23 @@ function App() {
       />
 
       {showEncryptionSettings && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-[#2A2633] border border-[rgba(247,243,227,0.3)] rounded-lg w-[500px] max-h-[80vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-[#F7F3E3]">
-                  Database Encryption
-                </h2>
-                <button
-                  onClick={() => setShowEncryptionSettings(false)}
-                  className="text-[rgba(247,243,227,0.6)] hover:text-[#F7F3E3] text-xl"
-                >
-                  ×
-                </button>
-              </div>
-              <EncryptionSettings
-                isEncrypted={databaseStatus?.is_encrypted || false}
-                onEncryptionChange={async () => {
-                  await checkDatabaseStatusAndInitialize();
-                }}
-                onClose={() => setShowEncryptionSettings(false)}
-              />
-            </div>
+        <Modal
+          isOpen={showEncryptionSettings}
+          onClose={() => setShowEncryptionSettings(false)}
+          title="Database Encryption"
+          maxWidth="500px"
+          maxHeight="80vh"
+        >
+          <div className="p-6">
+            <EncryptionSettings
+              isEncrypted={databaseStatus?.is_encrypted || false}
+              onEncryptionChange={async () => {
+                await checkDatabaseStatusAndInitialize();
+              }}
+              onClose={() => setShowEncryptionSettings(false)}
+            />
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

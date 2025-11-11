@@ -1,3 +1,4 @@
+import Modal from "./Modal";
 import ModalDateInput from "./ModalDateInput";
 import { validateLumpsumForm } from "../utils/dateValidation";
 
@@ -23,8 +24,6 @@ export default function LumpsumModal({
   onLumpsumDataChange,
   onCreateEvents,
 }: LumpsumModalProps) {
-  if (!isOpen) return null;
-
   const isFormValid = validateLumpsumForm(
     lumpsumData.start_date,
     lumpsumData.end_date,
@@ -63,155 +62,137 @@ export default function LumpsumModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Add Undocumented Lumpsum"
+      subtitle="Create multiple buy events distributed over a time period"
+      maxWidth="600px"
     >
-      <div
-        className="bg-[#2A2633] border border-[rgba(247,243,227,0.3)] rounded-lg w-[600px]"
-        onClick={(e) => {
-          e.stopPropagation();
-        }}
-      >
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-[rgba(247,243,227,0.2)]">
-          <h3 className="text-lg font-semibold text-[#F7F3E3]">
-            Add Undocumented Lumpsum
-          </h3>
-          <p className="text-sm text-[rgba(247,243,227,0.6)] mt-1">
-            Create multiple buy events distributed over a time period
-          </p>
-        </div>
+      {/* Form Content */}
+      <div className="p-6">
+        <div className="border-b border-[rgba(247,243,227,0.1)] bg-[rgba(247,243,227,0.05)] px-4 py-3 text-xs">
+          {/* First Row - Dates and Frequency */}
+          <div
+            className="grid gap-3 items-center mb-4"
+            style={{ gridTemplateColumns: "1fr 1fr 1fr" }}
+          >
+            <ModalDateInput
+              label="Start Date"
+              value={lumpsumData.start_date}
+              onChange={(value) => onLumpsumDataChange("start_date", value)}
+              yearInputId="start-year"
+              monthInputId="start-month"
+              dayInputId="start-day"
+              isStartDate={true}
+            />
 
-        {/* Form Content */}
-        <div className="p-6">
-          <div className="border-b border-[rgba(247,243,227,0.1)] bg-[rgba(247,243,227,0.05)] px-4 py-3 text-xs">
-            {/* First Row - Dates and Frequency */}
-            <div
-              className="grid gap-3 items-center mb-4"
-              style={{ gridTemplateColumns: "1fr 1fr 1fr" }}
-            >
-              <ModalDateInput
-                label="Start Date"
-                value={lumpsumData.start_date}
-                onChange={(value) => onLumpsumDataChange("start_date", value)}
-                yearInputId="start-year"
-                monthInputId="start-month"
-                dayInputId="start-day"
-                isStartDate={true}
-              />
+            <ModalDateInput
+              label="End Date"
+              value={lumpsumData.end_date}
+              onChange={(value) => onLumpsumDataChange("end_date", value)}
+              yearInputId="end-year"
+              monthInputId="end-month"
+              dayInputId="end-day"
+              isStartDate={false}
+            />
 
-              <ModalDateInput
-                label="End Date"
-                value={lumpsumData.end_date}
-                onChange={(value) => onLumpsumDataChange("end_date", value)}
-                yearInputId="end-year"
-                monthInputId="end-month"
-                dayInputId="end-day"
-                isStartDate={false}
-              />
-
-              <div>
-                <label className="block text-[rgba(247,243,227,0.8)] font-medium mb-2">
-                  Frequency
-                </label>
-                <select
-                  value={lumpsumData.frequency}
-                  onChange={(e) =>
-                    onLumpsumDataChange("frequency", e.target.value as "daily" | "weekly" | "monthly")
-                  }
-                  className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-3 py-2 text-xs rounded"
-                  style={{
-                    backgroundColor: "#090C08",
-                    color: "#F7F3E3",
-                    appearance: "none",
-                    WebkitAppearance: "none",
-                    MozAppearance: "none",
-                  }}
-                >
-                  <option value="daily" style={{ backgroundColor: "#090C08", color: "#F7F3E3" }}>
-                    Daily
-                  </option>
-                  <option value="weekly" style={{ backgroundColor: "#090C08", color: "#F7F3E3" }}>
-                    Weekly
-                  </option>
-                  <option value="monthly" style={{ backgroundColor: "#090C08", color: "#F7F3E3" }}>
-                    Monthly
-                  </option>
-                </select>
-              </div>
-            </div>
-
-            {/* Second Row - Amounts */}
-            <div
-              className="grid gap-3 items-center mb-4"
-              style={{ gridTemplateColumns: "1fr 1fr" }}
-            >
-              <div>
-                <label className="block text-[rgba(247,243,227,0.8)] font-medium mb-2">
-                  Total Sats
-                </label>
-                <input
-                  type="text"
-                  value={lumpsumData.total_sats}
-                  onChange={(e) => onLumpsumDataChange("total_sats", e.target.value)}
-                  className={`w-full bg-[#090C08] px-3 py-2 text-xs rounded ${
-                    lumpsumData.total_sats &&
-                    (!/^\d+$/.test(lumpsumData.total_sats) || parseInt(lumpsumData.total_sats) <= 0)
-                      ? "border-2 border-red-500 text-red-400"
-                      : "border border-[rgba(247,243,227,0.3)] text-[#F7F3E3]"
-                  }`}
-                  placeholder="1000000"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[rgba(247,243,227,0.8)] font-medium mb-2">
-                  Total USD
-                </label>
-                <input
-                  type="text"
-                  value={lumpsumData.total_usd}
-                  onChange={(e) => onLumpsumDataChange("total_usd", e.target.value)}
-                  className={`w-full bg-[#090C08] px-3 py-2 text-xs rounded ${
-                    lumpsumData.total_usd &&
-                    (!/^\d+(\.\d{1,2})?$/.test(lumpsumData.total_usd) || parseFloat(lumpsumData.total_usd) <= 0)
-                      ? "border-2 border-red-500 text-red-400"
-                      : "border border-[rgba(247,243,227,0.3)] text-[#F7F3E3]"
-                  }`}
-                  placeholder="500.00"
-                />
-              </div>
-            </div>
-
-            {/* Third Row - Memo */}
             <div>
               <label className="block text-[rgba(247,243,227,0.8)] font-medium mb-2">
-                Memo (Optional)
+                Frequency
+              </label>
+              <select
+                value={lumpsumData.frequency}
+                onChange={(e) =>
+                  onLumpsumDataChange("frequency", e.target.value as "daily" | "weekly" | "monthly")
+                }
+                className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-3 py-2 text-xs rounded"
+                style={{
+                  backgroundColor: "#090C08",
+                  color: "#F7F3E3",
+                  appearance: "none",
+                  WebkitAppearance: "none",
+                  MozAppearance: "none",
+                }}
+              >
+                <option value="daily" style={{ backgroundColor: "#090C08", color: "#F7F3E3" }}>
+                  Daily
+                </option>
+                <option value="weekly" style={{ backgroundColor: "#090C08", color: "#F7F3E3" }}>
+                  Weekly
+                </option>
+                <option value="monthly" style={{ backgroundColor: "#090C08", color: "#F7F3E3" }}>
+                  Monthly
+                </option>
+              </select>
+            </div>
+          </div>
+
+          {/* Second Row - Amounts */}
+          <div
+            className="grid gap-3 items-center mb-4"
+            style={{ gridTemplateColumns: "1fr 1fr" }}
+          >
+            <div>
+              <label className="block text-[rgba(247,243,227,0.8)] font-medium mb-2">
+                Total Sats
               </label>
               <input
                 type="text"
-                value={lumpsumData.memo}
-                onChange={(e) => onLumpsumDataChange("memo", e.target.value)}
-                className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-3 py-2 text-xs rounded"
-                placeholder="e.g., DCA from savings account"
+                value={lumpsumData.total_sats}
+                onChange={(e) => onLumpsumDataChange("total_sats", e.target.value)}
+                className={`w-full bg-[#090C08] px-3 py-2 text-xs rounded ${
+                  lumpsumData.total_sats &&
+                  (!/^\d+$/.test(lumpsumData.total_sats) || parseInt(lumpsumData.total_sats) <= 0)
+                    ? "border-2 border-red-500 text-red-400"
+                    : "border border-[rgba(247,243,227,0.3)] text-[#F7F3E3]"
+                }`}
+                placeholder="1000000"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[rgba(247,243,227,0.8)] font-medium mb-2">
+                Total USD
+              </label>
+              <input
+                type="text"
+                value={lumpsumData.total_usd}
+                onChange={(e) => onLumpsumDataChange("total_usd", e.target.value)}
+                className={`w-full bg-[#090C08] px-3 py-2 text-xs rounded ${
+                  lumpsumData.total_usd &&
+                  (!/^\d+(\.\d{1,2})?$/.test(lumpsumData.total_usd) || parseFloat(lumpsumData.total_usd) <= 0)
+                    ? "border-2 border-red-500 text-red-400"
+                    : "border border-[rgba(247,243,227,0.3)] text-[#F7F3E3]"
+                }`}
+                placeholder="500.00"
               />
             </div>
           </div>
 
-          {/* Preview Section */}
-          <div className="mt-4 p-3 bg-[rgba(247,243,227,0.05)] border border-[rgba(247,243,227,0.1)] rounded">
-            <p className="text-xs text-[rgba(247,243,227,0.6)] mb-2">Preview:</p>
-            <p className="text-xs text-[#F7F3E3]">{getPreviewText()}</p>
+          {/* Third Row - Memo */}
+          <div>
+            <label className="block text-[rgba(247,243,227,0.8)] font-medium mb-2">
+              Memo (Optional)
+            </label>
+            <input
+              type="text"
+              value={lumpsumData.memo}
+              onChange={(e) => onLumpsumDataChange("memo", e.target.value)}
+              className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-3 py-2 text-xs rounded"
+              placeholder="e.g., DCA from savings account"
+            />
           </div>
         </div>
 
+        {/* Preview Section */}
+        <div className="mt-4 p-3 bg-[rgba(247,243,227,0.05)] border border-[rgba(247,243,227,0.1)] rounded">
+          <p className="text-xs text-[rgba(247,243,227,0.6)] mb-2">Preview:</p>
+          <p className="text-xs text-[#F7F3E3]">{getPreviewText()}</p>
+        </div>
+
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-[rgba(247,243,227,0.2)] flex gap-3">
+        <div className="mt-6 flex gap-3">
           <button
             onClick={onCreateEvents}
             disabled={!isFormValid}
@@ -231,6 +212,6 @@ export default function LumpsumModal({
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

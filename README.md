@@ -14,7 +14,6 @@ yarn start:dev
 
 **Common Issue:** The Tauri window may open blank initially while Vite finishes compiling. Simply right-click in the window and select "Reload" to refresh the page and the app will load properly. This is normal Tauri development behavior.
 
-- TODO: reusable modal component
 - TODO: use this modal for an event input to add fields and make look better
 - TODO: complete the csv import from coinbase
 - TODO: complete the csv import from river

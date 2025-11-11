@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Modal from "./Modal";
 import { TauriService, BitcoinTransaction } from "../services/tauriService";
 
 interface CsvPreview {
@@ -25,8 +26,6 @@ export default function CsvImportModal({
   const [isImporting, setIsImporting] = useState(false);
   const [error, setError] = useState<string>("");
   const [step, setStep] = useState<"select" | "preview" | "importing">("select");
-
-  if (!isOpen) return null;
 
   const handleFileSelect = async () => {
     try {
@@ -103,119 +102,111 @@ export default function CsvImportModal({
     setStep("select");
   };
 
+  const getSubtitle = () => {
+    if (step === "select") return "Select your exchange CSV file";
+    if (step === "preview") return "Review detected data before importing";
+    if (step === "importing") return "Importing your transactions...";
+    return "";
+  };
+
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !isImporting) {
-          handleClose();
-        }
-      }}
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Import CSV Data"
+      subtitle={getSubtitle()}
+      maxWidth="600px"
+      maxHeight="80vh"
+      preventCloseOnBackdropClick={isImporting}
+      showCloseButton={!isImporting}
     >
-      <div
-        className="bg-[#2A2633] border border-[rgba(247,243,227,0.3)] rounded-lg w-[600px] max-h-[80vh] overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-[rgba(247,243,227,0.2)]">
-          <h3 className="text-lg font-semibold text-[#F7F3E3]">
-            Import CSV Data
-          </h3>
-          <p className="text-sm text-[rgba(247,243,227,0.6)] mt-1">
-            {step === "select" && "Select your exchange CSV file"}
-            {step === "preview" && "Review detected data before importing"}
-            {step === "importing" && "Importing your transactions..."}
-          </p>
-        </div>
-
-        {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
-          {step === "select" && (
-            <div className="space-y-4">
-              {/* File Selection */}
-              <div>
-                <label className="block text-[rgba(247,243,227,0.8)] font-medium mb-2">
-                  Select CSV File
-                </label>
-                <div className="flex gap-3">
-                  <input
-                    type="text"
-                    value={selectedFile ? selectedFile.split('/').pop() || selectedFile : ""}
-                    readOnly
-                    className="flex-1 bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-3 py-2 text-sm rounded"
-                    placeholder="No file selected"
-                  />
-                  <button
-                    onClick={handleFileSelect}
-                    disabled={isAnalyzing}
-                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white px-4 py-2 text-sm rounded"
-                  >
-                    {isAnalyzing ? "Analyzing..." : "Browse"}
-                  </button>
-                </div>
-              </div>
-
-              {/* Supported Formats */}
-              <div className="bg-[rgba(247,243,227,0.05)] border border-[rgba(247,243,227,0.1)] rounded p-3">
-                <p className="text-xs text-[rgba(247,243,227,0.6)] mb-2">Supported exchanges:</p>
-                <ul className="text-xs text-[#F7F3E3] space-y-1">
-                  <li>• Coinbase (transaction exports)</li>
-                  <li>• River (transaction exports)</li>
-                  <li>• More formats coming soon...</li>
-                </ul>
+      {/* Content */}
+      <div className="p-6">
+        {step === "select" && (
+          <div className="space-y-4">
+            {/* File Selection */}
+            <div>
+              <label className="block text-[rgba(247,243,227,0.8)] font-medium mb-2">
+                Select CSV File
+              </label>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={selectedFile ? selectedFile.split('/').pop() || selectedFile : ""}
+                  readOnly
+                  className="flex-1 bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-3 py-2 text-sm rounded"
+                  placeholder="No file selected"
+                />
+                <button
+                  onClick={handleFileSelect}
+                  disabled={isAnalyzing}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white px-4 py-2 text-sm rounded"
+                >
+                  {isAnalyzing ? "Analyzing..." : "Browse"}
+                </button>
               </div>
             </div>
-          )}
 
-          {step === "preview" && preview && (
-            <div className="space-y-4">
-              {/* Detection Results */}
-              <div className="bg-green-900/20 border border-green-500/30 rounded p-3">
-                <p className="text-green-400 text-sm font-medium mb-1">
-                  ✅ Format Detected: {preview.format}
-                </p>
-                <p className="text-xs text-[rgba(247,243,227,0.6)]">
-                  Found {preview.total_records} records (headers at line {preview.headers_found_at_line})
-                </p>
-              </div>
-
-              {/* Sample Data Preview */}
-              <div>
-                <p className="text-sm text-[rgba(247,243,227,0.8)] mb-2">Sample Records:</p>
-                <div className="bg-[#090C08] border border-[rgba(247,243,227,0.3)] rounded p-3 text-xs">
-                  <pre className="text-[#F7F3E3] whitespace-pre-wrap overflow-x-auto">
-                    {JSON.stringify(preview.sample_records, null, 2)}
-                  </pre>
-                </div>
-              </div>
-
-              {/* File Info */}
-              <div className="text-xs text-[rgba(247,243,227,0.6)]">
-                <p>File: {selectedFile.split('/').pop() || selectedFile}</p>
-              </div>
+            {/* Supported Formats */}
+            <div className="bg-[rgba(247,243,227,0.05)] border border-[rgba(247,243,227,0.1)] rounded p-3">
+              <p className="text-xs text-[rgba(247,243,227,0.6)] mb-2">Supported exchanges:</p>
+              <ul className="text-xs text-[#F7F3E3] space-y-1">
+                <li>• Coinbase (transaction exports)</li>
+                <li>• River (transaction exports)</li>
+                <li>• More formats coming soon...</li>
+              </ul>
             </div>
-          )}
+          </div>
+        )}
 
-          {step === "importing" && (
-            <div className="text-center py-8">
-              <div className="text-4xl mb-4">⏳</div>
-              <p className="text-[#F7F3E3] mb-2">Processing your CSV file...</p>
+        {step === "preview" && preview && (
+          <div className="space-y-4">
+            {/* Detection Results */}
+            <div className="bg-green-900/20 border border-green-500/30 rounded p-3">
+              <p className="text-green-400 text-sm font-medium mb-1">
+                ✅ Format Detected: {preview.format}
+              </p>
               <p className="text-xs text-[rgba(247,243,227,0.6)]">
-                This may take a moment for large files
+                Found {preview.total_records} records (headers at line {preview.headers_found_at_line})
               </p>
             </div>
-          )}
 
-          {/* Error Display */}
-          {error && (
-            <div className="bg-red-900/20 border border-red-500/30 rounded p-3 mt-4">
-              <p className="text-red-400 text-sm">{error}</p>
+            {/* Sample Data Preview */}
+            <div>
+              <p className="text-sm text-[rgba(247,243,227,0.8)] mb-2">Sample Records:</p>
+              <div className="bg-[#090C08] border border-[rgba(247,243,227,0.3)] rounded p-3 text-xs">
+                <pre className="text-[#F7F3E3] whitespace-pre-wrap overflow-x-auto">
+                  {JSON.stringify(preview.sample_records, null, 2)}
+                </pre>
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* File Info */}
+            <div className="text-xs text-[rgba(247,243,227,0.6)]">
+              <p>File: {selectedFile.split('/').pop() || selectedFile}</p>
+            </div>
+          </div>
+        )}
+
+        {step === "importing" && (
+          <div className="text-center py-8">
+            <div className="text-4xl mb-4">⏳</div>
+            <p className="text-[#F7F3E3] mb-2">Processing your CSV file...</p>
+            <p className="text-xs text-[rgba(247,243,227,0.6)]">
+              This may take a moment for large files
+            </p>
+          </div>
+        )}
+
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-900/20 border border-red-500/30 rounded p-3 mt-4">
+            <p className="text-red-400 text-sm">{error}</p>
+          </div>
+        )}
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-[rgba(247,243,227,0.2)] flex gap-3">
+        <div className="mt-6 flex gap-3">
           {step === "select" && (
             <button
               onClick={handleClose}
@@ -253,6 +244,6 @@ export default function CsvImportModal({
           )}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
