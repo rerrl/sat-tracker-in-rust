@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export interface MetricItem {
   label: string;
@@ -29,6 +29,8 @@ interface MetricsGridProps {
 }
 
 const MetricsGrid: React.FC<MetricsGridProps> = ({ bitcoinPrice, metrics }) => {
+  const [hoveredMetric, setHoveredMetric] = useState<number | null>(null);
+  const [hoveredBitcoinPrice, setHoveredBitcoinPrice] = useState(false);
   const getColorClasses = (color: 'orange' | 'green' | 'blue') => {
     switch (color) {
       case 'orange':
@@ -57,7 +59,11 @@ const MetricsGrid: React.FC<MetricsGridProps> = ({ bitcoinPrice, metrics }) => {
       <div className="flex gap-3 mb-3">
         {/* Bitcoin Price (if provided) */}
         {bitcoinPrice && (
-          <div className="flex-1 text-center p-2 bg-[rgba(97,218,251,0.1)] border border-[rgba(97,218,251,0.2)] rounded relative">
+          <div 
+            className="flex-1 text-center p-2 bg-[rgba(97,218,251,0.1)] border border-[rgba(97,218,251,0.2)] rounded relative"
+            onMouseEnter={() => setHoveredBitcoinPrice(true)}
+            onMouseLeave={() => setHoveredBitcoinPrice(false)}
+          >
             <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1 flex items-center justify-center gap-1">
               Bitcoin Price
               <button
@@ -121,9 +127,16 @@ const MetricsGrid: React.FC<MetricsGridProps> = ({ bitcoinPrice, metrics }) => {
                       }`}
                     >
                       {bitcoinPrice.percentChange24hr >= 0 ? "+" : ""}
-                      {bitcoinPrice.percentChange24hr.toFixed(2)}% (24h)
+                      {bitcoinPrice.percentChange24hr.toFixed(2)}% (24hr)
                     </div>
                   )}
+              </div>
+            )}
+            {/* Custom Tooltip for Bitcoin Price */}
+            {hoveredBitcoinPrice && (
+              <div className="absolute top-full left-0 mt-2 px-2 py-1 bg-black text-[#f7f3e3] text-xs rounded whitespace-nowrap z-50 shadow-lg">
+                Current Bitcoin price with 24-hour percentage change
+                <div className="absolute bottom-full left-4 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-black"></div>
               </div>
             )}
           </div>
@@ -135,8 +148,9 @@ const MetricsGrid: React.FC<MetricsGridProps> = ({ bitcoinPrice, metrics }) => {
           return (
             <div
               key={index}
-              className={`flex-1 text-center p-2 ${colorClasses.bg} border ${colorClasses.border} rounded`}
-              title={metric.hint}
+              className={`flex-1 text-center p-2 ${colorClasses.bg} border ${colorClasses.border} rounded relative`}
+              onMouseEnter={() => setHoveredMetric(index)}
+              onMouseLeave={() => setHoveredMetric(null)}
             >
               <div className="text-xs text-[rgba(247,243,227,0.6)] mb-1">
                 {metric.label}
@@ -155,6 +169,13 @@ const MetricsGrid: React.FC<MetricsGridProps> = ({ bitcoinPrice, metrics }) => {
                   }`}
                 >
                   {metric.subValue}
+                </div>
+              )}
+              {/* Custom Tooltip */}
+              {metric.hint && hoveredMetric === index && (
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-black text-[#f7f3e3] text-xs rounded whitespace-nowrap z-50 shadow-lg">
+                  {metric.hint}
+                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-black"></div>
                 </div>
               )}
             </div>

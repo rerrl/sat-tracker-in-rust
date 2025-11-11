@@ -185,6 +185,20 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
               maximumFractionDigits: 0,
             })}`,
         color: "orange",
+        hint: "Current portfolio value with 24-hour change based on Bitcoin price movement alone",
+        subValue: (() => {
+          if (metricsLoading || !portfolioMetrics?.current_sats || percentChange24hr === null) {
+            return undefined;
+          }
+          const currentPortfolioValue = ((portfolioMetrics.current_sats || 0) / 100_000_000) * bitcoinPrice;
+          const dailyDollarChange = currentPortfolioValue * (percentChange24hr / 100);
+          const sign = dailyDollarChange >= 0 ? "+" : "";
+          return `${sign}$${Math.abs(dailyDollarChange).toLocaleString(undefined, {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+          })} (24hr)`;
+        })(),
+        subValueColor: percentChange24hr !== null && percentChange24hr >= 0 ? 'green' : 'red',
       },
       {
         label: "Current Sats",
