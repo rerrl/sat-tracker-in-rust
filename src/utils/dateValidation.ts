@@ -45,11 +45,43 @@ export function validateLumpsumForm(
   totalSats: string,
   totalUsd: string
 ): boolean {
-  const startValid = validateDateString(startDate).isValid;
-  const endValid = validateDateString(endDate).isValid;
-  
-  const satsValid = Boolean(totalSats && /^\d+$/.test(totalSats) && parseInt(totalSats) > 0);
-  const usdValid = Boolean(totalUsd && /^\d+(\.\d{1,2})?$/.test(totalUsd) && parseFloat(totalUsd) > 0);
+  // Check if all required fields are filled
+  if (!startDate || !endDate || !totalSats || !totalUsd) {
+    return false;
+  }
 
-  return startValid && endValid && satsValid && usdValid;
+  // Extract date part from ISO string if needed (YYYY-MM-DD from YYYY-MM-DDTHH:MM:SS.sssZ)
+  const startDateOnly = startDate.includes('T') ? startDate.split('T')[0] : startDate;
+  const endDateOnly = endDate.includes('T') ? endDate.split('T')[0] : endDate;
+
+  // Validate start date format and values
+  const startValidation = validateDateString(startDateOnly);
+  if (!startValidation.isValid) {
+    return false;
+  }
+
+  // Validate end date format and values
+  const endValidation = validateDateString(endDateOnly);
+  if (!endValidation.isValid) {
+    return false;
+  }
+
+  // Check if start date is before end date
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (start >= end) {
+    return false;
+  }
+
+  // Validate total sats (must be positive integer)
+  if (!/^\d+$/.test(totalSats) || parseInt(totalSats) <= 0) {
+    return false;
+  }
+
+  // Validate total USD (must be positive number with up to 2 decimal places)
+  if (!/^\d+(\.\d{1,2})?$/.test(totalUsd) || parseFloat(totalUsd) <= 0) {
+    return false;
+  }
+
+  return true;
 }

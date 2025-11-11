@@ -272,17 +272,14 @@ function App() {
         return;
       }
 
-      const request = {
+      const createdTransactions = await TauriService.createUndocumentedLumpsumTransactions({
         start_date: startDate.toISOString(),
         end_date: endDate.toISOString(),
         total_sats: parseInt(lumpsumData.total_sats),
         total_usd_cents: Math.round(parseFloat(lumpsumData.total_usd) * 100),
         frequency: lumpsumData.frequency,
         memo: lumpsumData.memo.trim() || undefined,
-      };
-
-      const createdTransactions =
-        await TauriService.createUndocumentedLumpsumTransactions(request);
+      });
 
       // Invalidate all queries to refetch
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
