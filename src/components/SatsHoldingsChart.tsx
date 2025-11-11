@@ -11,7 +11,7 @@ import {
   Filler,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
-import { BalanceChangeEvent } from "../services/tauriService";
+import { BitcoinTransaction } from "../services/tauriService";
 
 ChartJS.register(
   CategoryScale,
@@ -25,7 +25,7 @@ ChartJS.register(
 );
 
 interface SatsHoldingsChartProps {
-  events: BalanceChangeEvent[];
+  events: BitcoinTransaction[];
 }
 
 export default function SatsHoldingsChart({ events }: SatsHoldingsChartProps) {
@@ -68,13 +68,13 @@ export default function SatsHoldingsChart({ events }: SatsHoldingsChartProps) {
     const dataPoints: Array<{
       date: Date;
       balance: number;
-      event: BalanceChangeEvent | null;
+      event: BitcoinTransaction | null;
     }> = sortedEvents.map((event) => {
       // Apply the correct sign based on event type
       let balanceChange = 0;
-      if (event.event_type === "Buy") {
+      if (event.type === "Buy") {
         balanceChange = event.amount_sats; // Positive - adds to balance
-      } else if (event.event_type === "Sell" || event.event_type === "Fee") {
+      } else if (event.type === "Sell" || event.type === "Fee") {
         balanceChange = -event.amount_sats; // Negative - subtracts from balance
       }
 

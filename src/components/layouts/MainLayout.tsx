@@ -1,6 +1,6 @@
 import React from "react";
 import EventsList from "../EventsList";
-import { BalanceChangeEvent } from "../../services/tauriService";
+import { BitcoinTransaction } from "../../services/tauriService";
 
 interface MainLayoutProps {
   // Left side content
@@ -10,14 +10,14 @@ interface MainLayoutProps {
   analyticsContent: React.ReactNode;
 
   // Events list props (since this seems consistent across tools)
-  events: BalanceChangeEvent[];
+  events: BitcoinTransaction[];
   totalCount: number;
   editingEventId: string | null;
   editData: any;
   isCreatingNew: boolean;
   newEventData: any;
   onAddNewEvent: () => void;
-  onEditEvent: (event: BalanceChangeEvent) => void;
+  onEditEvent: (event: BitcoinTransaction) => void;
   onSaveEvent: () => Promise<void>;
   onDeleteEvent: () => Promise<void>;
   onCancelEdit: () => void;

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { BalanceChangeEvent } from '../services/tauriService';
+import { BitcoinTransaction } from '../services/tauriService';
 import SatsHoldingsChart from './SatsHoldingsChart';
 
 interface SatsHoldingsChartSectionProps {
-  events: BalanceChangeEvent[];
+  events: BitcoinTransaction[];
 }
 
 const SatsHoldingsChartSection: React.FC<SatsHoldingsChartSectionProps> = ({ events }) => {

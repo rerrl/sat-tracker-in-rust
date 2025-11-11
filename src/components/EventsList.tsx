@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { BalanceChangeEvent } from "../services/tauriService";
+import { BitcoinTransaction } from "../services/tauriService";
 import DateTimeInput from "./DateTimeInput";
 
 const EventItem = React.memo(
@@ -14,7 +14,7 @@ const EventItem = React.memo(
     editData,
     onEditDataChange,
   }: {
-    event: BalanceChangeEvent | null;
+    event: BitcoinTransaction | null;
     isEditing: boolean;
     isCreating?: boolean;
     onEdit: () => void;
@@ -49,14 +49,14 @@ const EventItem = React.memo(
                     .replace(",", "")}
                 </div>
                 <div className="text-[rgba(247,243,227,0.5)] text-xs">
-                  {event.event_type}
+                  {event.type}
                 </div>
                 <div className="text-[rgba(247,243,227,0.5)] text-xs">
                   {event.amount_sats.toLocaleString()} sats
                 </div>
                 <div className="text-[rgba(247,243,227,0.5)] text-xs">
-                  {event.value_cents
-                    ? `$${(event.value_cents / 100).toFixed(2)}`
+                  {event.fiat_amount_cents
+                    ? `$${(event.fiat_amount_cents / 100).toFixed(2)}`
                     : "-"}
                 </div>
                 <div className="text-[rgba(247,243,227,0.5)] text-xs">-</div>
@@ -96,12 +96,12 @@ const EventItem = React.memo(
                   Type
                 </label>
                 <select
-                  value={editData.event_type}
+                  value={editData.type}
                   onChange={(e) => {
                     const newType = e.target.value;
-                    onEditDataChange("event_type", newType);
+                    onEditDataChange("type", newType);
                     if (newType === "Fee") {
-                      onEditDataChange("value_cents", null);
+                      onEditDataChange("fiat_amount_cents", null);
                     }
                   }}
                   className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded"
@@ -164,57 +164,57 @@ const EventItem = React.memo(
               <div>
                 <label className="block text-[rgba(247,243,227,0.6)] text-xs mb-1">
                   USD{" "}
-                  {editData.event_type === "Fee" && (
+                  {editData.type === "Fee" && (
                     <span className="text-[rgba(247,243,227,0.4)]">(N/A)</span>
                   )}
                 </label>
                 <input
                   type="text"
                   value={
-                    editData.event_type === "Fee"
+                    editData.type === "Fee"
                       ? "N/A"
-                      : editData.value_cents === null ||
-                        editData.value_cents === undefined
+                      : editData.fiat_amount_cents === null ||
+                        editData.fiat_amount_cents === undefined
                       ? ""
-                      : editData.value_cents === ""
+                      : editData.fiat_amount_cents === ""
                       ? ""
-                      : typeof editData.value_cents === "string"
-                      ? editData.value_cents
-                      : (editData.value_cents / 100).toString()
+                      : typeof editData.fiat_amount_cents === "string"
+                      ? editData.fiat_amount_cents
+                      : (editData.fiat_amount_cents / 100).toString()
                   }
                   onChange={(e) => {
-                    if (editData.event_type === "Fee") return;
+                    if (editData.type === "Fee") return;
                     const value = e.target.value;
                     if (value === "" || /^[0-9]+(\.[0-9]{0,2})?$/.test(value)) {
                       if (value === "") {
-                        onEditDataChange("value_cents", "");
+                        onEditDataChange("fiat_amount_cents", "");
                       } else {
-                        onEditDataChange("value_cents", value);
+                        onEditDataChange("fiat_amount_cents", value);
                       }
                     }
                   }}
                   onBlur={() => {
-                    if (editData.event_type === "Fee") return;
+                    if (editData.type === "Fee") return;
                     if (
-                      editData.value_cents &&
-                      typeof editData.value_cents === "string"
+                      editData.fiat_amount_cents &&
+                      typeof editData.fiat_amount_cents === "string"
                     ) {
-                      const numValue = parseFloat(editData.value_cents);
+                      const numValue = parseFloat(editData.fiat_amount_cents);
                       if (!isNaN(numValue)) {
                         onEditDataChange(
-                          "value_cents",
+                          "fiat_amount_cents",
                           Math.round(numValue * 100)
                         );
                       }
                     }
                   }}
-                  disabled={editData.event_type === "Fee"}
+                  disabled={editData.type === "Fee"}
                   className={`w-full border px-2 py-1 text-xs rounded ${
-                    editData.event_type === "Fee"
+                    editData.type === "Fee"
                       ? "bg-[rgba(9,12,8,0.5)] border-[rgba(247,243,227,0.1)] text-[rgba(247,243,227,0.4)] cursor-not-allowed"
                       : "bg-[#090C08] border-[rgba(247,243,227,0.3)] text-[#F7F3E3]"
                   }`}
-                  placeholder={editData.event_type === "Fee" ? "N/A" : "500.00"}
+                  placeholder={editData.type === "Fee" ? "N/A" : "500.00"}
                 />
               </div>
 
@@ -239,15 +239,15 @@ const EventItem = React.memo(
             <div className="flex justify-between items-center">
               {/* Calculated BTC/USD Rate */}
               <div className="text-xs text-[rgba(247,243,227,0.6)]">
-                {(editData.event_type === "Buy" ||
-                  editData.event_type === "Sell") &&
+                {(editData.type === "Buy" ||
+                  editData.type === "Sell") &&
                   editData.amount_sats &&
-                  editData.value_cents &&
-                  editData.value_cents !== "" && (
+                  editData.fiat_amount_cents &&
+                  editData.fiat_amount_cents !== "" && (
                     <span>
                       Rate: $
                       {(
-                        Math.abs(editData.value_cents) /
+                        Math.abs(editData.fiat_amount_cents) /
                         100 /
                         (Math.abs(editData.amount_sats) / 100_000_000)
                       ).toLocaleString(undefined, {
@@ -313,32 +313,32 @@ const EventItem = React.memo(
           <div
             className={
               `text-[rgba(247,243,227,1)] text-xs border-l-2 border-[rgba(247,243,227,0.3)] pl-2 ` +
-              (event.event_type === "Buy"
+              (event.type === "Buy"
                 ? "border-green-400"
-                : event.event_type === "Sell"
+                : event.type === "Sell"
                 ? "border-red-400"
                 : "border-yellow-400")
             }
           >
-            {event.event_type}
+            {event.type}
           </div>
           <div className="text-[rgba(247,243,227,1)] text-xs">
             {event.amount_sats.toLocaleString()} sats
           </div>
           <div className="text-[rgba(247,243,227,0.5)] text-xs">
-            {event.value_cents
-              ? `$${(event.value_cents / 100).toLocaleString(undefined, {
+            {event.fiat_amount_cents
+              ? `$${(event.fiat_amount_cents / 100).toLocaleString(undefined, {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}`
               : "-"}
           </div>
           <div className="text-[rgba(247,243,227,0.5)] text-xs">
-            {(event.event_type === "Buy" || event.event_type === "Sell") &&
+            {(event.type === "Buy" || event.type === "Sell") &&
             event.amount_sats &&
-            event.value_cents
+            event.fiat_amount_cents
               ? `$${(
-                  Math.abs(event.value_cents) /
+                  Math.abs(event.fiat_amount_cents) /
                   100 /
                   (Math.abs(event.amount_sats) / 100_000_000)
                 ).toLocaleString(undefined, {
@@ -368,14 +368,14 @@ const EventItem = React.memo(
 );
 
 interface EventsListProps {
-  events: BalanceChangeEvent[];
+  events: BitcoinTransaction[];
   totalCount: number;
   editingEventId: string | null;
   editData: any;
   isCreatingNew: boolean;
   newEventData: any;
   onAddNewEvent: () => void;
-  onEditEvent: (event: BalanceChangeEvent) => void;
+  onEditEvent: (event: BitcoinTransaction) => void;
   onSaveEvent: () => void;
   onDeleteEvent: () => void;
   onCancelEdit: () => void;

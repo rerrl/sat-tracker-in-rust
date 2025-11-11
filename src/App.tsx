@@ -4,12 +4,6 @@ import {
   DatabaseStatus,
   BitcoinTransaction,
 } from "./services/tauriService";
-import {
-  useEvents,
-  useCreateEvent,
-  useUpdateEvent,
-  useDeleteEvent,
-} from "./hooks/useEvents";
 import { useQueryClient } from "@tanstack/react-query";
 import AppHeader from "./components/AppHeader";
 import ToolContainer from "./components/ToolContainer";
@@ -19,6 +13,12 @@ import EncryptionSettings from "./components/EncryptionSettings";
 import CsvImportModal from "./components/CsvImportModal";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
+import { 
+  useTransactions, 
+  useCreateTransaction, 
+  useUpdateTransaction, 
+  useDeleteTransaction 
+} from "./hooks/useTransactions";
 
 function App() {
   // Database initialization state
@@ -37,15 +37,16 @@ function App() {
   const [showEncryptionSettings, setShowEncryptionSettings] = useState(false);
   const [showCsvImportModal, setShowCsvImportModal] = useState(false);
 
-  // Replace event state with hooks
   const {
-    events,
+    transactions,
     totalCount,
     loading: eventsLoading,
-  } = useEvents(isDatabaseInitialized);
-  const createEventMutation = useCreateEvent();
-  const updateEventMutation = useUpdateEvent();
-  const deleteEventMutation = useDeleteEvent();
+  } = useTransactions(isDatabaseInitialized);
+
+  const createTransactionMutation = useCreateTransaction();
+  const updateTransactionMutation = useUpdateTransaction();
+  const deleteTransactionMutation = useDeleteTransaction();
+
   const queryClient = useQueryClient();
 
   // UI state for editing (keep these)
@@ -84,7 +85,7 @@ function App() {
     if (!editingEventId || !editData) return;
 
     try {
-      await updateEventMutation.mutateAsync({
+      await updateTransactionMutation.mutateAsync({
         id: editingEventId,
         request: {
           type: editData.type as "Buy" | "Sell" | "Fee",
@@ -102,20 +103,20 @@ function App() {
       setEditingEventId(null);
       setEditData(null);
     }
-  }, [editingEventId, editData, updateEventMutation]);
+  }, [editingEventId, editData, updateTransactionMutation]);
 
   const handleDeleteEvent = useCallback(async () => {
     if (!editingEventId) return;
 
     try {
-      await deleteEventMutation.mutateAsync(editingEventId);
+      await deleteTransactionMutation.mutateAsync(editingEventId);
     } catch (error) {
       console.error("Error deleting event:", error);
     } finally {
       setEditingEventId(null);
       setEditData(null);
     }
-  }, [editingEventId, deleteEventMutation]);
+  }, [editingEventId, deleteTransactionMutation]);
 
   const handleCancelEdit = useCallback(() => {
     setEditingEventId(null);
@@ -148,7 +149,7 @@ function App() {
     if (!newEventData) return;
 
     try {
-      await createEventMutation.mutateAsync({
+      await createTransactionMutation.mutateAsync({
         type: newEventData.type as "Buy" | "Sell" | "Fee",
         amount_sats: newEventData.amount_sats,
         fiat_amount_cents: newEventData.fiat_amount_cents,
@@ -163,7 +164,7 @@ function App() {
       setIsCreatingNew(false);
       setNewEventData(null);
     }
-  }, [newEventData, createEventMutation]);
+  }, [newEventData, createTransactionMutation]);
 
   const handleCancelNewEvent = useCallback(() => {
     setIsCreatingNew(false);
@@ -280,12 +281,11 @@ function App() {
         memo: lumpsumData.memo.trim() || undefined,
       };
 
-      const createdTransactions = await TauriService.createUndocumentedLumpsumTransactions(
-        request
-      );
+      const createdTransactions =
+        await TauriService.createUndocumentedLumpsumTransactions(request);
 
       // Invalidate all queries to refetch
-      queryClient.invalidateQueries({ queryKey: ["events"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["portfolioMetrics"] });
       queryClient.invalidateQueries({ queryKey: ["activityMetrics"] });
 
@@ -341,7 +341,7 @@ function App() {
             console.log("Import result:", result);
 
             // Invalidate all queries to refetch after import
-            queryClient.invalidateQueries({ queryKey: ["events"] });
+            queryClient.invalidateQueries({ queryKey: ["transactions"] });
             queryClient.invalidateQueries({ queryKey: ["portfolioMetrics"] });
             queryClient.invalidateQueries({ queryKey: ["activityMetrics"] });
 
@@ -406,7 +406,7 @@ function App() {
 
         <ToolContainer
           selectedTool={selectedTool}
-          events={events}
+          events={transactions}
           eventsLoading={eventsLoading}
           totalCount={totalCount}
           editingEventId={editingEventId}
@@ -438,10 +438,10 @@ function App() {
         onClose={() => setShowCsvImportModal(false)}
         onImportComplete={(events) => {
           // Invalidate all queries to refetch after import
-          queryClient.invalidateQueries({ queryKey: ["events"] });
+          queryClient.invalidateQueries({ queryKey: ["transactions"] });
           queryClient.invalidateQueries({ queryKey: ["portfolioMetrics"] });
           queryClient.invalidateQueries({ queryKey: ["activityMetrics"] });
-          
+
           alert(`Successfully imported ${events.length} events`);
         }}
       />
