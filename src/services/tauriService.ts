@@ -209,6 +209,11 @@ export class TauriService {
   static async importCsvData(filePath: string): Promise<BalanceChangeEvent[]> {
     return await invoke("import_csv_data", { filePath });
   }
+
+  // Analyze CSV file
+  static async analyzeCsvFile(filePath: string): Promise<any> {
+    return await invoke("analyze_csv_file", { filePath });
+  }
 }
 
 // Export individual functions for convenience
