@@ -1,5 +1,5 @@
-use crate::commands::balance_change_event::create_balance_change_event;
-use crate::models::balance_change_event::{BalanceChangeType, CreateBalanceChangeEventRequest};
+use crate::commands::bitcoin_transaction::create_bitcoin_transaction;
+use crate::models::bitcoin_transaction::{TransactionType, CreateBitcoinTransactionRequest};
 use chrono::{DateTime, Utc};
 use sqlx::{Row, SqlitePool};
 use tauri::State;
@@ -71,15 +71,17 @@ pub async fn import_sat_tracker_v1_data(pool: State<'_, SqlitePool>) -> Result<S
                     }
                 };
 
-                let request = CreateBalanceChangeEventRequest {
+                let request = CreateBitcoinTransactionRequest {
+                    r#type: TransactionType::Buy,
                     amount_sats,
-                    value_cents: Some(value_cents),
-                    event_type: BalanceChangeType::Buy,
+                    fiat_amount_cents: Some(value_cents),
+                    fee_sats: Some(0),
+                    fee_fiat_cents: Some(0),
                     memo,
                     timestamp,
                 };
 
-                match create_balance_change_event(pool.clone(), request).await {
+                match create_bitcoin_transaction(pool.clone(), request).await {
                     Ok(_) => imported_count += 1,
                     Err(e) => errors.push(format!("Failed to import buy record: {}", e)),
                 }
@@ -105,15 +107,15 @@ pub async fn import_sat_tracker_v1_data(pool: State<'_, SqlitePool>) -> Result<S
                 let date_str: String = row.get("date");
 
                 // Determine event type based on memo content
-                let event_type = if let Some(ref memo_text) = memo {
+                let transaction_type = if let Some(ref memo_text) = memo {
                     let memo_lower = memo_text.to_lowercase();
                     if memo_lower.contains("withdraw") || memo_lower.contains("fee") {
-                        BalanceChangeType::Fee
+                        TransactionType::Fee
                     } else {
-                        BalanceChangeType::Sell
+                        TransactionType::Sell
                     }
                 } else {
-                    BalanceChangeType::Sell
+                    TransactionType::Sell
                 };
 
                 // Parse the timestamp
@@ -145,15 +147,17 @@ pub async fn import_sat_tracker_v1_data(pool: State<'_, SqlitePool>) -> Result<S
                     }
                 };
 
-                let request = CreateBalanceChangeEventRequest {
+                let request = CreateBitcoinTransactionRequest {
+                    r#type: transaction_type,
                     amount_sats,
-                    value_cents: None, // DeductionEvents don't have USD value
-                    event_type,
+                    fiat_amount_cents: None, // DeductionEvents don't have USD value
+                    fee_sats: Some(0),
+                    fee_fiat_cents: Some(0),
                     memo,
                     timestamp,
                 };
 
-                match create_balance_change_event(pool.clone(), request).await {
+                match create_bitcoin_transaction(pool.clone(), request).await {
                     Ok(_) => imported_count += 1,
                     Err(e) => errors.push(format!("Failed to import deduction record: {}", e)),
                 }

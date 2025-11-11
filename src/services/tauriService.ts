@@ -1,34 +1,40 @@
 import { invoke } from "@tauri-apps/api/core";
 
 // Types matching your Rust structs
-export interface BalanceChangeEvent {
+export interface BitcoinTransaction {
   id: string;
+  type: "Buy" | "Sell" | "Fee";
   amount_sats: number;
-  value_cents: number | null;
-  event_type: "Buy" | "Sell" | "Fee";
+  fiat_amount_cents: number | null;
+  fee_sats: number | null;
+  fee_fiat_cents: number | null;
   memo: string | null;
   timestamp: string; // ISO date string from Rust
   created_at: string; // ISO date string from Rust
 }
 
-export interface CreateBalanceChangeEventRequest {
+export interface CreateBitcoinTransactionRequest {
+  type: "Buy" | "Sell" | "Fee";
   amount_sats: number;
-  value_cents: number | null;
-  event_type: "Buy" | "Sell" | "Fee";
+  fiat_amount_cents: number | null;
+  fee_sats: number | null;
+  fee_fiat_cents: number | null;
   memo: string | null;
   timestamp: string; // ISO date string
 }
 
-export interface UpdateBalanceChangeEventRequest {
+export interface UpdateBitcoinTransactionRequest {
+  type: "Buy" | "Sell" | "Fee";
   amount_sats: number;
-  value_cents: number | null;
-  event_type: "Buy" | "Sell" | "Fee";
+  fiat_amount_cents: number | null;
+  fee_sats: number | null;
+  fee_fiat_cents: number | null;
   memo: string | null;
   timestamp: string; // ISO date string
 }
 
-export interface PaginatedBalanceChangeEvents {
-  events: BalanceChangeEvent[];
+export interface PaginatedBitcoinTransactions {
+  transactions: BitcoinTransaction[];
   total_count: number;
   page: number;
   page_size: number;
@@ -104,36 +110,37 @@ export interface DayData {
 }
 
 export class TauriService {
-  // Create a new balance change event
-  static async createBalanceChangeEvent(
-    request: CreateBalanceChangeEventRequest
-  ): Promise<BalanceChangeEvent> {
-    return await invoke("create_balance_change_event", { request });
+  // Create a new bitcoin transaction
+  static async createBitcoinTransaction(
+    request: CreateBitcoinTransactionRequest
+  ): Promise<BitcoinTransaction> {
+    return await invoke("create_bitcoin_transaction", { request });
   }
 
-  // Get paginated balance change events with simple parameters
-  static async getBalanceChangeEvents(
+  // Get paginated bitcoin transactions with simple parameters
+  static async getBitcoinTransactions(
     page: number = 0,
     pageSize: number = 100
-  ): Promise<PaginatedBalanceChangeEvents> {
-    return await invoke("get_balance_change_events", {
+  ): Promise<PaginatedBitcoinTransactions> {
+    return await invoke("get_bitcoin_transactions", {
       page,
       pageSize,
     });
   }
 
-  // Update a balance change event
-  static async updateBalanceChangeEvent(
+  // Update a bitcoin transaction
+  static async updateBitcoinTransaction(
     id: string,
-    request: UpdateBalanceChangeEventRequest
-  ): Promise<BalanceChangeEvent> {
-    return await invoke("update_balance_change_event", { id, request });
+    request: UpdateBitcoinTransactionRequest
+  ): Promise<BitcoinTransaction> {
+    return await invoke("update_bitcoin_transaction", { id, request });
   }
 
-  // Delete a balance change event
-  static async deleteBalanceChangeEvent(id: string): Promise<void> {
-    return await invoke("delete_balance_change_event", { id });
+  // Delete a bitcoin transaction
+  static async deleteBitcoinTransaction(id: string): Promise<void> {
+    return await invoke("delete_bitcoin_transaction", { id });
   }
+
 
   // Get portfolio metrics
   static async getPortfolioMetrics(): Promise<PortfolioMetrics> {
@@ -145,11 +152,11 @@ export class TauriService {
     return await invoke("import_sat_tracker_v1_data");
   }
 
-  // Create undocumented lumpsum events
-  static async createUndocumentedLumpsumEvents(
+  // Create undocumented lumpsum transactions
+  static async createUndocumentedLumpsumTransactions(
     request: CreateUndocumentedLumpsumRequest
-  ): Promise<BalanceChangeEvent[]> {
-    return await invoke("create_undocumented_lumpsum_events", {
+  ): Promise<BitcoinTransaction[]> {
+    return await invoke("create_undocumented_lumpsum_transactions", {
       startDate: request.start_date,
       endDate: request.end_date,
       totalSats: request.total_sats,
@@ -158,6 +165,7 @@ export class TauriService {
       memo: request.memo,
     });
   }
+
 
   // Encryption-related commands
   static async checkDatabaseStatus(): Promise<DatabaseStatus> {
@@ -206,7 +214,7 @@ export class TauriService {
   }
 
   // Import CSV data
-  static async importCsvData(filePath: string): Promise<BalanceChangeEvent[]> {
+  static async importCsvData(filePath: string): Promise<BitcoinTransaction[]> {
     return await invoke("import_csv_data", { filePath });
   }
 
@@ -218,11 +226,11 @@ export class TauriService {
 
 // Export individual functions for convenience
 export const {
-  createBalanceChangeEvent,
-  getBalanceChangeEvents,
-  updateBalanceChangeEvent,
-  deleteBalanceChangeEvent,
+  createBitcoinTransaction,
+  getBitcoinTransactions,
+  updateBitcoinTransaction,
+  deleteBitcoinTransaction,
   getPortfolioMetrics,
   importSatTrackerV1Data,
-  createUndocumentedLumpsumEvents,
+  createUndocumentedLumpsumTransactions,
 } = TauriService;

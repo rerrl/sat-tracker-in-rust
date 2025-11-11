@@ -5,18 +5,18 @@ use sqlx::{migrate::MigrateDatabase, Sqlite, SqlitePool};
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
-pub enum BalanceChangeType {
+pub enum TransactionType {
     Buy,
     Sell,
     Fee,
 }
 
-impl std::fmt::Display for BalanceChangeType {
+impl std::fmt::Display for TransactionType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            BalanceChangeType::Buy => write!(f, "Buy"),
-            BalanceChangeType::Sell => write!(f, "Sell"),
-            BalanceChangeType::Fee => write!(f, "Fee"),
+            TransactionType::Buy => write!(f, "buy"),
+            TransactionType::Sell => write!(f, "sell"),
+            TransactionType::Fee => write!(f, "fee"),
         }
     }
 }
@@ -71,13 +71,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a vector of event types based on distribution
     let mut event_types = Vec::new();
     for _ in 0..buy_count {
-        event_types.push("Buy");
+        event_types.push("buy");
     }
     for _ in 0..sell_count {
-        event_types.push("Sell");
+        event_types.push("sell");
     }
     for _ in 0..fee_count {
-        event_types.push("Fee");
+        event_types.push("fee");
     }
 
     // Shuffle the event types to spread them out randomly
@@ -97,12 +97,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         current_btc_price_cents += price_increase;
 
         match event_type {
-            "Buy" => {
+            "buy" => {
                 // Generate a rounded dollar amount (in hundreds)
                 let dollar_amount = rng.gen_range(1..=50) * 100; // $100 to $5000 in $100 increments
-                let value_cents = dollar_amount * 100; // Convert to cents
+                let fiat_amount_cents = dollar_amount * 100; // Convert to cents
                 let amount_sats =
-                    ((value_cents as f64 / current_btc_price_cents as f64) * 100_000_000.0) as i64;
+                    ((fiat_amount_cents as f64 / current_btc_price_cents as f64) * 100_000_000.0) as i64;
                 let memo = if rng.gen_bool(0.3) {
                     Some("DCA".to_string())
                 } else {
@@ -110,24 +110,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
 
                 sqlx::query(
-                    "INSERT INTO balance_change_events (id, amount_sats, value_cents, event_type, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO bitcoin_transactions (id, type, amount_sats, fiat_amount_cents, fee_sats, fee_fiat_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
                 )
                 .bind(Uuid::new_v4().to_string())
+                .bind("buy")
                 .bind(amount_sats)
-                .bind(value_cents)
-                .bind("Buy")
+                .bind(fiat_amount_cents)
+                .bind(0) // No fees for now
+                .bind(0) // No fiat fees for now
                 .bind(&memo)
                 .bind(current_date)
                 .bind(Utc::now())
                 .execute(&pool)
                 .await?;
             }
-            "Sell" => {
+            "sell" => {
                 // Generate a rounded dollar amount (in hundreds)
                 let dollar_amount = rng.gen_range(1..=50) * 100; // $100 to $5000 in $100 increments
-                let value_cents = dollar_amount * 100; // Convert to cents
+                let fiat_amount_cents = dollar_amount * 100; // Convert to cents
                 let amount_sats =
-                    ((value_cents as f64 / current_btc_price_cents as f64) * 100_000_000.0) as i64;
+                    ((fiat_amount_cents as f64 / current_btc_price_cents as f64) * 100_000_000.0) as i64;
                 let memo = if rng.gen_bool(0.4) {
                     Some("Emergency".to_string())
                 } else {
@@ -135,19 +137,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
 
                 sqlx::query(
-                    "INSERT INTO balance_change_events (id, amount_sats, value_cents, event_type, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO bitcoin_transactions (id, type, amount_sats, fiat_amount_cents, fee_sats, fee_fiat_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
                 )
                 .bind(Uuid::new_v4().to_string())
+                .bind("sell")
                 .bind(amount_sats)
-                .bind(value_cents)
-                .bind("Sell")
+                .bind(fiat_amount_cents)
+                .bind(0) // No fees for now
+                .bind(0) // No fiat fees for now
                 .bind(&memo)
                 .bind(current_date)
                 .bind(Utc::now())
                 .execute(&pool)
                 .await?;
             }
-            "Fee" => {
+            "fee" => {
                 let amount_sats = rng.gen_range(100..=10000);
                 let memo = if rng.gen_bool(0.5) {
                     Some("Network fee".to_string())
@@ -156,12 +160,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
 
                 sqlx::query(
-                    "INSERT INTO balance_change_events (id, amount_sats, value_cents, event_type, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO bitcoin_transactions (id, type, amount_sats, fiat_amount_cents, fee_sats, fee_fiat_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
                 )
                 .bind(Uuid::new_v4().to_string())
+                .bind("fee")
                 .bind(amount_sats)
-                .bind(0)
-                .bind("Fee")
+                .bind(None::<i64>) // No fiat amount for pure bitcoin fees
+                .bind(0) // No additional fees
+                .bind(0) // No fiat fees
                 .bind(&memo)
                 .bind(current_date)
                 .bind(Utc::now())

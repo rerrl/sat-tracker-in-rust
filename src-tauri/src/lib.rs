@@ -2,7 +2,7 @@ mod models;
 mod commands;
 mod database;
 
-use commands::balance_change_event::{create_balance_change_event, get_balance_change_events, update_balance_change_event, delete_balance_change_event, get_portfolio_metrics, create_undocumented_lumpsum_events};
+use commands::bitcoin_transaction::{create_bitcoin_transaction, get_bitcoin_transactions, update_bitcoin_transaction, delete_bitcoin_transaction, get_portfolio_metrics, create_undocumented_lumpsum_transactions};
 use commands::import::import_sat_tracker_v1_data;
 use commands::api::{fetch_bitcoin_price, fetch_announcements};
 use commands::encryption::{check_database_status, validate_database_password, encrypt_database, change_database_password, initialize_database_with_password};
@@ -89,13 +89,13 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
-            create_balance_change_event,
-            get_balance_change_events,
-            update_balance_change_event,
-            delete_balance_change_event,
+            create_bitcoin_transaction,
+            get_bitcoin_transactions,
+            update_bitcoin_transaction,
+            delete_bitcoin_transaction,
             get_portfolio_metrics,
             import_sat_tracker_v1_data,
-            create_undocumented_lumpsum_events,
+            create_undocumented_lumpsum_transactions,
             fetch_bitcoin_price,
             fetch_announcements,
             check_database_status,

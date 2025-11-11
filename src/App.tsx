@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   TauriService,
   DatabaseStatus,
-  BalanceChangeEvent,
+  BitcoinTransaction,
 } from "./services/tauriService";
 import {
   useEvents,
@@ -65,16 +65,18 @@ function App() {
   });
 
   // Memoized event handlers
-  const handleEditEvent = useCallback((event: BalanceChangeEvent) => {
+  const handleEditEvent = useCallback((transaction: BitcoinTransaction) => {
     setIsCreatingNew(false);
     setNewEventData(null);
-    setEditingEventId(event.id);
+    setEditingEventId(transaction.id);
     setEditData({
-      event_type: event.event_type,
-      amount_sats: event.amount_sats,
-      value_cents: event.value_cents,
-      memo: event.memo,
-      timestamp: event.timestamp,
+      type: transaction.type,
+      amount_sats: transaction.amount_sats,
+      fiat_amount_cents: transaction.fiat_amount_cents,
+      fee_sats: transaction.fee_sats,
+      fee_fiat_cents: transaction.fee_fiat_cents,
+      memo: transaction.memo,
+      timestamp: transaction.timestamp,
     });
   }, []);
 
@@ -85,9 +87,11 @@ function App() {
       await updateEventMutation.mutateAsync({
         id: editingEventId,
         request: {
+          type: editData.type as "Buy" | "Sell" | "Fee",
           amount_sats: editData.amount_sats,
-          value_cents: editData.value_cents,
-          event_type: editData.event_type as "Buy" | "Sell" | "Fee",
+          fiat_amount_cents: editData.fiat_amount_cents,
+          fee_sats: editData.fee_sats,
+          fee_fiat_cents: editData.fee_fiat_cents,
           memo: editData.memo,
           timestamp: editData.timestamp,
         },
@@ -128,9 +132,11 @@ function App() {
   const handleAddNewEvent = useCallback(() => {
     setIsCreatingNew(true);
     setNewEventData({
-      event_type: "Buy",
+      type: "Buy",
       amount_sats: 0,
-      value_cents: null,
+      fiat_amount_cents: null,
+      fee_sats: 0,
+      fee_fiat_cents: 0,
       memo: null,
       timestamp: new Date().toISOString(),
     });
@@ -143,9 +149,11 @@ function App() {
 
     try {
       await createEventMutation.mutateAsync({
+        type: newEventData.type as "Buy" | "Sell" | "Fee",
         amount_sats: newEventData.amount_sats,
-        value_cents: newEventData.value_cents,
-        event_type: newEventData.event_type as "Buy" | "Sell" | "Fee",
+        fiat_amount_cents: newEventData.fiat_amount_cents,
+        fee_sats: newEventData.fee_sats,
+        fee_fiat_cents: newEventData.fee_fiat_cents,
         memo: newEventData.memo,
         timestamp: newEventData.timestamp,
       });
@@ -272,7 +280,7 @@ function App() {
         memo: lumpsumData.memo.trim() || undefined,
       };
 
-      const createdEvents = await TauriService.createUndocumentedLumpsumEvents(
+      const createdTransactions = await TauriService.createUndocumentedLumpsumTransactions(
         request
       );
 
@@ -291,7 +299,7 @@ function App() {
         memo: "",
       });
 
-      alert(`Successfully created ${createdEvents.length} events`);
+      alert(`Successfully created ${createdTransactions.length} transactions`);
     } catch (error) {
       console.error("Error creating lumpsum events:", error);
       alert(`Failed to create events: ${error}`);

@@ -1,14 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { TauriService, BitcoinTransaction, CreateBitcoinTransactionRequest, UpdateBitcoinTransactionRequest } from "../services/tauriService";
 
-export const useEvents = (isDatabaseInitialized: boolean) => {
+export const useTransactions = (isDatabaseInitialized: boolean) => {
   const {
     data,
     isLoading,
     error,
     refetch,
   } = useQuery({
-    queryKey: ['events'],
+    queryKey: ['transactions'],
     queryFn: async () => {
       console.log("Fetching all transactions");
       let allTransactions: BitcoinTransaction[] = [];
@@ -25,7 +25,7 @@ export const useEvents = (isDatabaseInitialized: boolean) => {
       }
 
       return {
-        events: allTransactions,
+        transactions: allTransactions,
         totalCount,
       };
     },
@@ -35,7 +35,7 @@ export const useEvents = (isDatabaseInitialized: boolean) => {
   });
 
   return {
-    events: data?.events || [],
+    transactions: data?.transactions || [],
     totalCount: data?.totalCount || 0,
     loading: isLoading,
     error: error ? (error instanceof Error ? error.message : "Failed to load transactions") : null,
@@ -43,43 +43,49 @@ export const useEvents = (isDatabaseInitialized: boolean) => {
   };
 };
 
-export const useCreateEvent = () => {
+export const useCreateTransaction = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: (request: CreateBitcoinTransactionRequest) => 
       TauriService.createBitcoinTransaction(request),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['portfolioMetrics'] });
       queryClient.invalidateQueries({ queryKey: ['activityMetrics'] });
     },
   });
 };
 
-export const useUpdateEvent = () => {
+export const useUpdateTransaction = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: ({ id, request }: { id: string; request: UpdateBitcoinTransactionRequest }) => 
       TauriService.updateBitcoinTransaction(id, request),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['portfolioMetrics'] });
       queryClient.invalidateQueries({ queryKey: ['activityMetrics'] });
     },
   });
 };
 
-export const useDeleteEvent = () => {
+export const useDeleteTransaction = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: (id: string) => TauriService.deleteBitcoinTransaction(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['portfolioMetrics'] });
       queryClient.invalidateQueries({ queryKey: ['activityMetrics'] });
     },
   });
 };
+
+// Keep backward compatibility aliases
+export const useEvents = useTransactions;
+export const useCreateEvent = useCreateTransaction;
+export const useUpdateEvent = useUpdateTransaction;
+export const useDeleteEvent = useDeleteTransaction;

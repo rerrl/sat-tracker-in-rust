@@ -1,6 +1,6 @@
-use crate::commands::balance_change_event::create_balance_change_event;
-use crate::models::balance_change_event::{
-    BalanceChangeEvent, BalanceChangeType, CreateBalanceChangeEventRequest,
+use crate::commands::bitcoin_transaction::create_bitcoin_transaction;
+use crate::models::bitcoin_transaction::{
+    BitcoinTransaction, TransactionType, CreateBitcoinTransactionRequest,
 };
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -124,7 +124,7 @@ fn usd_to_cents(usd_str: &str) -> Result<i64, String> {
 async fn process_coinbase_csv(
     pool: State<'_, SqlitePool>,
     content: &str,
-) -> Result<Vec<BalanceChangeEvent>, String> {
+) -> Result<Vec<BitcoinTransaction>, String> {
     // Find the header line first
     let lines: Vec<&str> = content.lines().collect();
     let mut headers_line = 0;
@@ -179,16 +179,18 @@ async fn process_coinbase_csv(
             let value_cents = usd_to_cents(&buy_record.usd_total)?;
             let timestamp = parse_coinbase_timestamp(&buy_record.timestamp)?;
 
-            let request = CreateBalanceChangeEventRequest {
+            let request = CreateBitcoinTransactionRequest {
+                r#type: TransactionType::Buy,
                 amount_sats,
-                value_cents: Some(value_cents),
-                event_type: BalanceChangeType::Buy,
+                fiat_amount_cents: Some(value_cents),
+                fee_sats: Some(0),
+                fee_fiat_cents: Some(0),
                 memo: Some(format!("Coinbase: {}", buy_record.notes)),
                 timestamp,
             };
 
-            let event = create_balance_change_event(pool.clone(), request).await?;
-            events.push(event);
+            let transaction = create_bitcoin_transaction(pool.clone(), request).await?;
+            events.push(transaction);
         }
 
         // Process fee transactions
@@ -196,16 +198,18 @@ async fn process_coinbase_csv(
             let fee_sats = btc_to_sats(&fee_record.quantity_transacted)?;
             let timestamp = parse_coinbase_timestamp(&fee_record.timestamp)?;
 
-            let request = CreateBalanceChangeEventRequest {
+            let request = CreateBitcoinTransactionRequest {
+                r#type: TransactionType::Fee,
                 amount_sats: fee_sats,
-                value_cents: None,
-                event_type: BalanceChangeType::Fee,
+                fiat_amount_cents: None,
+                fee_sats: Some(0),
+                fee_fiat_cents: Some(0),
                 memo: Some(format!("Coinbase Fee: {}", fee_record.notes)),
                 timestamp,
             };
 
-            let event = create_balance_change_event(pool.clone(), request).await?;
-            events.push(event);
+            let transaction = create_bitcoin_transaction(pool.clone(), request).await?;
+            events.push(transaction);
         }
     }
 
@@ -215,7 +219,7 @@ async fn process_coinbase_csv(
 async fn process_river_csv(
     pool: State<'_, SqlitePool>,
     content: &str,
-) -> Result<Vec<BalanceChangeEvent>, String> {
+) -> Result<Vec<BitcoinTransaction>, String> {
     // Find the header line first
     let lines: Vec<&str> = content.lines().collect();
     let mut headers_line = 0;
@@ -243,62 +247,70 @@ async fn process_river_csv(
                 let amount_sats = btc_to_sats(&record.amount_btc)?;
                 let value_cents = usd_to_cents(&record.total_usd)?;
 
-                let request = CreateBalanceChangeEventRequest {
+                let request = CreateBitcoinTransactionRequest {
+                    r#type: TransactionType::Buy,
                     amount_sats,
-                    value_cents: Some(value_cents),
-                    event_type: BalanceChangeType::Buy,
+                    fiat_amount_cents: Some(value_cents),
+                    fee_sats: Some(0),
+                    fee_fiat_cents: Some(0),
                     memo: Some(format!("River: {}", record.description)),
                     timestamp,
                 };
 
-                let event = create_balance_change_event(pool.clone(), request).await?;
-                events.push(event);
+                let transaction = create_bitcoin_transaction(pool.clone(), request).await?;
+                events.push(transaction);
 
                 // Handle fees if present
                 if !record.fee_btc.is_empty() && record.fee_btc != "0" {
                     let fee_sats = btc_to_sats(&record.fee_btc)?;
 
-                    let fee_request = CreateBalanceChangeEventRequest {
+                    let fee_request = CreateBitcoinTransactionRequest {
+                        r#type: TransactionType::Fee,
                         amount_sats: fee_sats,
-                        value_cents: None,
-                        event_type: BalanceChangeType::Fee,
+                        fiat_amount_cents: None,
+                        fee_sats: Some(0),
+                        fee_fiat_cents: Some(0),
                         memo: Some(format!("River Fee: {}", record.description)),
                         timestamp,
                     };
 
-                    let fee_event = create_balance_change_event(pool.clone(), fee_request).await?;
-                    events.push(fee_event);
+                    let fee_transaction = create_bitcoin_transaction(pool.clone(), fee_request).await?;
+                    events.push(fee_transaction);
                 }
             }
             "sell" => {
                 let amount_sats = btc_to_sats(&record.amount_btc)?;
                 let value_cents = usd_to_cents(&record.total_usd)?;
 
-                let request = CreateBalanceChangeEventRequest {
+                let request = CreateBitcoinTransactionRequest {
+                    r#type: TransactionType::Sell,
                     amount_sats,
-                    value_cents: Some(value_cents),
-                    event_type: BalanceChangeType::Sell,
+                    fiat_amount_cents: Some(value_cents),
+                    fee_sats: Some(0),
+                    fee_fiat_cents: Some(0),
                     memo: Some(format!("River: {}", record.description)),
                     timestamp,
                 };
 
-                let event = create_balance_change_event(pool.clone(), request).await?;
-                events.push(event);
+                let transaction = create_bitcoin_transaction(pool.clone(), request).await?;
+                events.push(transaction);
 
                 // Handle fees if present
                 if !record.fee_btc.is_empty() && record.fee_btc != "0" {
                     let fee_sats = btc_to_sats(&record.fee_btc)?;
 
-                    let fee_request = CreateBalanceChangeEventRequest {
+                    let fee_request = CreateBitcoinTransactionRequest {
+                        r#type: TransactionType::Fee,
                         amount_sats: fee_sats,
-                        value_cents: None,
-                        event_type: BalanceChangeType::Fee,
+                        fiat_amount_cents: None,
+                        fee_sats: Some(0),
+                        fee_fiat_cents: Some(0),
                         memo: Some(format!("River Fee: {}", record.description)),
                         timestamp,
                     };
 
-                    let fee_event = create_balance_change_event(pool.clone(), fee_request).await?;
-                    events.push(fee_event);
+                    let fee_transaction = create_bitcoin_transaction(pool.clone(), fee_request).await?;
+                    events.push(fee_transaction);
                 }
             }
             _ => continue, // Skip other transaction types
@@ -376,7 +388,7 @@ pub async fn analyze_csv_file(file_path: String) -> Result<CsvPreview, String> {
 pub async fn import_csv_data(
     pool: State<'_, SqlitePool>,
     file_path: String,
-) -> Result<Vec<BalanceChangeEvent>, String> {
+) -> Result<Vec<BitcoinTransaction>, String> {
     let content = std::fs::read_to_string(&file_path)
         .map_err(|e| format!("Failed to read file '{}': {}", file_path, e))?;
 
