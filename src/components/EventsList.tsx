@@ -2,9 +2,6 @@ import React, { useState } from "react";
 import { BitcoinTransaction } from "../services/tauriService";
 import DateTimeInput from "./DateTimeInput";
 
-// Grid layout constant for consistent column sizing
-const GRID_LAYOUT = "0.7fr_0.4fr_0.7fr_0.5fr_1.4fr";
-
 const EventItem = React.memo(
   ({
     event,
@@ -37,7 +34,7 @@ const EventItem = React.memo(
           {/* Show original event data in collapsed form */}
           {!isCreating && event && (
             <div className="px-4 py-1 text-xs border-b border-[rgba(247,243,227,0.1)] bg-[rgba(247,243,227,0.03)]">
-              <div className={`grid grid-cols-[${GRID_LAYOUT}] gap-2 items-center opacity-60`}>
+              <div className={`events-grid items-center opacity-60`}>
                 <div className="text-[rgba(247,243,227,0.5)] text-xs">
                   <div>{new Date(event.timestamp).toLocaleDateString("en-US", {
                     year: "numeric",
@@ -82,6 +79,9 @@ const EventItem = React.memo(
                   {event.type === "Fee" ? "N/A" : event.fiat_amount_cents && event.amount_sats
                     ? `$${Math.round((event.fiat_amount_cents / 100) / (event.amount_sats / 100000000)).toLocaleString()}`
                     : "-"}
+                </div>
+                <div className="text-[rgba(247,243,227,0.5)] text-xs truncate" title={event.memo || ""}>
+                  {event.memo || "-"}
                 </div>
               </div>
             </div>
@@ -376,7 +376,7 @@ const EventItem = React.memo(
           className="hover:bg-[rgba(247,243,227,0.1)] px-4 py-1 text-xs group cursor-pointer"
           onClick={onSelect}
         >
-          <div className={`grid grid-cols-[${GRID_LAYOUT}] gap-2 items-center`}>
+          <div className={`events-grid items-center`}>
             <div className="text-[rgba(247,243,227,0.5)] text-xs">
               <div>{new Date(event.timestamp).toLocaleDateString("en-US", {
                 year: "numeric",
@@ -430,6 +430,9 @@ const EventItem = React.memo(
               {event.type === "Fee" ? "N/A" : event.fiat_amount_cents && event.amount_sats
                 ? `$${Math.round((event.fiat_amount_cents / 100) / (event.amount_sats / 100000000)).toLocaleString()}`
                 : "-"}
+            </div>
+            <div className="text-[rgba(247,243,227,0.5)] text-xs truncate" title={event.memo || ""}>
+              {event.memo || "-"}
             </div>
           </div>
         </div>
@@ -560,12 +563,13 @@ const EventsList: React.FC<EventsListProps> = ({
           </div>
         </div>
         {/* Column Headers */}
-        <div className={`grid grid-cols-[${GRID_LAYOUT}] gap-2 mt-2 text-xs font-medium text-[rgba(247,243,227,0.6)]`}>
+        <div className={`events-grid mt-2 text-xs font-medium text-[rgba(247,243,227,0.6)]`}>
           <div>Date</div>
           <div>Type</div>
           <div>Amount</div>
           <div>USD</div>
           <div>Rate</div>
+          <div>Memo</div>
         </div>
       </div>
 
