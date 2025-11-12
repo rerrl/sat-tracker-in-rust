@@ -25,7 +25,7 @@ pub async fn create_bitcoin_transaction(
     };
 
     sqlx::query(
-        "INSERT INTO bitcoin_transactions (id, type, amount_sats, fiat_amount_cents, fee_fiat_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO bitcoin_transactions (id, type, amount_sats, fiat_amount_cents, fee_fiat_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
     )
     .bind(&transaction.id)
     .bind(transaction.r#type.to_string())

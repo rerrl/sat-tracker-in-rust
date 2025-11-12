@@ -1,4 +1,4 @@
-use chrono::{Utc, Duration};
+use chrono::{Duration, Utc};
 use rand::seq::SliceRandom;
 use rand::Rng;
 use sqlx::{migrate::MigrateDatabase, Sqlite, SqlitePool};
@@ -84,7 +84,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     event_types.shuffle(&mut rng);
 
     let mut events_created = 0;
-    
+
     // Start from January 15, 2023
     let mut current_date = chrono::DateTime::parse_from_rfc3339("2023-01-15T10:00:00Z")
         .unwrap()
@@ -101,8 +101,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // Generate a rounded dollar amount (in hundreds)
                 let dollar_amount = rng.gen_range(1..=50) * 100; // $100 to $5000 in $100 increments
                 let fiat_amount_cents = dollar_amount * 100; // Convert to cents
-                let amount_sats =
-                    ((fiat_amount_cents as f64 / current_btc_price_cents as f64) * 100_000_000.0) as i64;
+                let amount_sats = ((fiat_amount_cents as f64 / current_btc_price_cents as f64)
+                    * 100_000_000.0) as i64;
                 let memo = if rng.gen_bool(0.3) {
                     Some("DCA".to_string())
                 } else {
@@ -110,13 +110,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
 
                 sqlx::query(
-                    "INSERT INTO bitcoin_transactions (id, type, amount_sats, fiat_amount_cents, fee_sats, fee_fiat_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO bitcoin_transactions (id, type, amount_sats, fiat_amount_cents, fee_fiat_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
                 )
                 .bind(Uuid::new_v4().to_string())
                 .bind("buy")
                 .bind(amount_sats)
                 .bind(fiat_amount_cents)
-                .bind(0) // No fees for now
                 .bind(0) // No fiat fees for now
                 .bind(&memo)
                 .bind(current_date)
@@ -128,8 +127,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // Generate a rounded dollar amount (in hundreds)
                 let dollar_amount = rng.gen_range(1..=50) * 100; // $100 to $5000 in $100 increments
                 let fiat_amount_cents = dollar_amount * 100; // Convert to cents
-                let amount_sats =
-                    ((fiat_amount_cents as f64 / current_btc_price_cents as f64) * 100_000_000.0) as i64;
+                let amount_sats = ((fiat_amount_cents as f64 / current_btc_price_cents as f64)
+                    * 100_000_000.0) as i64;
                 let memo = if rng.gen_bool(0.4) {
                     Some("Emergency".to_string())
                 } else {
@@ -137,13 +136,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
 
                 sqlx::query(
-                    "INSERT INTO bitcoin_transactions (id, type, amount_sats, fiat_amount_cents, fee_sats, fee_fiat_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO bitcoin_transactions (id, type, amount_sats, fiat_amount_cents, fee_fiat_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
                 )
                 .bind(Uuid::new_v4().to_string())
                 .bind("sell")
                 .bind(amount_sats)
                 .bind(fiat_amount_cents)
-                .bind(0) // No fees for now
                 .bind(0) // No fiat fees for now
                 .bind(&memo)
                 .bind(current_date)
@@ -160,13 +158,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
 
                 sqlx::query(
-                    "INSERT INTO bitcoin_transactions (id, type, amount_sats, fiat_amount_cents, fee_sats, fee_fiat_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO bitcoin_transactions (id, type, amount_sats, fiat_amount_cents, fee_fiat_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
                 )
                 .bind(Uuid::new_v4().to_string())
                 .bind("fee")
                 .bind(amount_sats)
                 .bind(None::<i64>) // No fiat amount for pure bitcoin fees
-                .bind(0) // No additional fees
                 .bind(0) // No fiat fees
                 .bind(&memo)
                 .bind(current_date)
@@ -178,7 +175,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         events_created += 1;
-        
+
         // Add 3-5 days to current_date
         let days_to_add = rng.gen_range(3..=5);
         current_date = current_date + Duration::days(days_to_add);
