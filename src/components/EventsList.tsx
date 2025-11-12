@@ -2,25 +2,32 @@ import React, { useState } from "react";
 import { BitcoinTransaction } from "../services/tauriService";
 import DateTimeInput from "./DateTimeInput";
 
+// Grid layout constant for consistent column sizing
+const GRID_LAYOUT = "0.7fr_0.4fr_0.7fr_0.5fr_1.4fr";
+
 const EventItem = React.memo(
   ({
     event,
     isEditing,
     isCreating,
+    isSelected,
     onEdit,
     onSave,
     onDelete,
     onCancel,
+    onSelect,
     editData,
     onEditDataChange,
   }: {
     event: BitcoinTransaction | null;
     isEditing: boolean;
     isCreating?: boolean;
+    isSelected?: boolean;
     onEdit: () => void;
     onSave: () => void;
     onDelete: () => void;
     onCancel: () => void;
+    onSelect?: () => void;
     editData: any;
     onEditDataChange: (field: string, value: any) => void;
   }) => {
@@ -30,46 +37,51 @@ const EventItem = React.memo(
           {/* Show original event data in collapsed form */}
           {!isCreating && event && (
             <div className="px-4 py-1 text-xs border-b border-[rgba(247,243,227,0.1)] bg-[rgba(247,243,227,0.03)]">
-              <div
-                className="grid gap-2 items-center opacity-60"
-                style={{
-                  gridTemplateColumns: "1.8fr 0.7fr 1.2fr 1fr 1fr 1fr 1.2fr 0.7fr",
-                }}
-              >
+              <div className={`grid grid-cols-[${GRID_LAYOUT}] gap-2 items-center opacity-60`}>
                 <div className="text-[rgba(247,243,227,0.5)] text-xs">
-                  {new Date(event.timestamp)
-                    .toLocaleString("en-US", {
-                      year: "numeric",
-                      month: "2-digit",
-                      day: "2-digit",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: true,
-                    })
-                    .replace(",", "")}
+                  <div>{new Date(event.timestamp).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                  })}</div>
+                  <div>{new Date(event.timestamp).toLocaleTimeString("en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true,
+                  })}</div>
                 </div>
                 <div className="text-[rgba(247,243,227,0.5)] text-xs">
-                  {event.type}
+                  {event.type === "Fee" ? (
+                    <span title="On-chain fee">Fee</span>
+                  ) : (
+                    event.type
+                  )}
                 </div>
                 <div className="text-[rgba(247,243,227,0.5)] text-xs">
-                  {event.amount_sats.toLocaleString()} sats
+                  <span title={event.amount_sats >= 1000000 
+                    ? `${(event.amount_sats / 100000000).toFixed(8)} BTC`
+                    : `${(event.amount_sats / 100000000).toFixed(8)} BTC`
+                  }>
+                    {event.amount_sats >= 1000000 
+                      ? `${Math.floor(event.amount_sats / 100000000 * 1000000) / 1000000} BTC`
+                      : `${event.amount_sats.toLocaleString()} sats`
+                    }
+                  </span>
                 </div>
                 <div className="text-[rgba(247,243,227,0.5)] text-xs">
-                  {event.fiat_amount_cents
-                    ? `$${(event.fiat_amount_cents / 100).toFixed(2)}`
+                  {event.type === "Fee" ? "N/A" : event.fiat_amount_cents
+                    ? <span title={`$${(event.fiat_amount_cents / 100).toFixed(2)}`}>
+                        ${event.fiat_amount_cents >= 99900 
+                          ? Math.round(event.fiat_amount_cents / 100).toLocaleString()
+                          : (event.fiat_amount_cents / 100).toFixed(2)
+                        }
+                      </span>
                     : "-"}
                 </div>
                 <div className="text-[rgba(247,243,227,0.5)] text-xs">
-                  {event.fee_sats ? `${event.fee_sats.toLocaleString()} sats` : "-"}
-                </div>
-                <div className="text-[rgba(247,243,227,0.5)] text-xs">
-                  {event.fee_fiat_cents ? `$${(event.fee_fiat_cents / 100).toFixed(2)}` : "-"}
-                </div>
-                <div className="text-[rgba(247,243,227,0.5)] text-xs truncate">
-                  {event.memo || "-"}
-                </div>
-                <div className="text-[rgba(247,243,227,0.5)] text-xs">
-                  Editing...
+                  {event.type === "Fee" ? "N/A" : event.fiat_amount_cents && event.amount_sats
+                    ? `$${Math.round((event.fiat_amount_cents / 100) / (event.amount_sats / 100000000)).toLocaleString()}`
+                    : "-"}
                 </div>
               </div>
             </div>
@@ -80,10 +92,7 @@ const EventItem = React.memo(
             {/* Main edit row - split into two rows for better spacing */}
             <div className="space-y-2">
               {/* First row: Basic transaction info */}
-              <div
-                className="grid gap-2 items-end"
-                style={{ gridTemplateColumns: "2fr 0.8fr 1.5fr 1.3fr 1.5fr" }}
-              >
+              <div className="grid grid-cols-[2fr_0.8fr_1.5fr_1.3fr_1.5fr] gap-2 items-end">
                 {/* Date & Time */}
                 <div>
                   <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-0.5 font-medium">
@@ -225,10 +234,7 @@ const EventItem = React.memo(
 
               {/* Second row: Fee information - only show for Fee transactions */}
               {editData.type === "Fee" && (
-                <div
-                  className="grid gap-2 items-end"
-                  style={{ gridTemplateColumns: "1fr 1fr 2fr" }}
-                >
+                <div className="grid grid-cols-[1fr_1fr_2fr] gap-2 items-end">
                   {/* On-chain Fee Sats */}
                   <div>
                     <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-0.5 font-medium">
@@ -365,74 +371,88 @@ const EventItem = React.memo(
     if (!event) return null;
 
     return (
-      <div className="border-b border-[rgba(247,243,227,0.1)] hover:bg-[rgba(247,243,227,0.1)] px-4 py-1 text-xs group">
-        <div
-          className="grid gap-2 items-center"
-          style={{
-            gridTemplateColumns: "1.8fr 0.7fr 1.2fr 1fr 1fr 1fr 1.2fr 0.7fr",
-          }}
+      <div className="border-b border-[rgba(247,243,227,0.1)]">
+        <div 
+          className="hover:bg-[rgba(247,243,227,0.1)] px-4 py-1 text-xs group cursor-pointer"
+          onClick={onSelect}
         >
-          <div className="text-[rgba(247,243,227,0.5)] text-xs">
-            {new Date(event.timestamp)
-              .toLocaleString("en-US", {
+          <div className={`grid grid-cols-[${GRID_LAYOUT}] gap-2 items-center`}>
+            <div className="text-[rgba(247,243,227,0.5)] text-xs">
+              <div>{new Date(event.timestamp).toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "2-digit",
                 day: "2-digit",
+              })}</div>
+              <div>{new Date(event.timestamp).toLocaleTimeString("en-US", {
                 hour: "2-digit",
                 minute: "2-digit",
                 hour12: true,
-              })
-              .replace(",", "")}
-          </div>
-          <div
-            className={
-              `text-[rgba(247,243,227,1)] text-xs border-l-2 border-[rgba(247,243,227,0.3)] pl-2 ` +
-              (event.type === "Buy"
-                ? "border-green-400"
-                : event.type === "Sell"
-                ? "border-red-400"
-                : "border-yellow-400")
-            }
-          >
-            {event.type}
-          </div>
-          <div className="text-[rgba(247,243,227,1)] text-xs">
-            {event.amount_sats.toLocaleString()} sats
-          </div>
-          <div className="text-[rgba(247,243,227,0.5)] text-xs">
-            {event.fiat_amount_cents
-              ? `$${(event.fiat_amount_cents / 100).toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}`
-              : "-"}
-          </div>
-          <div className="text-[rgba(247,243,227,0.5)] text-xs">
-            {event.fee_sats ? `${event.fee_sats.toLocaleString()} sats` : "-"}
-          </div>
-          <div className="text-[rgba(247,243,227,0.5)] text-xs">
-            {event.fee_fiat_cents
-              ? `$${(event.fee_fiat_cents / 100).toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })}`
-              : "-"}
-          </div>
-          <div
-            className="text-[rgba(247,243,227,0.5)] truncate text-xs"
-            title={event.memo || ""}
-          >
-            {event.memo || "-"}
-          </div>
-          <div className="flex justify-end">
-            <button
-              onClick={onEdit}
-              className="opacity-0 group-hover:opacity-100 bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 text-xs rounded transition-opacity"
+              })}</div>
+            </div>
+            <div
+              className={
+                `text-[rgba(247,243,227,1)] text-xs border-l-2 border-[rgba(247,243,227,0.3)] pl-2 ` +
+                (event.type === "Buy"
+                  ? "border-green-400"
+                  : event.type === "Sell"
+                  ? "border-red-400"
+                  : "border-yellow-400")
+              }
             >
-              Edit
-            </button>
+              {event.type === "Fee" ? (
+                <span title="On-chain fee">Fee</span>
+              ) : (
+                event.type
+              )}
+            </div>
+            <div className="text-[rgba(247,243,227,1)] text-xs">
+              <span title={event.amount_sats >= 1000000 
+                ? `${(event.amount_sats / 100000000).toFixed(8)} BTC`
+                : `${(event.amount_sats / 100000000).toFixed(8)} BTC`
+              }>
+                {event.amount_sats >= 1000000 
+                  ? `${Math.floor(event.amount_sats / 100000000 * 1000000) / 1000000} BTC`
+                  : `${event.amount_sats.toLocaleString()} sats`
+                }
+              </span>
+            </div>
+            <div className="text-[rgba(247,243,227,0.5)] text-xs">
+              {event.type === "Fee" ? "N/A" : event.fiat_amount_cents
+                ? <span title={`$${(event.fiat_amount_cents / 100).toFixed(2)}`}>
+                    ${event.fiat_amount_cents >= 99900 
+                      ? Math.round(event.fiat_amount_cents / 100).toLocaleString()
+                      : (event.fiat_amount_cents / 100).toFixed(2)
+                    }
+                  </span>
+                : "-"}
+            </div>
+            <div className="text-[rgba(247,243,227,0.5)] text-xs">
+              {event.type === "Fee" ? "N/A" : event.fiat_amount_cents && event.amount_sats
+                ? `$${Math.round((event.fiat_amount_cents / 100) / (event.amount_sats / 100000000)).toLocaleString()}`
+                : "-"}
+            </div>
           </div>
         </div>
+        
+        {/* Expanded details when selected */}
+        {isSelected && (
+          <div className="bg-[rgba(247,243,227,0.05)] px-4 py-2 border-t border-[rgba(247,243,227,0.1)]">
+            <div className="flex justify-between items-center">
+              <div className="text-xs text-[rgba(247,243,227,0.7)]">
+                <span className="font-medium">Memo:</span> {event.memo || "No memo"}
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-xs rounded transition-colors"
+              >
+                Edit
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -442,11 +462,13 @@ interface EventsListProps {
   events: BitcoinTransaction[];
   totalCount: number;
   editingEventId: string | null;
+  selectedEventId: string | null;
   editData: any;
   isCreatingNew: boolean;
   newEventData: any;
   onAddNewEvent: () => void;
   onEditEvent: (event: BitcoinTransaction) => void;
+  onSelectEvent: (eventId: string | null) => void;
   onSaveEvent: () => void;
   onDeleteEvent: () => void;
   onCancelEdit: () => void;
@@ -460,11 +482,13 @@ const EventsList: React.FC<EventsListProps> = ({
   events,
   totalCount,
   editingEventId,
+  selectedEventId,
   editData,
   isCreatingNew,
   newEventData,
   onAddNewEvent,
   onEditEvent,
+  onSelectEvent,
   onSaveEvent,
   onDeleteEvent,
   onCancelEdit,
@@ -536,20 +560,12 @@ const EventsList: React.FC<EventsListProps> = ({
           </div>
         </div>
         {/* Column Headers */}
-        <div
-          className="grid gap-2 mt-2 text-xs font-medium text-[rgba(247,243,227,0.6)]"
-          style={{
-            gridTemplateColumns: "1.8fr 0.7fr 1.2fr 1fr 1fr 1fr 1.2fr 0.7fr",
-          }}
-        >
+        <div className={`grid grid-cols-[${GRID_LAYOUT}] gap-2 mt-2 text-xs font-medium text-[rgba(247,243,227,0.6)]`}>
           <div>Date</div>
           <div>Type</div>
           <div>Amount</div>
           <div>USD</div>
-          <div>On-chain Fee</div>
-          <div>Fee USD</div>
-          <div>Memo</div>
-          <div>Actions</div>
+          <div>Rate</div>
         </div>
       </div>
 
@@ -575,8 +591,10 @@ const EventsList: React.FC<EventsListProps> = ({
             key={event.id}
             event={event}
             isEditing={editingEventId === event.id}
+            isSelected={selectedEventId === event.id}
             isCreating={false}
             onEdit={() => onEditEvent(event)}
+            onSelect={() => onSelectEvent(selectedEventId === event.id ? null : event.id)}
             onSave={onSaveEvent}
             onDelete={onDeleteEvent}
             onCancel={onCancelEdit}
