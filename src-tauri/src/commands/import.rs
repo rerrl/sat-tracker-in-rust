@@ -1,5 +1,5 @@
 use crate::commands::bitcoin_transaction::create_bitcoin_transaction;
-use crate::models::bitcoin_transaction::{TransactionType, CreateBitcoinTransactionRequest};
+use crate::models::bitcoin_transaction::{CreateBitcoinTransactionRequest, TransactionType};
 use chrono::{DateTime, Utc};
 use sqlx::{Row, SqlitePool};
 use tauri::State;
@@ -75,7 +75,6 @@ pub async fn import_sat_tracker_v1_data(pool: State<'_, SqlitePool>) -> Result<S
                     r#type: TransactionType::Buy,
                     amount_sats,
                     fiat_amount_cents: Some(value_cents),
-                    fee_sats: Some(0),
                     fee_fiat_cents: Some(0),
                     memo,
                     timestamp,
@@ -151,7 +150,6 @@ pub async fn import_sat_tracker_v1_data(pool: State<'_, SqlitePool>) -> Result<S
                     r#type: transaction_type,
                     amount_sats,
                     fiat_amount_cents: None, // DeductionEvents don't have USD value
-                    fee_sats: Some(0),
                     fee_fiat_cents: Some(0),
                     memo,
                     timestamp,

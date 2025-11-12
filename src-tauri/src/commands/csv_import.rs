@@ -1,13 +1,12 @@
 use crate::commands::bitcoin_transaction::create_bitcoin_transaction;
 use crate::models::bitcoin_transaction::{
-    BitcoinTransaction, TransactionType, CreateBitcoinTransactionRequest,
+    BitcoinTransaction, CreateBitcoinTransactionRequest, TransactionType,
 };
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 use std::collections::HashMap;
 use tauri::State;
-use uuid::Uuid;
 
 #[derive(Debug, Serialize)]
 pub struct CsvPreview {
@@ -74,7 +73,7 @@ fn detect_csv_format(content: &str) -> Result<CsvFormat, String> {
     // Search through multiple lines to find the header (like analyze_csv_file does)
     for (i, line) in lines.iter().enumerate() {
         println!("Line {}: {}", i, line);
-        
+
         if line.contains("Timestamp") && line.contains("Transaction Type") {
             println!("Found Coinbase format at line {}", i);
             return Ok(CsvFormat::Coinbase);
@@ -128,7 +127,7 @@ async fn process_coinbase_csv(
     // Find the header line first
     let lines: Vec<&str> = content.lines().collect();
     let mut headers_line = 0;
-    
+
     for (i, line) in lines.iter().enumerate() {
         if line.contains("Timestamp") && line.contains("Transaction Type") {
             headers_line = i;
@@ -183,7 +182,6 @@ async fn process_coinbase_csv(
                 r#type: TransactionType::Buy,
                 amount_sats,
                 fiat_amount_cents: Some(value_cents),
-                fee_sats: Some(0),
                 fee_fiat_cents: Some(0),
                 memo: Some(format!("Coinbase: {}", buy_record.notes)),
                 timestamp,
@@ -202,7 +200,6 @@ async fn process_coinbase_csv(
                 r#type: TransactionType::Fee,
                 amount_sats: fee_sats,
                 fiat_amount_cents: None,
-                fee_sats: Some(0),
                 fee_fiat_cents: Some(0),
                 memo: Some(format!("Coinbase Fee: {}", fee_record.notes)),
                 timestamp,
@@ -223,7 +220,7 @@ async fn process_river_csv(
     // Find the header line first
     let lines: Vec<&str> = content.lines().collect();
     let mut headers_line = 0;
-    
+
     for (i, line) in lines.iter().enumerate() {
         if line.contains("Date") && line.contains("Type") && line.contains("Amount (BTC)") {
             headers_line = i;
@@ -251,7 +248,6 @@ async fn process_river_csv(
                     r#type: TransactionType::Buy,
                     amount_sats,
                     fiat_amount_cents: Some(value_cents),
-                    fee_sats: Some(0),
                     fee_fiat_cents: Some(0),
                     memo: Some(format!("River: {}", record.description)),
                     timestamp,
@@ -268,13 +264,13 @@ async fn process_river_csv(
                         r#type: TransactionType::Fee,
                         amount_sats: fee_sats,
                         fiat_amount_cents: None,
-                        fee_sats: Some(0),
                         fee_fiat_cents: Some(0),
                         memo: Some(format!("River Fee: {}", record.description)),
                         timestamp,
                     };
 
-                    let fee_transaction = create_bitcoin_transaction(pool.clone(), fee_request).await?;
+                    let fee_transaction =
+                        create_bitcoin_transaction(pool.clone(), fee_request).await?;
                     events.push(fee_transaction);
                 }
             }
@@ -286,7 +282,6 @@ async fn process_river_csv(
                     r#type: TransactionType::Sell,
                     amount_sats,
                     fiat_amount_cents: Some(value_cents),
-                    fee_sats: Some(0),
                     fee_fiat_cents: Some(0),
                     memo: Some(format!("River: {}", record.description)),
                     timestamp,
@@ -303,13 +298,13 @@ async fn process_river_csv(
                         r#type: TransactionType::Fee,
                         amount_sats: fee_sats,
                         fiat_amount_cents: None,
-                        fee_sats: Some(0),
                         fee_fiat_cents: Some(0),
                         memo: Some(format!("River Fee: {}", record.description)),
                         timestamp,
                     };
 
-                    let fee_transaction = create_bitcoin_transaction(pool.clone(), fee_request).await?;
+                    let fee_transaction =
+                        create_bitcoin_transaction(pool.clone(), fee_request).await?;
                     events.push(fee_transaction);
                 }
             }
@@ -322,15 +317,15 @@ async fn process_river_csv(
 
 #[tauri::command]
 pub async fn analyze_csv_file(file_path: String) -> Result<CsvPreview, String> {
-    let content = std::fs::read_to_string(&file_path)
-        .map_err(|e| format!("Failed to read file: {}", e))?;
+    let content =
+        std::fs::read_to_string(&file_path).map_err(|e| format!("Failed to read file: {}", e))?;
 
     let lines: Vec<&str> = content.lines().collect();
-    
+
     // Find the header line by looking for known patterns
     let mut headers_line = 0;
     let mut format = "Unknown".to_string();
-    
+
     for (i, line) in lines.iter().enumerate() {
         if line.contains("Timestamp") && line.contains("Transaction Type") {
             headers_line = i;
@@ -350,24 +345,27 @@ pub async fn analyze_csv_file(file_path: String) -> Result<CsvPreview, String> {
     // Parse from the header line onwards
     let csv_content = lines[headers_line..].join("\n");
     let mut reader = csv::Reader::from_reader(csv_content.as_bytes());
-    
+
     let mut sample_records = Vec::new();
     let mut total_records = 0;
-    
+
     // Get headers first before iterating
     let headers = reader.headers().map(|h| h.clone()).ok();
-    
+
     for (i, result) in reader.records().enumerate() {
         if let Ok(record) = result {
             total_records += 1;
-            
+
             // Take first 3 records as samples
             if i < 3 {
                 let mut record_map = serde_json::Map::new();
                 if let Some(ref headers) = headers {
                     for (j, field) in record.iter().enumerate() {
                         if let Some(header) = headers.get(j) {
-                            record_map.insert(header.to_string(), serde_json::Value::String(field.to_string()));
+                            record_map.insert(
+                                header.to_string(),
+                                serde_json::Value::String(field.to_string()),
+                            );
                         }
                     }
                 }

@@ -33,7 +33,7 @@ const EventItem = React.memo(
               <div
                 className="grid gap-2 items-center opacity-60"
                 style={{
-                  gridTemplateColumns: "2fr 0.8fr 1.5fr 1.3fr 1fr 1.5fr 0.8fr",
+                  gridTemplateColumns: "1.8fr 0.7fr 1.2fr 1fr 1fr 1fr 1.2fr 0.7fr",
                 }}
               >
                 <div className="text-[rgba(247,243,227,0.5)] text-xs">
@@ -59,7 +59,12 @@ const EventItem = React.memo(
                     ? `$${(event.fiat_amount_cents / 100).toFixed(2)}`
                     : "-"}
                 </div>
-                <div className="text-[rgba(247,243,227,0.5)] text-xs">-</div>
+                <div className="text-[rgba(247,243,227,0.5)] text-xs">
+                  {event.fee_sats ? `${event.fee_sats.toLocaleString()} sats` : "-"}
+                </div>
+                <div className="text-[rgba(247,243,227,0.5)] text-xs">
+                  {event.fee_fiat_cents ? `$${(event.fee_fiat_cents / 100).toFixed(2)}` : "-"}
+                </div>
                 <div className="text-[rgba(247,243,227,0.5)] text-xs truncate">
                   {event.memo || "-"}
                 </div>
@@ -72,215 +77,284 @@ const EventItem = React.memo(
 
           {/* Compact edit form */}
           <div className="px-4 py-2 bg-[rgba(247,243,227,0.03)] border-l-2 border-blue-500">
-            {/* Main edit row */}
-            <div
-              className="grid gap-2 items-end mb-2"
-              style={{ gridTemplateColumns: "2fr 0.8fr 1.5fr 1.3fr 1.5fr" }}
-            >
-              {/* Date & Time */}
-              <div>
-                <label className="block text-[rgba(247,243,227,0.6)] text-xs mb-1">
-                  Date & Time
-                </label>
-                <DateTimeInput
-                  value={editData.timestamp || new Date().toISOString()}
-                  onChange={(isoTimestamp) => {
-                    onEditDataChange("timestamp", isoTimestamp);
-                  }}
-                />
-              </div>
+            {/* Main edit row - split into two rows for better spacing */}
+            <div className="space-y-2">
+              {/* First row: Basic transaction info */}
+              <div
+                className="grid gap-2 items-end"
+                style={{ gridTemplateColumns: "2fr 0.8fr 1.5fr 1.3fr 1.5fr" }}
+              >
+                {/* Date & Time */}
+                <div>
+                  <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-0.5 font-medium">
+                    Date & Time
+                  </label>
+                  <DateTimeInput
+                    value={editData.timestamp || new Date().toISOString()}
+                    onChange={(isoTimestamp) => {
+                      onEditDataChange("timestamp", isoTimestamp);
+                    }}
+                  />
+                </div>
 
-              {/* Event Type */}
-              <div>
-                <label className="block text-[rgba(247,243,227,0.6)] text-xs mb-1">
-                  Type
-                </label>
-                <select
-                  value={editData.type}
-                  onChange={(e) => {
-                    const newType = e.target.value;
-                    onEditDataChange("type", newType);
-                    if (newType === "Fee") {
-                      onEditDataChange("fiat_amount_cents", null);
-                    }
-                  }}
-                  className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded"
-                  style={{
-                    backgroundColor: "#090C08",
-                    color: "#F7F3E3",
-                    appearance: "none",
-                    WebkitAppearance: "none",
-                    MozAppearance: "none",
-                  }}
-                >
-                  <option
-                    value="Buy"
-                    style={{ backgroundColor: "#090C08", color: "#F7F3E3" }}
-                  >
-                    Buy
-                  </option>
-                  <option
-                    value="Sell"
-                    style={{ backgroundColor: "#090C08", color: "#F7F3E3" }}
-                  >
-                    Sell
-                  </option>
-                  <option
-                    value="Fee"
-                    style={{ backgroundColor: "#090C08", color: "#F7F3E3" }}
-                  >
-                    Fee
-                  </option>
-                </select>
-              </div>
-
-              {/* Amount in Sats */}
-              <div>
-                <label className="block text-[rgba(247,243,227,0.6)] text-xs mb-1">
-                  Amount (Sats)
-                </label>
-                <input
-                  type="text"
-                  value={
-                    editData.amount_sats === ""
-                      ? ""
-                      : editData.amount_sats?.toString() || ""
-                  }
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === "" || /^[1-9]\d*$/.test(value)) {
-                      onEditDataChange(
-                        "amount_sats",
-                        value === "" ? "" : parseInt(value)
-                      );
-                    }
-                  }}
-                  className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded"
-                  placeholder="1000000"
-                />
-              </div>
-
-              {/* USD Value */}
-              <div>
-                <label className="block text-[rgba(247,243,227,0.6)] text-xs mb-1">
-                  USD{" "}
-                  {editData.type === "Fee" && (
-                    <span className="text-[rgba(247,243,227,0.4)]">(N/A)</span>
-                  )}
-                </label>
-                <input
-                  type="text"
-                  value={
-                    editData.type === "Fee"
-                      ? "N/A"
-                      : editData.fiat_amount_cents === null ||
-                        editData.fiat_amount_cents === undefined
-                      ? ""
-                      : editData.fiat_amount_cents === ""
-                      ? ""
-                      : typeof editData.fiat_amount_cents === "string"
-                      ? editData.fiat_amount_cents
-                      : (editData.fiat_amount_cents / 100).toString()
-                  }
-                  onChange={(e) => {
-                    if (editData.type === "Fee") return;
-                    const value = e.target.value;
-                    if (value === "" || /^[0-9]+(\.[0-9]{0,2})?$/.test(value)) {
-                      if (value === "") {
-                        onEditDataChange("fiat_amount_cents", "");
-                      } else {
-                        onEditDataChange("fiat_amount_cents", value);
+                {/* Event Type */}
+                <div>
+                  <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-0.5 font-medium">
+                    Type
+                  </label>
+                  <select
+                    value={editData.type}
+                    onChange={(e) => {
+                      const newType = e.target.value;
+                      onEditDataChange("type", newType);
+                      if (newType === "Fee") {
+                        onEditDataChange("fiat_amount_cents", null);
                       }
+                    }}
+                    className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
+                    style={{
+                      colorScheme: 'dark'
+                    }}
+                  >
+                    <option value="Buy" style={{ backgroundColor: '#1a1a1a', color: '#F7F3E3' }}>Buy</option>
+                    <option value="Sell" style={{ backgroundColor: '#1a1a1a', color: '#F7F3E3' }}>Sell</option>
+                    <option value="Fee" style={{ backgroundColor: '#1a1a1a', color: '#F7F3E3' }}>Fee</option>
+                  </select>
+                </div>
+
+                {/* Amount in Sats */}
+                <div>
+                  <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-0.5 font-medium">
+                    Amount (Sats)
+                  </label>
+                  <input
+                    type="text"
+                    value={
+                      editData.amount_sats === ""
+                        ? ""
+                        : editData.amount_sats?.toString() || ""
                     }
-                  }}
-                  onBlur={() => {
-                    if (editData.type === "Fee") return;
-                    if (
-                      editData.fiat_amount_cents &&
-                      typeof editData.fiat_amount_cents === "string"
-                    ) {
-                      const numValue = parseFloat(editData.fiat_amount_cents);
-                      if (!isNaN(numValue)) {
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === "" || /^[1-9]\d*$/.test(value)) {
                         onEditDataChange(
-                          "fiat_amount_cents",
-                          Math.round(numValue * 100)
+                          "amount_sats",
+                          value === "" ? "" : parseInt(value)
                         );
                       }
+                    }}
+                    className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
+                    placeholder="1000000"
+                  />
+                </div>
+
+                {/* USD Value */}
+                <div>
+                  <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-0.5 font-medium">
+                    USD Value{" "}
+                    {editData.type === "Fee" && (
+                      <span className="text-[rgba(247,243,227,0.4)]">(N/A)</span>
+                    )}
+                  </label>
+                  <input
+                    type="text"
+                    value={
+                      editData.type === "Fee"
+                        ? ""
+                        : editData.fiat_amount_cents === null ||
+                          editData.fiat_amount_cents === undefined
+                        ? ""
+                        : editData.fiat_amount_cents === ""
+                        ? ""
+                        : typeof editData.fiat_amount_cents === "string"
+                        ? editData.fiat_amount_cents
+                        : (editData.fiat_amount_cents / 100).toString()
                     }
-                  }}
-                  disabled={editData.type === "Fee"}
-                  className={`w-full border px-2 py-1 text-xs rounded ${
-                    editData.type === "Fee"
-                      ? "bg-[rgba(9,12,8,0.5)] border-[rgba(247,243,227,0.1)] text-[rgba(247,243,227,0.4)] cursor-not-allowed"
-                      : "bg-[#090C08] border-[rgba(247,243,227,0.3)] text-[#F7F3E3]"
-                  }`}
-                  placeholder={editData.type === "Fee" ? "N/A" : "500.00"}
-                />
+                    onChange={(e) => {
+                      if (editData.type === "Fee") return;
+                      const value = e.target.value;
+                      if (value === "" || /^[0-9]+(\.[0-9]{0,2})?$/.test(value)) {
+                        if (value === "") {
+                          onEditDataChange("fiat_amount_cents", "");
+                        } else {
+                          onEditDataChange("fiat_amount_cents", value);
+                        }
+                      }
+                    }}
+                    onBlur={() => {
+                      if (editData.type === "Fee") return;
+                      if (
+                        editData.fiat_amount_cents &&
+                        typeof editData.fiat_amount_cents === "string"
+                      ) {
+                        const numValue = parseFloat(editData.fiat_amount_cents);
+                        if (!isNaN(numValue)) {
+                          onEditDataChange(
+                            "fiat_amount_cents",
+                            Math.round(numValue * 100)
+                          );
+                        }
+                      }
+                    }}
+                    disabled={editData.type === "Fee"}
+                    className={`w-full border px-2 py-1 text-xs rounded focus:outline-none ${
+                      editData.type === "Fee"
+                        ? "bg-[rgba(26,26,26,0.5)] border-[rgba(247,243,227,0.2)] text-[rgba(247,243,227,0.4)] cursor-not-allowed"
+                        : "bg-[#1a1a1a] border-[rgba(247,243,227,0.3)] text-[#F7F3E3] focus:border-blue-400"
+                    }`}
+                    placeholder={editData.type === "Fee" ? "N/A" : "500.00"}
+                  />
+                </div>
+
+                {/* Memo */}
+                <div>
+                  <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-0.5 font-medium">
+                    Memo
+                  </label>
+                  <input
+                    type="text"
+                    value={editData.memo || ""}
+                    onChange={(e) =>
+                      onEditDataChange("memo", e.target.value || null)
+                    }
+                    className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
+                    placeholder="Optional memo"
+                  />
+                </div>
               </div>
 
-              {/* Memo */}
-              <div>
-                <label className="block text-[rgba(247,243,227,0.6)] text-xs mb-1">
-                  Memo
-                </label>
-                <input
-                  type="text"
-                  value={editData.memo || ""}
-                  onChange={(e) =>
-                    onEditDataChange("memo", e.target.value || null)
-                  }
-                  className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded"
-                  placeholder="Optional memo"
-                />
-              </div>
+              {/* Second row: Fee information - only show for Fee transactions */}
+              {editData.type === "Fee" && (
+                <div
+                  className="grid gap-2 items-end"
+                  style={{ gridTemplateColumns: "1fr 1fr 2fr" }}
+                >
+                  {/* On-chain Fee Sats */}
+                  <div>
+                    <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-0.5 font-medium">
+                      On-chain Fee (Sats)
+                    </label>
+                    <input
+                      type="text"
+                      value={
+                        editData.fee_sats === null || editData.fee_sats === undefined
+                          ? ""
+                          : editData.fee_sats === ""
+                          ? ""
+                          : editData.fee_sats?.toString() || ""
+                      }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "" || /^[0-9]\d*$/.test(value)) {
+                          onEditDataChange(
+                            "fee_sats",
+                            value === "" ? null : parseInt(value)
+                          );
+                        }
+                      }}
+                      className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
+                      placeholder="Optional"
+                    />
+                  </div>
+
+                  {/* On-chain Fee USD */}
+                  <div>
+                    <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-0.5 font-medium">
+                      On-chain Fee (USD)
+                    </label>
+                    <input
+                      type="text"
+                      value={
+                        editData.fee_fiat_cents === null ||
+                        editData.fee_fiat_cents === undefined
+                          ? ""
+                          : editData.fee_fiat_cents === ""
+                          ? ""
+                          : typeof editData.fee_fiat_cents === "string"
+                          ? editData.fee_fiat_cents
+                          : (editData.fee_fiat_cents / 100).toString()
+                      }
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === "" || /^[0-9]+(\.[0-9]{0,2})?$/.test(value)) {
+                          if (value === "") {
+                            onEditDataChange("fee_fiat_cents", "");
+                          } else {
+                            onEditDataChange("fee_fiat_cents", value);
+                          }
+                        }
+                      }}
+                      onBlur={() => {
+                        if (
+                          editData.fee_fiat_cents &&
+                          typeof editData.fee_fiat_cents === "string"
+                        ) {
+                          const numValue = parseFloat(editData.fee_fiat_cents);
+                          if (!isNaN(numValue)) {
+                            onEditDataChange(
+                              "fee_fiat_cents",
+                              Math.round(numValue * 100)
+                            );
+                          } else {
+                            onEditDataChange("fee_fiat_cents", null);
+                          }
+                        }
+                      }}
+                      className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
+                      placeholder="Optional"
+                    />
+                  </div>
+
+                  {/* Empty space for alignment */}
+                  <div></div>
+                </div>
+              )}
+
+              {/* Calculated rates info - only show for Buy/Sell */}
+              {editData.type !== "Fee" && (
+                <div className="text-xs text-[rgba(247,243,227,0.7)] pl-4 flex items-end pb-1">
+                  {(editData.type === "Buy" || editData.type === "Sell") &&
+                    editData.amount_sats &&
+                    editData.fiat_amount_cents &&
+                    editData.fiat_amount_cents !== "" && (
+                      <div>
+                        Rate: $
+                        {(
+                          Math.abs(editData.fiat_amount_cents) /
+                          100 /
+                          (Math.abs(editData.amount_sats) / 100_000_000)
+                        ).toLocaleString(undefined, {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        })}
+                      </div>
+                    )}
+                </div>
+              )}
             </div>
 
-            {/* Bottom row with calculated rate and actions */}
-            <div className="flex justify-between items-center">
-              {/* Calculated BTC/USD Rate */}
-              <div className="text-xs text-[rgba(247,243,227,0.6)]">
-                {(editData.type === "Buy" ||
-                  editData.type === "Sell") &&
-                  editData.amount_sats &&
-                  editData.fiat_amount_cents &&
-                  editData.fiat_amount_cents !== "" && (
-                    <span>
-                      Rate: $
-                      {(
-                        Math.abs(editData.fiat_amount_cents) /
-                        100 /
-                        (Math.abs(editData.amount_sats) / 100_000_000)
-                      ).toLocaleString(undefined, {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      })}
-                    </span>
-                  )}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-2">
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-2 pt-2 border-t border-[rgba(247,243,227,0.1)] mt-2">
+              <button
+                onClick={onCancel}
+                className="bg-[rgba(247,243,227,0.1)] hover:bg-[rgba(247,243,227,0.2)] text-[#F7F3E3] px-3 py-1 text-xs rounded transition-colors"
+              >
+                Cancel
+              </button>
+              {!isCreating && (
                 <button
-                  onClick={onSave}
-                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-xs rounded"
+                  onClick={onDelete}
+                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-xs rounded transition-colors"
                 >
-                  {isCreating ? "Create" : "Save"}
+                  Delete
                 </button>
-                {!isCreating && (
-                  <button
-                    onClick={onDelete}
-                    className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-xs rounded"
-                  >
-                    Delete
-                  </button>
-                )}
-                <button
-                  onClick={onCancel}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 text-xs rounded"
-                >
-                  Cancel
-                </button>
-              </div>
+              )}
+              <button
+                onClick={onSave}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-xs rounded transition-colors"
+              >
+                {isCreating ? "Create Event" : "Save Changes"}
+              </button>
             </div>
           </div>
         </div>
@@ -295,7 +369,7 @@ const EventItem = React.memo(
         <div
           className="grid gap-2 items-center"
           style={{
-            gridTemplateColumns: "2fr 0.8fr 1.5fr 1.3fr 1fr 1.5fr 0.8fr",
+            gridTemplateColumns: "1.8fr 0.7fr 1.2fr 1fr 1fr 1fr 1.2fr 0.7fr",
           }}
         >
           <div className="text-[rgba(247,243,227,0.5)] text-xs">
@@ -334,16 +408,13 @@ const EventItem = React.memo(
               : "-"}
           </div>
           <div className="text-[rgba(247,243,227,0.5)] text-xs">
-            {(event.type === "Buy" || event.type === "Sell") &&
-            event.amount_sats &&
-            event.fiat_amount_cents
-              ? `$${(
-                  Math.abs(event.fiat_amount_cents) /
-                  100 /
-                  (Math.abs(event.amount_sats) / 100_000_000)
-                ).toLocaleString(undefined, {
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
+            {event.fee_sats ? `${event.fee_sats.toLocaleString()} sats` : "-"}
+          </div>
+          <div className="text-[rgba(247,243,227,0.5)] text-xs">
+            {event.fee_fiat_cents
+              ? `$${(event.fee_fiat_cents / 100).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
                 })}`
               : "-"}
           </div>
@@ -468,14 +539,15 @@ const EventsList: React.FC<EventsListProps> = ({
         <div
           className="grid gap-2 mt-2 text-xs font-medium text-[rgba(247,243,227,0.6)]"
           style={{
-            gridTemplateColumns: "2fr 0.8fr 1.5fr 1.3fr 1fr 1.5fr 0.8fr",
+            gridTemplateColumns: "1.8fr 0.7fr 1.2fr 1fr 1fr 1fr 1.2fr 0.7fr",
           }}
         >
           <div>Date</div>
           <div>Type</div>
           <div>Amount</div>
           <div>USD</div>
-          <div>BTC/USD</div>
+          <div>On-chain Fee</div>
+          <div>Fee USD</div>
           <div>Memo</div>
           <div>Actions</div>
         </div>
