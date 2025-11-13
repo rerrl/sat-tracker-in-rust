@@ -49,15 +49,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Generate a random number of events between 50 and 250
     let total_events = rng.gen_range(50..=250);
-    println!("🎯 Generating {} events", total_events);
+    println!("🎯 Generating {} events (including 5 initial buys)", total_events);
 
-    // Calculate event distribution
-    let buy_count = (total_events as f32 * 0.75) as usize;
-    let sell_count = (total_events as f32 * 0.15) as usize;
-    let fee_count = total_events - buy_count - sell_count;
+    // Calculate event distribution (subtract 5 for initial buys)
+    let remaining_events = total_events - 5;
+    let buy_count = (remaining_events as f32 * 0.75) as usize;
+    let sell_count = (remaining_events as f32 * 0.15) as usize;
+    let fee_count = remaining_events - buy_count - sell_count;
 
     println!(
-        "📊 Distribution: {} buys, {} sells, {} fees",
+        "📊 Distribution: 5 initial buys + {} buys, {} sells, {} fees",
         buy_count, sell_count, fee_count
     );
 
@@ -90,6 +91,50 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap()
         .with_timezone(&Utc);
 
+    // First, create 5 initial buy events
+    println!("🚀 Creating 5 initial buy events...");
+    for i in 0..5 {
+        // Increase Bitcoin price by $500-$2000 for each event
+        let price_increase = rng.gen_range(50000..=200000); // $500-$2000 in cents
+        current_btc_price_cents += price_increase;
+
+        // Generate a rounded dollar amount (in hundreds)
+        let dollar_amount = rng.gen_range(1..=50) * 100; // $100 to $5000 in $100 increments
+        let fiat_amount_cents = dollar_amount * 100; // Convert to cents
+        let amount_sats = ((fiat_amount_cents as f64 / current_btc_price_cents as f64)
+            * 100_000_000.0) as i64;
+        
+        // Calculate fee (0.5-1.5% of fiat amount)
+        let fee_percentage = rng.gen_range(0.5..=1.5);
+        let fee_fiat_cents = (fiat_amount_cents as f64 * fee_percentage / 100.0) as i64;
+        
+        let memo = if rng.gen_bool(0.3) {
+            Some("DCA".to_string())
+        } else {
+            None
+        };
+
+        sqlx::query(
+            "INSERT INTO bitcoin_transactions (id, type, amount_sats, fiat_amount_cents, fee_fiat_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        )
+        .bind(Uuid::new_v4().to_string())
+        .bind("buy")
+        .bind(amount_sats)
+        .bind(fiat_amount_cents)
+        .bind(fee_fiat_cents)
+        .bind(&memo)
+        .bind(current_date)
+        .bind(Utc::now())
+        .execute(&pool)
+        .await?;
+
+        events_created += 1;
+
+        // Add 3-5 days to current_date
+        let days_to_add = rng.gen_range(3..=5);
+        current_date = current_date + Duration::days(days_to_add);
+    }
+
     // Create events in shuffled order
     for event_type in event_types {
         // Increase Bitcoin price by $500-$2000 for each event
@@ -103,6 +148,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let fiat_amount_cents = dollar_amount * 100; // Convert to cents
                 let amount_sats = ((fiat_amount_cents as f64 / current_btc_price_cents as f64)
                     * 100_000_000.0) as i64;
+                
+                // Calculate fee (0.5-1.5% of fiat amount)
+                let fee_percentage = rng.gen_range(0.5..=1.5);
+                let fee_fiat_cents = (fiat_amount_cents as f64 * fee_percentage / 100.0) as i64;
+                
                 let memo = if rng.gen_bool(0.3) {
                     Some("DCA".to_string())
                 } else {
@@ -116,7 +166,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .bind("buy")
                 .bind(amount_sats)
                 .bind(fiat_amount_cents)
-                .bind(0) // No fiat fees for now
+                .bind(fee_fiat_cents)
                 .bind(&memo)
                 .bind(current_date)
                 .bind(Utc::now())
@@ -129,6 +179,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let fiat_amount_cents = dollar_amount * 100; // Convert to cents
                 let amount_sats = ((fiat_amount_cents as f64 / current_btc_price_cents as f64)
                     * 100_000_000.0) as i64;
+                
+                // Calculate fee (0.5-1.5% of fiat amount)
+                let fee_percentage = rng.gen_range(0.5..=1.5);
+                let fee_fiat_cents = (fiat_amount_cents as f64 * fee_percentage / 100.0) as i64;
+                
                 let memo = if rng.gen_bool(0.4) {
                     Some("Emergency".to_string())
                 } else {
@@ -142,7 +197,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .bind("sell")
                 .bind(amount_sats)
                 .bind(fiat_amount_cents)
-                .bind(0) // No fiat fees for now
+                .bind(fee_fiat_cents)
                 .bind(&memo)
                 .bind(current_date)
                 .bind(Utc::now())

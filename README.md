@@ -14,14 +14,11 @@ yarn start:dev
 
 **Common Issue:** The Tauri window may open blank initially while Vite finishes compiling. Simply right-click in the window and select "Reload" to refresh the page and the app will load properly. This is normal Tauri development behavior.
 
-- TODO: use this modal for an event input to add fields and make look better
+- fix sat tracker import v1 (customizable fee for unrecorded events)
+- make sure add undocumented lumpsum works
 - TODO: complete the csv import from coinbase
 - TODO: complete the csv import from river
-
 - TODO: remove import v1 data button before release
-- TODO: btc <-> sats in events/charts (low priority)
-- TODO: speed up tool switching
-  - Add React.memo() to remaining components for performance optimization (MetricsGrid, SatsHoldingsChartSection, ActivityHeatmap, AnalyticsSection, MainLayout, etc.)
 
 ## App Architecture & Tool System
 

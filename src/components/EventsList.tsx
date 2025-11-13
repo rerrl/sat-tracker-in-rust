@@ -567,7 +567,7 @@ const EventItem = React.memo(
                   <div className="text-xs text-[rgba(247,243,227,0.7)] space-y-1">
                     {/* Exchange Rate (without fees) */}
                     <div>
-                      <span className="font-medium">Exchange Rate:</span> $
+                      <span className="font-medium text-[rgba(247,243,227,0.8)]">Exchange Rate:</span> <span className="text-blue-300">$
                       {(
                         Math.abs(event.fiat_amount_cents) /
                         100 /
@@ -575,20 +575,14 @@ const EventItem = React.memo(
                       ).toLocaleString(undefined, {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
-                      })}
+                      })}</span>
                     </div>
                     
-                    {/* Total Cost and Effective Rate (when fee exists) */}
+                    {/* Effective Rate and Fee details (when fee exists) */}
                     {event.fee_fiat_cents !== null && event.fee_fiat_cents !== undefined && (
                       <>
                         <div>
-                          <span className="font-medium">Total Cost:</span> $
-                          {(
-                            (Math.abs(event.fiat_amount_cents) + Math.abs(event.fee_fiat_cents)) / 100
-                          ).toFixed(2)}
-                        </div>
-                        <div>
-                          <span className="font-medium">Effective Rate (fee included):</span> $
+                          <span className="font-medium text-[rgba(247,243,227,0.8)]">Effective Rate (fee included):</span> <span className="text-orange-300">$
                           {(
                             (Math.abs(event.fiat_amount_cents) + Math.abs(event.fee_fiat_cents)) /
                             100 /
@@ -596,7 +590,17 @@ const EventItem = React.memo(
                           ).toLocaleString(undefined, {
                             minimumFractionDigits: 0,
                             maximumFractionDigits: 0,
-                          })}
+                          })}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-[rgba(247,243,227,0.8)]">Fee (USD):</span> <span className="text-red-300">$
+                          {(Math.abs(event.fee_fiat_cents) / 100).toFixed(2)}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-[rgba(247,243,227,0.8)]">Total Cost:</span> <span className="text-green-300">$
+                          {(
+                            (Math.abs(event.fiat_amount_cents) + Math.abs(event.fee_fiat_cents)) / 100
+                          ).toFixed(2)}</span>
                         </div>
                       </>
                     )}
