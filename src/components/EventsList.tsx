@@ -33,82 +33,104 @@ const EventItem = React.memo(
         <div className="border-b border-[rgba(247,243,227,0.2)] bg-[rgba(247,243,227,0.08)]">
           {/* Show original event data in collapsed form */}
           {!isCreating && event && (
-            <div className="px-4 py-1 text-xs border-b border-[rgba(247,243,227,0.1)] bg-[rgba(247,243,227,0.03)]">
-              <div className={`events-grid items-center opacity-60`}>
-                <div className="text-[rgba(247,243,227,0.5)] text-xs">
-                  <div>{new Date(event.timestamp).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                  })}</div>
-                  <div>{new Date(event.timestamp).toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: true,
-                  })}</div>
+            <div className="px-4 py-1 text-xs bg-[rgba(247,243,227,0.1)] border-l-4 border-blue-500">
+              <div className={`events-grid items-center`}>
+                <div className="text-[rgba(247,243,227,0.7)] text-xs">
+                  <div>
+                    {new Date(event.timestamp).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
+                    })}
+                  </div>
+                  <div>
+                    {new Date(event.timestamp).toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: true,
+                    })}
+                  </div>
                 </div>
-                <div className="text-[rgba(247,243,227,0.5)] text-xs">
+                <div
+                  className={
+                    `text-[rgba(247,243,227,1)] text-xs border-l-2 border-[rgba(247,243,227,0.3)] pl-2 ` +
+                    (event.type === "Buy"
+                      ? "border-green-400"
+                      : event.type === "Sell"
+                      ? "border-red-400"
+                      : "border-yellow-400")
+                  }
+                >
                   {event.type === "Fee" ? (
                     <span title="On-chain fee">Fee</span>
                   ) : (
                     event.type
                   )}
                 </div>
-                <div className="text-[rgba(247,243,227,0.5)] text-xs">
-                  <span title={event.amount_sats >= 1000000 
-                    ? `${(event.amount_sats / 100000000).toFixed(8)} BTC`
-                    : `${(event.amount_sats / 100000000).toFixed(8)} BTC`
-                  }>
-                    {event.amount_sats >= 1000000 
-                      ? `${Math.floor(event.amount_sats / 100000000 * 1000000) / 1000000} BTC`
-                      : `${event.amount_sats.toLocaleString()} sats`
+                <div className="text-[rgba(247,243,227,1)] text-xs">
+                  <span
+                    title={
+                      event.amount_sats >= 1000000
+                        ? `${(event.amount_sats / 100000000).toFixed(8)} BTC`
+                        : `${(event.amount_sats / 100000000).toFixed(8)} BTC`
                     }
+                  >
+                    {event.amount_sats >= 1000000
+                      ? `${
+                          Math.floor(
+                            (event.amount_sats / 100000000) * 1000000
+                          ) / 1000000
+                        } BTC`
+                      : `${event.amount_sats.toLocaleString()} sats`}
                   </span>
                 </div>
-                <div className="text-[rgba(247,243,227,0.5)] text-xs">
-                  {event.type === "Fee" ? "N/A" : event.fiat_amount_cents
-                    ? <span title={`$${(event.fiat_amount_cents / 100).toFixed(2)}`}>
-                        ${event.fiat_amount_cents >= 99900 
-                          ? Math.round(event.fiat_amount_cents / 100).toLocaleString()
-                          : (event.fiat_amount_cents / 100).toFixed(2)
-                        }
-                      </span>
+                <div className="text-[rgba(247,243,227,0.7)] text-xs">
+                  {event.type === "Fee" ? (
+                    "N/A"
+                  ) : event.fiat_amount_cents ? (
+                    <span
+                      title={`$${(event.fiat_amount_cents / 100).toFixed(2)}`}
+                    >
+                      $
+                      {event.fiat_amount_cents >= 99900
+                        ? Math.round(
+                            event.fiat_amount_cents / 100
+                          ).toLocaleString()
+                        : (event.fiat_amount_cents / 100).toFixed(2)}
+                    </span>
+                  ) : (
+                    "-"
+                  )}
+                </div>
+                <div className="text-[rgba(247,243,227,0.7)] text-xs">
+                  {event.type === "Fee"
+                    ? "N/A"
+                    : event.fiat_amount_cents && event.amount_sats
+                    ? `$${Math.round(
+                        event.fiat_amount_cents /
+                          100 /
+                          (event.amount_sats / 100000000)
+                      ).toLocaleString()}`
                     : "-"}
                 </div>
-                <div className="text-[rgba(247,243,227,0.5)] text-xs">
-                  {event.type === "Fee" ? "N/A" : event.fiat_amount_cents && event.amount_sats
-                    ? `$${Math.round((event.fiat_amount_cents / 100) / (event.amount_sats / 100000000)).toLocaleString()}`
-                    : "-"}
-                </div>
-                <div className="text-[rgba(247,243,227,0.5)] text-xs truncate" title={event.memo || ""}>
+                <div
+                  className="text-[rgba(247,243,227,0.7)] text-xs truncate"
+                  title={event.memo || ""}
+                >
                   {event.memo || "-"}
                 </div>
               </div>
             </div>
           )}
 
-          {/* Compact edit form */}
-          <div className="px-4 py-2 bg-[rgba(247,243,227,0.03)] border-l-2 border-blue-500">
-            {/* Main edit row - split into two rows for better spacing */}
-            <div className="space-y-2">
-              {/* First row: Basic transaction info */}
-              <div className="grid grid-cols-[2fr_0.8fr_1.5fr_1.3fr_1.5fr] gap-2 items-end">
-                {/* Date & Time */}
-                <div>
-                  <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-0.5 font-medium">
-                    Date & Time
-                  </label>
-                  <DateTimeInput
-                    value={editData.timestamp || new Date().toISOString()}
-                    onChange={(isoTimestamp) => {
-                      onEditDataChange("timestamp", isoTimestamp);
-                    }}
-                  />
-                </div>
-
+          {/* Edit form */}
+          <div className="bg-[rgba(247,243,227,0.05)] px-4 py-3 border-t border-[rgba(247,243,227,0.1)] border-l-4 border-blue-500 border-b border-[rgba(247,243,227,0.1)]">
+            <div className="space-y-3">
+              {/* First row: Date & Time and Type */}
+              <div className="grid gap-3 grid-cols-[1fr_2fr]">
                 {/* Event Type */}
                 <div>
-                  <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-0.5 font-medium">
+                  <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
                     Type
                   </label>
                   <select
@@ -122,18 +144,48 @@ const EventItem = React.memo(
                     }}
                     className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
                     style={{
-                      colorScheme: 'dark'
+                      colorScheme: "dark",
                     }}
                   >
-                    <option value="Buy" style={{ backgroundColor: '#1a1a1a', color: '#F7F3E3' }}>Buy</option>
-                    <option value="Sell" style={{ backgroundColor: '#1a1a1a', color: '#F7F3E3' }}>Sell</option>
-                    <option value="Fee" style={{ backgroundColor: '#1a1a1a', color: '#F7F3E3' }}>Fee</option>
+                    <option
+                      value="Buy"
+                      style={{ backgroundColor: "#1a1a1a", color: "#F7F3E3" }}
+                    >
+                      Buy
+                    </option>
+                    <option
+                      value="Sell"
+                      style={{ backgroundColor: "#1a1a1a", color: "#F7F3E3" }}
+                    >
+                      Sell
+                    </option>
+                    <option
+                      value="Fee"
+                      style={{ backgroundColor: "#1a1a1a", color: "#F7F3E3" }}
+                    >
+                      Fee
+                    </option>
                   </select>
                 </div>
+                <div>
+                  <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
+                    Date & Time
+                  </label>
+                  <DateTimeInput
+                    value={editData.timestamp || new Date().toISOString()}
+                    onChange={(isoTimestamp) => {
+                      onEditDataChange("timestamp", isoTimestamp);
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Second row: Amount, USD Value, Fee (for Buy/Sell), Memo */}
+              <div className={`grid gap-3 ${editData.type === "Fee" ? "grid-cols-[1.5fr_1.3fr_1.5fr]" : "grid-cols-[1.5fr_1.3fr_1.3fr_1.5fr]"}`}>
 
                 {/* Amount in Sats */}
                 <div>
-                  <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-0.5 font-medium">
+                  <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
                     Amount (Sats)
                   </label>
                   <input
@@ -159,10 +211,12 @@ const EventItem = React.memo(
 
                 {/* USD Value */}
                 <div>
-                  <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-0.5 font-medium">
+                  <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
                     USD Value{" "}
                     {editData.type === "Fee" && (
-                      <span className="text-[rgba(247,243,227,0.4)]">(N/A)</span>
+                      <span className="text-[rgba(247,243,227,0.4)]">
+                        (N/A)
+                      </span>
                     )}
                   </label>
                   <input
@@ -182,7 +236,10 @@ const EventItem = React.memo(
                     onChange={(e) => {
                       if (editData.type === "Fee") return;
                       const value = e.target.value;
-                      if (value === "" || /^[0-9]+(\.[0-9]{0,2})?$/.test(value)) {
+                      if (
+                        value === "" ||
+                        /^[0-9]+(\.[0-9]{0,2})?$/.test(value)
+                      ) {
                         if (value === "") {
                           onEditDataChange("fiat_amount_cents", "");
                         } else {
@@ -215,58 +272,11 @@ const EventItem = React.memo(
                   />
                 </div>
 
-                {/* Memo */}
-                <div>
-                  <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-0.5 font-medium">
-                    Memo
-                  </label>
-                  <input
-                    type="text"
-                    value={editData.memo || ""}
-                    onChange={(e) =>
-                      onEditDataChange("memo", e.target.value || null)
-                    }
-                    className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
-                    placeholder="Optional memo"
-                  />
-                </div>
-              </div>
-
-              {/* Second row: Fee information - only show for Fee transactions */}
-              {editData.type === "Fee" && (
-                <div className="grid grid-cols-[1fr_1fr_2fr] gap-2 items-end">
-                  {/* On-chain Fee Sats */}
+                {/* Fee (USD) - only show for Buy/Sell */}
+                {editData.type !== "Fee" && (
                   <div>
-                    <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-0.5 font-medium">
-                      On-chain Fee (Sats)
-                    </label>
-                    <input
-                      type="text"
-                      value={
-                        editData.fee_sats === null || editData.fee_sats === undefined
-                          ? ""
-                          : editData.fee_sats === ""
-                          ? ""
-                          : editData.fee_sats?.toString() || ""
-                      }
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === "" || /^[0-9]\d*$/.test(value)) {
-                          onEditDataChange(
-                            "fee_sats",
-                            value === "" ? null : parseInt(value)
-                          );
-                        }
-                      }}
-                      className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
-                      placeholder="Optional"
-                    />
-                  </div>
-
-                  {/* On-chain Fee USD */}
-                  <div>
-                    <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-0.5 font-medium">
-                      On-chain Fee (USD)
+                    <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
+                      Fee (USD)
                     </label>
                     <input
                       type="text"
@@ -282,7 +292,10 @@ const EventItem = React.memo(
                       }
                       onChange={(e) => {
                         const value = e.target.value;
-                        if (value === "" || /^[0-9]+(\.[0-9]{0,2})?$/.test(value)) {
+                        if (
+                          value === "" ||
+                          /^[0-9]+(\.[0-9]{0,2})?$/.test(value)
+                        ) {
                           if (value === "") {
                             onEditDataChange("fee_fiat_cents", "");
                           } else {
@@ -310,23 +323,57 @@ const EventItem = React.memo(
                       placeholder="Optional"
                     />
                   </div>
+                )}
 
-                  {/* Empty space for alignment */}
-                  <div></div>
+                {/* Memo */}
+                <div>
+                  <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
+                    Memo
+                  </label>
+                  <input
+                    type="text"
+                    value={editData.memo || ""}
+                    onChange={(e) =>
+                      onEditDataChange("memo", e.target.value || null)
+                    }
+                    className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
+                    placeholder="Optional memo"
+                  />
                 </div>
-              )}
+              </div>
 
-              {/* Calculated rates info - only show for Buy/Sell */}
-              {editData.type !== "Fee" && (
-                <div className="text-xs text-[rgba(247,243,227,0.7)] pl-4 flex items-end pb-1">
-                  {(editData.type === "Buy" || editData.type === "Sell") &&
-                    editData.amount_sats &&
-                    editData.fiat_amount_cents &&
-                    editData.fiat_amount_cents !== "" && (
+              {/* Rate display for Buy/Sell */}
+              {editData.type !== "Fee" && 
+                editData.amount_sats && 
+                editData.fiat_amount_cents && 
+                editData.fiat_amount_cents !== "" && (
+                <div className="text-xs text-[rgba(247,243,227,0.7)] space-y-1">
+                  {/* Exchange Rate (without fees) */}
+                  <div>
+                    <span className="font-medium">Exchange Rate:</span> $
+                    {(
+                      Math.abs(editData.fiat_amount_cents) /
+                      100 /
+                      (Math.abs(editData.amount_sats) / 100_000_000)
+                    ).toLocaleString(undefined, {
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    })}
+                  </div>
+                  
+                  {/* Effective Rate (with fees) and Total */}
+                  {editData.fee_fiat_cents && editData.fee_fiat_cents !== "" && (
+                    <>
                       <div>
-                        Rate: $
+                        <span className="font-medium">Total Cost:</span> $
                         {(
-                          Math.abs(editData.fiat_amount_cents) /
+                          (Math.abs(editData.fiat_amount_cents) + Math.abs(typeof editData.fee_fiat_cents === "string" ? parseFloat(editData.fee_fiat_cents) * 100 : editData.fee_fiat_cents)) / 100
+                        ).toFixed(2)}
+                      </div>
+                      <div>
+                        <span className="font-medium">Effective Rate (fee included):</span> $
+                        {(
+                          (Math.abs(editData.fiat_amount_cents) + Math.abs(typeof editData.fee_fiat_cents === "string" ? parseFloat(editData.fee_fiat_cents) * 100 : editData.fee_fiat_cents)) /
                           100 /
                           (Math.abs(editData.amount_sats) / 100_000_000)
                         ).toLocaleString(undefined, {
@@ -334,33 +381,41 @@ const EventItem = React.memo(
                           maximumFractionDigits: 0,
                         })}
                       </div>
-                    )}
+                    </>
+                  )}
                 </div>
               )}
-            </div>
 
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-2 pt-2 border-t border-[rgba(247,243,227,0.1)] mt-2">
-              <button
-                onClick={onCancel}
-                className="bg-[rgba(247,243,227,0.1)] hover:bg-[rgba(247,243,227,0.2)] text-[#F7F3E3] px-3 py-1 text-xs rounded transition-colors"
-              >
-                Cancel
-              </button>
-              {!isCreating && (
-                <button
-                  onClick={onDelete}
-                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-xs rounded transition-colors"
-                >
-                  Delete
-                </button>
-              )}
-              <button
-                onClick={onSave}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-xs rounded transition-colors"
-              >
-                {isCreating ? "Create Event" : "Save Changes"}
-              </button>
+              {/* Action Buttons */}
+              <div className="flex justify-between items-center">
+                <div className="text-xs text-[rgba(247,243,227,0.7)]">
+                  <span className="font-medium">
+                    {isCreating ? "Creating new event" : "Editing event"}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={onCancel}
+                    className="bg-[rgba(247,243,227,0.1)] hover:bg-[rgba(247,243,227,0.2)] text-[#F7F3E3] px-3 py-1 text-xs rounded transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  {!isCreating && (
+                    <button
+                      onClick={onDelete}
+                      className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 text-xs rounded transition-colors"
+                    >
+                      Delete
+                    </button>
+                  )}
+                  <button
+                    onClick={onSave}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-xs rounded transition-colors"
+                  >
+                    {isCreating ? "Create Event" : "Save Changes"}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -371,23 +426,27 @@ const EventItem = React.memo(
     if (!event) return null;
 
     return (
-      <div className="border-b border-[rgba(247,243,227,0.1)]">
-        <div 
-          className="hover:bg-[rgba(247,243,227,0.1)] px-4 py-1 text-xs group cursor-pointer"
+      <div className={`border-b border-[rgba(247,243,227,0.1)] ${isSelected ? 'bg-[rgba(247,243,227,0.1)] border-l-4 border-blue-500' : ''}`}>
+        <div
+          className={`hover:bg-[rgba(247,243,227,0.1)] px-4 py-1 text-xs group cursor-pointer ${isSelected ? 'bg-[rgba(247,243,227,0.1)]' : ''}`}
           onClick={onSelect}
         >
           <div className={`events-grid items-center`}>
             <div className="text-[rgba(247,243,227,0.5)] text-xs">
-              <div>{new Date(event.timestamp).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-              })}</div>
-              <div>{new Date(event.timestamp).toLocaleTimeString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true,
-              })}</div>
+              <div>
+                {new Date(event.timestamp).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                })}
+              </div>
+              <div>
+                {new Date(event.timestamp).toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: true,
+                })}
+              </div>
             </div>
             <div
               className={
@@ -406,43 +465,62 @@ const EventItem = React.memo(
               )}
             </div>
             <div className="text-[rgba(247,243,227,1)] text-xs">
-              <span title={event.amount_sats >= 1000000 
-                ? `${(event.amount_sats / 100000000).toFixed(8)} BTC`
-                : `${(event.amount_sats / 100000000).toFixed(8)} BTC`
-              }>
-                {event.amount_sats >= 1000000 
-                  ? `${Math.floor(event.amount_sats / 100000000 * 1000000) / 1000000} BTC`
-                  : `${event.amount_sats.toLocaleString()} sats`
+              <span
+                title={
+                  event.amount_sats >= 1000000
+                    ? `${(event.amount_sats / 100000000).toFixed(8)} BTC`
+                    : `${(event.amount_sats / 100000000).toFixed(8)} BTC`
                 }
+              >
+                {event.amount_sats >= 1000000
+                  ? `${
+                      Math.floor((event.amount_sats / 100000000) * 1000000) /
+                      1000000
+                    } BTC`
+                  : `${event.amount_sats.toLocaleString()} sats`}
               </span>
             </div>
             <div className="text-[rgba(247,243,227,0.5)] text-xs">
-              {event.type === "Fee" ? "N/A" : event.fiat_amount_cents
-                ? <span title={`$${(event.fiat_amount_cents / 100).toFixed(2)}`}>
-                    ${event.fiat_amount_cents >= 99900 
-                      ? Math.round(event.fiat_amount_cents / 100).toLocaleString()
-                      : (event.fiat_amount_cents / 100).toFixed(2)
-                    }
-                  </span>
-                : "-"}
+              {event.type === "Fee" ? (
+                "N/A"
+              ) : event.fiat_amount_cents ? (
+                <span title={`$${(event.fiat_amount_cents / 100).toFixed(2)}`}>
+                  $
+                  {event.fiat_amount_cents >= 99900
+                    ? Math.round(event.fiat_amount_cents / 100).toLocaleString()
+                    : (event.fiat_amount_cents / 100).toFixed(2)}
+                </span>
+              ) : (
+                "-"
+              )}
             </div>
             <div className="text-[rgba(247,243,227,0.5)] text-xs">
-              {event.type === "Fee" ? "N/A" : event.fiat_amount_cents && event.amount_sats
-                ? `$${Math.round((event.fiat_amount_cents / 100) / (event.amount_sats / 100000000)).toLocaleString()}`
+              {event.type === "Fee"
+                ? "N/A"
+                : event.fiat_amount_cents && event.amount_sats
+                ? `$${Math.round(
+                    event.fiat_amount_cents /
+                      100 /
+                      (event.amount_sats / 100000000)
+                  ).toLocaleString()}`
                 : "-"}
             </div>
-            <div className="text-[rgba(247,243,227,0.5)] text-xs truncate" title={event.memo || ""}>
+            <div
+              className="text-[rgba(247,243,227,0.5)] text-xs truncate"
+              title={event.memo || ""}
+            >
               {event.memo || "-"}
             </div>
           </div>
         </div>
-        
+
         {/* Expanded details when selected */}
         {isSelected && (
-          <div className="bg-[rgba(247,243,227,0.05)] px-4 py-2 border-t border-[rgba(247,243,227,0.1)]">
+          <div className="bg-[rgba(247,243,227,0.05)] px-4 py-3 border-t border-[rgba(247,243,227,0.1)]">
             <div className="flex justify-between items-center">
               <div className="text-xs text-[rgba(247,243,227,0.7)]">
-                <span className="font-medium">Memo:</span> {event.memo || "No memo"}
+                <span className="font-medium">Memo:</span>{" "}
+                {event.memo || "No memo"}
               </div>
               <button
                 onClick={(e) => {
@@ -503,19 +581,19 @@ const EventsList: React.FC<EventsListProps> = ({
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 50;
-  
+
   // Calculate pagination
   const totalPages = Math.ceil(events.length / pageSize);
   const startIndex = currentPage * pageSize;
   const endIndex = Math.min(startIndex + pageSize, events.length);
   const visibleEvents = events.slice(startIndex, endIndex);
-  
+
   const handlePrevPage = () => {
-    setCurrentPage(prev => Math.max(0, prev - 1));
+    setCurrentPage((prev) => Math.max(0, prev - 1));
   };
-  
+
   const handleNextPage = () => {
-    setCurrentPage(prev => Math.min(totalPages - 1, prev + 1));
+    setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
   };
   return (
     <div className="h-1/2 flex flex-col">
@@ -528,7 +606,8 @@ const EventsList: React.FC<EventsListProps> = ({
             </h2>
             {events.length > pageSize && (
               <div className="text-xs text-[rgba(247,243,227,0.6)] mt-1">
-                Showing {startIndex + 1}-{endIndex} of {events.length} loaded events
+                Showing {startIndex + 1}-{endIndex} of {events.length} loaded
+                events
               </div>
             )}
           </div>
@@ -563,7 +642,9 @@ const EventsList: React.FC<EventsListProps> = ({
           </div>
         </div>
         {/* Column Headers */}
-        <div className={`events-grid mt-2 text-xs font-medium text-[rgba(247,243,227,0.6)]`}>
+        <div
+          className={`events-grid mt-2 text-xs font-medium text-[rgba(247,243,227,0.6)]`}
+        >
           <div>Date</div>
           <div>Type</div>
           <div>Amount</div>
@@ -598,7 +679,9 @@ const EventsList: React.FC<EventsListProps> = ({
             isSelected={selectedEventId === event.id}
             isCreating={false}
             onEdit={() => onEditEvent(event)}
-            onSelect={() => onSelectEvent(selectedEventId === event.id ? null : event.id)}
+            onSelect={() =>
+              onSelectEvent(selectedEventId === event.id ? null : event.id)
+            }
             onSave={onSaveEvent}
             onDelete={onDeleteEvent}
             onCancel={onCancelEdit}
@@ -610,10 +693,11 @@ const EventsList: React.FC<EventsListProps> = ({
         {visibleEvents.length > 0 && (
           <div className="text-center py-4">
             <div className="text-xs text-[rgba(247,243,227,0.5)]">
-              {events.length > pageSize 
-                ? `Page ${currentPage + 1} of ${totalPages} • ${events.length} total events loaded`
-                : "All events loaded"
-              }
+              {events.length > pageSize
+                ? `Page ${currentPage + 1} of ${totalPages} • ${
+                    events.length
+                  } total events loaded`
+                : "All events loaded"}
             </div>
           </div>
         )}

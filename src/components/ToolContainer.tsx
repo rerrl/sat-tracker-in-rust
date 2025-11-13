@@ -9,11 +9,13 @@ interface ToolContainerProps {
   eventsLoading: boolean;
   totalCount: number;
   editingEventId: string | null;
+  selectedEventId: string | null;
   editData: any;
   isCreatingNew: boolean;
   newEventData: any;
   onAddNewEvent: () => void;
   onEditEvent: (event: BitcoinTransaction) => void;
+  onSelectEvent: (eventId: string | null) => void;
   onSaveEvent: () => Promise<void>;
   onDeleteEvent: () => Promise<void>;
   onCancelEdit: () => void;
@@ -29,11 +31,13 @@ const ToolContainer: React.FC<ToolContainerProps> = ({
   eventsLoading,
   totalCount,
   editingEventId,
+  selectedEventId,
   editData,
   isCreatingNew,
   newEventData,
   onAddNewEvent,
   onEditEvent,
+  onSelectEvent,
   onSaveEvent,
   onDeleteEvent,
   onCancelEdit,
@@ -47,11 +51,13 @@ const ToolContainer: React.FC<ToolContainerProps> = ({
     eventsLoading,
     totalCount,
     editingEventId,
+    selectedEventId,
     editData,
     isCreatingNew,
     newEventData,
     onAddNewEvent,
     onEditEvent,
+    onSelectEvent,
     onSaveEvent,
     onDeleteEvent,
     onCancelEdit,

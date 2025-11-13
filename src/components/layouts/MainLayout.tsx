@@ -13,11 +13,13 @@ interface MainLayoutProps {
   events: BitcoinTransaction[];
   totalCount: number;
   editingEventId: string | null;
+  selectedEventId: string | null;
   editData: any;
   isCreatingNew: boolean;
   newEventData: any;
   onAddNewEvent: () => void;
   onEditEvent: (event: BitcoinTransaction) => void;
+  onSelectEvent: (eventId: string | null) => void;
   onSaveEvent: () => Promise<void>;
   onDeleteEvent: () => Promise<void>;
   onCancelEdit: () => void;
@@ -33,11 +35,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   events,
   totalCount,
   editingEventId,
+  selectedEventId,
   editData,
   isCreatingNew,
   newEventData,
   onAddNewEvent,
   onEditEvent,
+  onSelectEvent,
   onSaveEvent,
   onDeleteEvent,
   onCancelEdit,
@@ -56,7 +60,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       {/* Right Column - Analytics + Events (35%) */}
       <div className="w-[35%] border-l border-[rgba(247,243,227,0.2)] bg-[#2A2633] flex flex-col">
         {/* Analytics Section - Fixed 50% height with scroll */}
-        <div className="h-1/2 overflow-y-auto flex-shrink-0">
+        <div className="h-1/2 overflow-y-auto shrink-0">
           {analyticsContent}
         </div>
 
@@ -65,11 +69,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           events={events}
           totalCount={totalCount}
           editingEventId={editingEventId}
+          selectedEventId={selectedEventId}
           editData={editData}
           isCreatingNew={isCreatingNew}
           newEventData={newEventData}
           onAddNewEvent={onAddNewEvent}
           onEditEvent={onEditEvent}
+          onSelectEvent={onSelectEvent}
           onSaveEvent={onSaveEvent}
           onDeleteEvent={onDeleteEvent}
           onCancelEdit={onCancelEdit}

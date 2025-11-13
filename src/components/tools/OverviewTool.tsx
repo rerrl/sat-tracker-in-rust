@@ -12,11 +12,13 @@ interface OverviewToolProps {
   eventsLoading: boolean;
   totalCount: number;
   editingEventId: string | null;
+  selectedEventId: string | null;
   editData: any;
   isCreatingNew: boolean;
   newEventData: any;
   onAddNewEvent: () => void;
   onEditEvent: (event: BitcoinTransaction) => void;
+  onSelectEvent: (eventId: string | null) => void;
   onSaveEvent: () => Promise<void>;
   onDeleteEvent: () => Promise<void>;
   onCancelEdit: () => void;
@@ -31,11 +33,13 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
   eventsLoading,
   totalCount,
   editingEventId,
+  selectedEventId,
   editData,
   isCreatingNew,
   newEventData,
   onAddNewEvent,
   onEditEvent,
+  onSelectEvent,
   onSaveEvent,
   onDeleteEvent,
   onCancelEdit,
@@ -361,11 +365,13 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
       events={events}
       totalCount={totalCount}
       editingEventId={editingEventId}
+      selectedEventId={selectedEventId}
       editData={editData}
       isCreatingNew={isCreatingNew}
       newEventData={newEventData}
       onAddNewEvent={onAddNewEvent}
       onEditEvent={onEditEvent}
+      onSelectEvent={onSelectEvent}
       onSaveEvent={onSaveEvent}
       onDeleteEvent={onDeleteEvent}
       onCancelEdit={onCancelEdit}

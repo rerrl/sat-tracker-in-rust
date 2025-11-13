@@ -14,11 +14,11 @@ import CsvImportModal from "./components/CsvImportModal";
 import Modal from "./components/Modal";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
-import { 
-  useTransactions, 
-  useCreateTransaction, 
-  useUpdateTransaction, 
-  useDeleteTransaction 
+import {
+  useTransactions,
+  useCreateTransaction,
+  useUpdateTransaction,
+  useDeleteTransaction,
 } from "./hooks/useTransactions";
 
 function App() {
@@ -52,6 +52,7 @@ function App() {
 
   // UI state for editing (keep these)
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [editData, setEditData] = useState<any>(null);
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [newEventData, setNewEventData] = useState<any>(null);
@@ -75,7 +76,6 @@ function App() {
       type: transaction.type,
       amount_sats: transaction.amount_sats,
       fiat_amount_cents: transaction.fiat_amount_cents,
-      fee_sats: transaction.fee_sats,
       fee_fiat_cents: transaction.fee_fiat_cents,
       memo: transaction.memo,
       timestamp: transaction.timestamp,
@@ -92,7 +92,6 @@ function App() {
           type: editData.type as "Buy" | "Sell" | "Fee",
           amount_sats: editData.amount_sats,
           fiat_amount_cents: editData.fiat_amount_cents,
-          fee_sats: editData.fee_sats,
           fee_fiat_cents: editData.fee_fiat_cents,
           memo: editData.memo,
           timestamp: editData.timestamp,
@@ -137,7 +136,6 @@ function App() {
       type: "Buy",
       amount_sats: 0,
       fiat_amount_cents: null,
-      fee_sats: 0,
       fee_fiat_cents: 0,
       memo: null,
       timestamp: new Date().toISOString(),
@@ -154,7 +152,6 @@ function App() {
         type: newEventData.type as "Buy" | "Sell" | "Fee",
         amount_sats: newEventData.amount_sats,
         fiat_amount_cents: newEventData.fiat_amount_cents,
-        fee_sats: newEventData.fee_sats,
         fee_fiat_cents: newEventData.fee_fiat_cents,
         memo: newEventData.memo,
         timestamp: newEventData.timestamp,
@@ -177,6 +174,10 @@ function App() {
       ...prev,
       [field]: value,
     }));
+  }, []);
+
+  const handleSelectEvent = useCallback((eventId: string | null) => {
+    setSelectedEventId(eventId);
   }, []);
 
   // Database initialization functions
@@ -273,14 +274,15 @@ function App() {
         return;
       }
 
-      const createdTransactions = await TauriService.createUndocumentedLumpsumTransactions({
-        start_date: startDate.toISOString(),
-        end_date: endDate.toISOString(),
-        total_sats: parseInt(lumpsumData.total_sats),
-        total_usd_cents: Math.round(parseFloat(lumpsumData.total_usd) * 100),
-        frequency: lumpsumData.frequency,
-        memo: lumpsumData.memo.trim() || undefined,
-      });
+      const createdTransactions =
+        await TauriService.createUndocumentedLumpsumTransactions({
+          start_date: startDate.toISOString(),
+          end_date: endDate.toISOString(),
+          total_sats: parseInt(lumpsumData.total_sats),
+          total_usd_cents: Math.round(parseFloat(lumpsumData.total_usd) * 100),
+          frequency: lumpsumData.frequency,
+          memo: lumpsumData.memo.trim() || undefined,
+        });
 
       // Invalidate all queries to refetch
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
@@ -408,11 +410,13 @@ function App() {
           eventsLoading={eventsLoading}
           totalCount={totalCount}
           editingEventId={editingEventId}
+          selectedEventId={selectedEventId}
           editData={editData}
           isCreatingNew={isCreatingNew}
           newEventData={newEventData}
           onAddNewEvent={handleAddNewEvent}
           onEditEvent={handleEditEvent}
+          onSelectEvent={handleSelectEvent}
           onSaveEvent={handleSaveEvent}
           onDeleteEvent={handleDeleteEvent}
           onCancelEdit={handleCancelEdit}

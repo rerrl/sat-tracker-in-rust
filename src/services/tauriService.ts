@@ -6,7 +6,6 @@ export interface BitcoinTransaction {
   type: "Buy" | "Sell" | "Fee";
   amount_sats: number;
   fiat_amount_cents: number | null;
-  fee_sats: number | null;
   fee_fiat_cents: number | null;
   memo: string | null;
   timestamp: string; // ISO date string from Rust
@@ -17,7 +16,6 @@ export interface CreateBitcoinTransactionRequest {
   type: "Buy" | "Sell" | "Fee";
   amount_sats: number;
   fiat_amount_cents: number | null;
-  fee_sats: number | null;
   fee_fiat_cents: number | null;
   memo: string | null;
   timestamp: string; // ISO date string
@@ -27,7 +25,6 @@ export interface UpdateBitcoinTransactionRequest {
   type: "Buy" | "Sell" | "Fee";
   amount_sats: number;
   fiat_amount_cents: number | null;
-  fee_sats: number | null;
   fee_fiat_cents: number | null;
   memo: string | null;
   timestamp: string; // ISO date string
@@ -141,7 +138,6 @@ export class TauriService {
     return await invoke("delete_bitcoin_transaction", { id });
   }
 
-
   // Get portfolio metrics
   static async getPortfolioMetrics(): Promise<PortfolioMetrics> {
     return await invoke("get_portfolio_metrics");
@@ -165,7 +161,6 @@ export class TauriService {
       memo: request.memo,
     });
   }
-
 
   // Encryption-related commands
   static async checkDatabaseStatus(): Promise<DatabaseStatus> {
