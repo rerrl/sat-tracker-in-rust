@@ -30,6 +30,16 @@ export interface UpdateBitcoinTransactionRequest {
   timestamp: string; // ISO date string
 }
 
+// Edit data type for form state (allows string values during editing)
+export interface EditBitcoinTransactionData {
+  type: "Buy" | "Sell" | "Fee";
+  amount_sats: number | string;
+  fiat_amount_cents: number | string | null;
+  fee_fiat_cents: number | string | null;
+  memo: string | null;
+  timestamp: string;
+}
+
 export interface PaginatedBitcoinTransactions {
   transactions: BitcoinTransaction[];
   total_count: number;

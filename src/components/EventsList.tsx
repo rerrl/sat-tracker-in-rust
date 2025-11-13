@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { BitcoinTransaction } from "../services/tauriService";
+import React, { useState, useEffect } from "react";
+import { BitcoinTransaction, EditBitcoinTransactionData } from "../services/tauriService";
 import DateTimeInput from "./DateTimeInput";
 
 const EventItem = React.memo(
@@ -25,8 +25,8 @@ const EventItem = React.memo(
     onDelete: () => void;
     onCancel: () => void;
     onSelect?: () => void;
-    editData: any;
-    onEditDataChange: (field: string, value: any) => void;
+    editData: EditBitcoinTransactionData;
+    onEditDataChange: (field: keyof EditBitcoinTransactionData, value: any) => void;
   }) => {
     if (isEditing || isCreating) {
       return (
@@ -515,7 +515,7 @@ const EventItem = React.memo(
         </div>
 
         {/* Expanded details when selected */}
-        {isSelected && (
+        {isSelected && !isEditing && (
           <div className="bg-[rgba(247,243,227,0.05)] px-4 py-3 border-t border-[rgba(247,243,227,0.1)]">
             <div className="flex justify-between items-center">
               <div className="text-xs text-[rgba(247,243,227,0.7)]">
@@ -544,19 +544,19 @@ interface EventsListProps {
   totalCount: number;
   editingEventId: string | null;
   selectedEventId: string | null;
-  editData: any;
+  editData: EditBitcoinTransactionData;
   isCreatingNew: boolean;
-  newEventData: any;
+  newEventData: EditBitcoinTransactionData;
   onAddNewEvent: () => void;
   onEditEvent: (event: BitcoinTransaction) => void;
   onSelectEvent: (eventId: string | null) => void;
   onSaveEvent: () => void;
   onDeleteEvent: () => void;
   onCancelEdit: () => void;
-  onEditDataChange: (field: string, value: any) => void;
+  onEditDataChange: (field: keyof EditBitcoinTransactionData, value: any) => void;
   onSaveNewEvent: () => void;
   onCancelNewEvent: () => void;
-  onNewEventDataChange: (field: string, value: any) => void;
+  onNewEventDataChange: (field: keyof EditBitcoinTransactionData, value: any) => void;
 }
 
 const EventsList: React.FC<EventsListProps> = ({
@@ -582,6 +582,24 @@ const EventsList: React.FC<EventsListProps> = ({
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 50;
 
+  // Handle escape key to close edit/deselect
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (editingEventId || isCreatingNew) {
+          onCancelEdit();
+        } else if (selectedEventId) {
+          onSelectEvent(null);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [editingEventId, isCreatingNew, selectedEventId, onCancelEdit, onSelectEvent]);
+
   // Calculate pagination
   const totalPages = Math.ceil(events.length / pageSize);
   const startIndex = currentPage * pageSize;
@@ -594,6 +612,31 @@ const EventsList: React.FC<EventsListProps> = ({
 
   const handleNextPage = () => {
     setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
+  };
+
+  // Enhanced event handlers to ensure proper UX flow
+  const handleSelectEvent = (eventId: string | null) => {
+    // Don't allow selection changes while editing
+    if (editingEventId || isCreatingNew) {
+      return;
+    }
+    onSelectEvent(eventId);
+  };
+
+  const handleEditEvent = (event: BitcoinTransaction) => {
+    // Only allow editing if the event is selected
+    if (selectedEventId !== event.id) {
+      return;
+    }
+    onEditEvent(event);
+  };
+
+  const handleAddNewEvent = () => {
+    // Clear any selection when creating new
+    if (selectedEventId) {
+      onSelectEvent(null);
+    }
+    onAddNewEvent();
   };
   return (
     <div className="h-1/2 flex flex-col">
@@ -634,7 +677,7 @@ const EventsList: React.FC<EventsListProps> = ({
               </div>
             )}
             <button
-              onClick={onAddNewEvent}
+              onClick={handleAddNewEvent}
               className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-xs rounded"
             >
               Add Event
@@ -678,9 +721,9 @@ const EventsList: React.FC<EventsListProps> = ({
             isEditing={editingEventId === event.id}
             isSelected={selectedEventId === event.id}
             isCreating={false}
-            onEdit={() => onEditEvent(event)}
+            onEdit={() => handleEditEvent(event)}
             onSelect={() =>
-              onSelectEvent(selectedEventId === event.id ? null : event.id)
+              handleSelectEvent(selectedEventId === event.id ? null : event.id)
             }
             onSave={onSaveEvent}
             onDelete={onDeleteEvent}
