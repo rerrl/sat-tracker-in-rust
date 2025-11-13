@@ -124,7 +124,7 @@ const EventItem = React.memo(
           )}
 
           {/* Edit form */}
-          <div className="bg-[rgba(247,243,227,0.05)] px-4 py-3 border-t border-[rgba(247,243,227,0.1)] border-l-4 border-blue-500 border-b border-[rgba(247,243,227,0.1)]">
+          <div className="bg-[rgba(247,243,227,0.05)] px-4 py-3 border-l-4 border-blue-500 border-b">
             <div className="space-y-3">
               {/* First row: Date & Time and Type */}
               <div className="grid gap-3 grid-cols-[1fr_2fr]">
@@ -351,35 +351,62 @@ const EventItem = React.memo(
                   {/* Exchange Rate (without fees) */}
                   <div>
                     <span className="font-medium">Exchange Rate:</span> $
-                    {(
-                      Math.abs(editData.fiat_amount_cents) /
-                      100 /
-                      (Math.abs(editData.amount_sats) / 100_000_000)
-                    ).toLocaleString(undefined, {
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 0,
-                    })}
+                    {(() => {
+                      const fiatCents = typeof editData.fiat_amount_cents === "string" 
+                        ? parseFloat(editData.fiat_amount_cents) * 100 
+                        : editData.fiat_amount_cents;
+                      const sats = typeof editData.amount_sats === "string" 
+                        ? parseInt(editData.amount_sats) 
+                        : editData.amount_sats;
+                      return (
+                        Math.abs(fiatCents) /
+                        100 /
+                        (Math.abs(sats) / 100_000_000)
+                      ).toLocaleString(undefined, {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      });
+                    })()}
                   </div>
                   
-                  {/* Effective Rate (with fees) and Total */}
-                  {editData.fee_fiat_cents && editData.fee_fiat_cents !== "" && (
+                  {/* Always show Total Cost and Effective Rate when we have fee data (including zero) */}
+                  {(editData.fee_fiat_cents !== null && editData.fee_fiat_cents !== undefined) && (
                     <>
                       <div>
                         <span className="font-medium">Total Cost:</span> $
-                        {(
-                          (Math.abs(editData.fiat_amount_cents) + Math.abs(typeof editData.fee_fiat_cents === "string" ? parseFloat(editData.fee_fiat_cents) * 100 : editData.fee_fiat_cents)) / 100
-                        ).toFixed(2)}
+                        {(() => {
+                          const fiatCents = typeof editData.fiat_amount_cents === "string" 
+                            ? parseFloat(editData.fiat_amount_cents) * 100 
+                            : editData.fiat_amount_cents;
+                          const feeCents = typeof editData.fee_fiat_cents === "string" 
+                            ? parseFloat(editData.fee_fiat_cents) * 100 
+                            : editData.fee_fiat_cents;
+                          return (
+                            (Math.abs(fiatCents) + Math.abs(feeCents)) / 100
+                          ).toFixed(2);
+                        })()}
                       </div>
                       <div>
                         <span className="font-medium">Effective Rate (fee included):</span> $
-                        {(
-                          (Math.abs(editData.fiat_amount_cents) + Math.abs(typeof editData.fee_fiat_cents === "string" ? parseFloat(editData.fee_fiat_cents) * 100 : editData.fee_fiat_cents)) /
-                          100 /
-                          (Math.abs(editData.amount_sats) / 100_000_000)
-                        ).toLocaleString(undefined, {
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        })}
+                        {(() => {
+                          const fiatCents = typeof editData.fiat_amount_cents === "string" 
+                            ? parseFloat(editData.fiat_amount_cents) * 100 
+                            : editData.fiat_amount_cents;
+                          const feeCents = typeof editData.fee_fiat_cents === "string" 
+                            ? parseFloat(editData.fee_fiat_cents) * 100 
+                            : editData.fee_fiat_cents;
+                          const sats = typeof editData.amount_sats === "string" 
+                            ? parseInt(editData.amount_sats) 
+                            : editData.amount_sats;
+                          return (
+                            (Math.abs(fiatCents) + Math.abs(feeCents)) /
+                            100 /
+                            (Math.abs(sats) / 100_000_000)
+                          ).toLocaleString(undefined, {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          });
+                        })()}
                       </div>
                     </>
                   )}
@@ -516,21 +543,79 @@ const EventItem = React.memo(
 
         {/* Expanded details when selected */}
         {isSelected && !isEditing && (
-          <div className="bg-[rgba(247,243,227,0.05)] px-4 py-3 border-t border-[rgba(247,243,227,0.1)]">
-            <div className="flex justify-between items-center">
-              <div className="text-xs text-[rgba(247,243,227,0.7)]">
-                <span className="font-medium">Memo:</span>{" "}
-                {event.memo || "No memo"}
+          <div className="bg-[rgba(247,243,227,0.05)] px-4 py-2 border-t border-[rgba(247,243,227,0.1)] border-l">
+            <div className="space-y-2">
+              {/* Amount Details */}
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div>
+                  <span className="font-medium text-[rgba(247,243,227,0.8)]">Amount:</span>
+                  <div className="text-[rgba(247,243,227,0.7)]">
+                    {event.amount_sats.toLocaleString()} sats • {(event.amount_sats / 100_000_000).toFixed(8)} BTC
+                  </div>
+                </div>
+                <div>
+                  <span className="font-medium text-[rgba(247,243,227,0.8)]">Memo:</span>
+                  <div className="text-[rgba(247,243,227,0.7)] wrap-break-word">
+                    {event.memo || "No memo"}
+                  </div>
+                </div>
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit();
-                }}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-xs rounded transition-colors"
-              >
-                Edit
-              </button>
+
+              {/* Rate Calculations (for Buy/Sell with USD value) */}
+              {event.type !== "Fee" && event.fiat_amount_cents && event.amount_sats && (
+                <div className="border-t border-[rgba(247,243,227,0.1)] pt-2">
+                  <div className="text-xs text-[rgba(247,243,227,0.7)] space-y-1">
+                    {/* Exchange Rate (without fees) */}
+                    <div>
+                      <span className="font-medium">Exchange Rate:</span> $
+                      {(
+                        Math.abs(event.fiat_amount_cents) /
+                        100 /
+                        (Math.abs(event.amount_sats) / 100_000_000)
+                      ).toLocaleString(undefined, {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}
+                    </div>
+                    
+                    {/* Total Cost and Effective Rate (when fee exists) */}
+                    {event.fee_fiat_cents !== null && event.fee_fiat_cents !== undefined && (
+                      <>
+                        <div>
+                          <span className="font-medium">Total Cost:</span> $
+                          {(
+                            (Math.abs(event.fiat_amount_cents) + Math.abs(event.fee_fiat_cents)) / 100
+                          ).toFixed(2)}
+                        </div>
+                        <div>
+                          <span className="font-medium">Effective Rate (fee included):</span> $
+                          {(
+                            (Math.abs(event.fiat_amount_cents) + Math.abs(event.fee_fiat_cents)) /
+                            100 /
+                            (Math.abs(event.amount_sats) / 100_000_000)
+                          ).toLocaleString(undefined, {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Action Button */}
+              <div className="flex justify-end border-t border-[rgba(247,243,227,0.1)] pt-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit();
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-xs rounded transition-colors"
+                >
+                  Edit Event
+                </button>
+              </div>
             </div>
           </div>
         )}
