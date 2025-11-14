@@ -26,14 +26,14 @@ struct CoinbaseRecord {
     asset: String,
     #[serde(rename = "Quantity Transacted")]
     quantity_transacted: String,
-    #[serde(rename = "USD Spot Price at Transaction")]
-    usd_spot_price: String,
-    #[serde(rename = "USD Subtotal")]
-    usd_subtotal: String,
-    #[serde(rename = "USD Total (inclusive of fees)")]
-    usd_total: String,
-    #[serde(rename = "USD Fees")]
-    usd_fees: String,
+    #[serde(rename = "Price at Transaction")]
+    price_at_transaction: String,
+    #[serde(rename = "Subtotal")]
+    subtotal: String,
+    #[serde(rename = "Total (inclusive of fees and/or spread)")]
+    total_inclusive: String,
+    #[serde(rename = "Fees and/or Spread")]
+    fees_and_spread: String,
     #[serde(rename = "Notes")]
     notes: String,
 }
@@ -87,15 +87,22 @@ fn detect_csv_format(content: &str) -> Result<CsvFormat, String> {
 }
 
 fn parse_coinbase_timestamp(timestamp_str: &str) -> Result<DateTime<Utc>, String> {
-    // Coinbase format: "2024-01-15T10:30:45Z"
-    DateTime::parse_from_rfc3339(timestamp_str)
-        .map(|dt| dt.with_timezone(&Utc))
-        .map_err(|e| {
-            format!(
-                "Failed to parse Coinbase timestamp '{}': {}",
-                timestamp_str, e
-            )
-        })
+    // Try RFC3339 format first: "2024-01-15T10:30:45Z"
+    if let Ok(dt) = DateTime::parse_from_rfc3339(timestamp_str) {
+        return Ok(dt.with_timezone(&Utc));
+    }
+
+    // Try Coinbase export format: "2025-10-10 21:28:40 UTC"
+    if let Ok(dt) =
+        NaiveDateTime::parse_from_str(timestamp_str.trim_end_matches(" UTC"), "%Y-%m-%d %H:%M:%S")
+    {
+        return Ok(dt.and_utc());
+    }
+
+    Err(format!(
+        "Failed to parse Coinbase timestamp '{}': unsupported format",
+        timestamp_str
+    ))
 }
 
 fn parse_river_timestamp(date_str: &str) -> Result<DateTime<Utc>, String> {
@@ -120,11 +127,18 @@ fn usd_to_cents(usd_str: &str) -> Result<i64, String> {
     Ok((usd * 100.0).round() as i64)
 }
 
+// TODO: update this:
+// - first, lets strip everythign that is not BTC (where asset !== "BTC")
+// - then lets group all the transactions by type (buy, sell, fee/withdrawal) taking into account the platform (coinbase/advanced)
+// - then for each group, we need to group the transactions by timestamp (within 60 seconds) and create a new txn object
+// - then we need to add the buys/sells/fees to the db
+
+// Next steps: generate a coinbase csv with buy/sell in both regualr and advanced platforms
 async fn process_coinbase_csv(
     pool: State<'_, SqlitePool>,
     content: &str,
 ) -> Result<Vec<BitcoinTransaction>, String> {
-    // Find the header line first
+    // Find the header line first (same logic as analyze_csv_file)
     let lines: Vec<&str> = content.lines().collect();
     let mut headers_line = 0;
 
@@ -167,15 +181,16 @@ async fn process_coinbase_csv(
         for record in group {
             match record.transaction_type.as_str() {
                 "Buy" => buy_records.push(record),
+                "Advanced Trade Buy" => buy_records.push(record),
                 "Coinbase Fee" => fee_records.push(record),
-                _ => continue, // Skip other transaction types
+                _ => continue, // Skip other transaction types like Send, Sell, etc.
             }
         }
 
         // Process buy transactions
         for buy_record in buy_records {
             let amount_sats = btc_to_sats(&buy_record.quantity_transacted)?;
-            let value_cents = usd_to_cents(&buy_record.usd_total)?;
+            let value_cents = usd_to_cents(&buy_record.total_inclusive)?;
             let timestamp = parse_coinbase_timestamp(&buy_record.timestamp)?;
 
             let request = CreateBitcoinTransactionRequest {
@@ -217,7 +232,7 @@ async fn process_river_csv(
     pool: State<'_, SqlitePool>,
     content: &str,
 ) -> Result<Vec<BitcoinTransaction>, String> {
-    // Find the header line first
+    // Find the header line first (same logic as analyze_csv_file)
     let lines: Vec<&str> = content.lines().collect();
     let mut headers_line = 0;
 

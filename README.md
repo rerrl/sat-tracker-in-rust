@@ -14,10 +14,9 @@ yarn start:dev
 
 **Common Issue:** The Tauri window may open blank initially while Vite finishes compiling. Simply right-click in the window and select "Reload" to refresh the page and the app will load properly. This is normal Tauri development behavior.
 
-- fix sat tracker import v1 (customizable fee for unrecorded events)
-- make sure add undocumented lumpsum works
 - TODO: complete the csv import from coinbase
 - TODO: complete the csv import from river
+- fix sat tracker import v1 (customizable fee for unrecorded events)
 - TODO: remove import v1 data button before release
 
 ## App Architecture & Tool System
