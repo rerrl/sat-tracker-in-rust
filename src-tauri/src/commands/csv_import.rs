@@ -194,20 +194,74 @@ async fn process_coinbase_csv(
         }
     }
 
-    // Process buy transactions
+    // Process buy transactions - group by timestamp (within 5 seconds)
+    buy_records.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
+
+    let buy_records_count = buy_records.len();
+    let mut grouped_buys: Vec<Vec<CoinbaseRecord>> = Vec::new();
+    let mut current_group: Vec<CoinbaseRecord> = Vec::new();
+
     for record in buy_records {
-        let timestamp = parse_coinbase_timestamp(&record.timestamp)?;
-        let amount_sats = btc_to_sats(&record.quantity_transacted)?;
-        let subtotal = usd_to_cents(&record.subtotal)?;
-        let total_inclusive = usd_to_cents(&record.total_inclusive)?;
-        let fees_and_spread = usd_to_cents(&record.fees_and_spread)?;
+        if current_group.is_empty() {
+            current_group.push(record);
+        } else {
+            let current_timestamp = parse_coinbase_timestamp(&record.timestamp)?;
+            let last_timestamp = parse_coinbase_timestamp(&current_group.last().unwrap().timestamp)?;
+            
+            let time_diff = (current_timestamp - last_timestamp).num_seconds().abs();
+            
+            if time_diff <= 5 {
+                // Group with previous transaction (within 5 seconds)
+                current_group.push(record);
+            } else {
+                // Start new group
+                grouped_buys.push(current_group);
+                current_group = vec![record];
+            }
+        }
+    }
+
+    // Don't forget the last group
+    if !current_group.is_empty() {
+        grouped_buys.push(current_group);
+    }
+
+    println!("Grouped {} buy records into {} transactions", buy_records_count, grouped_buys.len());
+
+    // Process each group as a single transaction
+    for group in grouped_buys {
+        let first_record = &group[0];
+        let timestamp = parse_coinbase_timestamp(&first_record.timestamp)?;
+        
+        // Sum up all amounts and costs in the group
+        let mut total_amount_sats = 0i64;
+        let mut total_subtotal = 0i64;
+        let mut total_inclusive = 0i64;
+        let mut total_fees_and_spread = 0i64;
+        let mut notes = Vec::new();
+        
+        for record in &group {
+            total_amount_sats += btc_to_sats(&record.quantity_transacted)?;
+            total_subtotal += usd_to_cents(&record.subtotal)?;
+            total_inclusive += usd_to_cents(&record.total_inclusive)?;
+            total_fees_and_spread += usd_to_cents(&record.fees_and_spread)?;
+            if !record.notes.is_empty() {
+                notes.push(record.notes.clone());
+            }
+        }
+        
+        let memo = if group.len() > 1 {
+            format!("Coinbase (grouped {} transactions): {}", group.len(), notes.join(", "))
+        } else {
+            format!("Coinbase: {}", notes.join(", "))
+        };
 
         let request = CreateBitcoinTransactionRequest {
             r#type: TransactionType::Buy,
-            amount_sats,
+            amount_sats: total_amount_sats,
             fiat_amount_cents: Some(total_inclusive),
-            fee_fiat_cents: Some(fees_and_spread),
-            memo: Some(format!("Coinbase: {}", record.notes)),
+            fee_fiat_cents: Some(total_fees_and_spread),
+            memo: Some(memo),
             timestamp,
         };
 
