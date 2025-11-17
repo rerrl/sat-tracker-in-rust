@@ -116,7 +116,7 @@ fn btc_to_sats(btc_str: &str) -> Result<i64, String> {
     let btc: f64 = btc_str
         .parse()
         .map_err(|e| format!("Failed to parse BTC amount '{}': {}", btc_str, e))?;
-    Ok((btc * 100_000_000.0).round() as i64)
+    Ok(((btc * 100_000_000.0).round() as i64).abs())
 }
 
 fn usd_to_cents(usd_str: &str) -> Result<i64, String> {
@@ -124,7 +124,7 @@ fn usd_to_cents(usd_str: &str) -> Result<i64, String> {
     let usd: f64 = cleaned
         .parse()
         .map_err(|e| format!("Failed to parse USD amount '{}': {}", usd_str, e))?;
-    Ok((usd * 100.0).round() as i64)
+    Ok(((usd * 100.0).round() as i64).abs())
 }
 
 // TODO: update this:
@@ -132,6 +132,10 @@ fn usd_to_cents(usd_str: &str) -> Result<i64, String> {
 // - then lets group all the transactions by type (buy, sell, fee/withdrawal) taking into account the platform (coinbase/advanced)
 // - then for each group, we need to group the transactions by timestamp (within 60 seconds) and create a new txn object
 // - then we need to add the buys/sells/fees to the db
+
+// Buy records have the transaction type set as "Buy" or "Advanced Trade Buy"
+// Sell records have the transaction type set as "Sell" or "Advanced Trade Sell"
+// Fee records have the transaction type as "Send" ("Pro Withdrawal" looks like its a duplicate, so we'll ignore it)
 
 // Next steps: generate a coinbase csv with buy/sell in both regualr and advanced platforms
 async fn process_coinbase_csv(
@@ -153,78 +157,102 @@ async fn process_coinbase_csv(
     let csv_content = lines[headers_line..].join("\n");
     let mut reader = csv::Reader::from_reader(csv_content.as_bytes());
     let mut events = Vec::new();
-    let mut grouped_transactions: HashMap<String, Vec<CoinbaseRecord>> = HashMap::new();
 
-    // First pass: group transactions by timestamp (within 60 seconds)
+    // Get all BTC records first
+    let mut btc_records = Vec::new();
+
     for result in reader.deserialize() {
         let record: CoinbaseRecord =
             result.map_err(|e| format!("Failed to parse CSV record: {}", e))?;
 
-        if record.asset != "BTC" {
-            continue; // Skip non-Bitcoin transactions
+        // Filter only BTC transactions
+        if record.asset == "BTC" {
+            btc_records.push(record);
         }
-
-        let timestamp = parse_coinbase_timestamp(&record.timestamp)?;
-        let timestamp_key = timestamp.timestamp().to_string();
-
-        grouped_transactions
-            .entry(timestamp_key)
-            .or_insert_with(Vec::new)
-            .push(record);
     }
 
-    // Second pass: process grouped transactions
-    for (_, group) in grouped_transactions {
-        let mut buy_records = Vec::new();
-        let mut fee_records = Vec::new();
+    // Group transactions by type
+    let mut buy_records = Vec::new();
+    let mut sell_records = Vec::new();
+    let mut fee_records = Vec::new();
 
-        for record in group {
-            match record.transaction_type.as_str() {
-                "Buy" => buy_records.push(record),
-                "Advanced Trade Buy" => buy_records.push(record),
-                "Coinbase Fee" => fee_records.push(record),
-                _ => continue, // Skip other transaction types like Send, Sell, etc.
+    for record in btc_records {
+        match record.transaction_type.as_str() {
+            "Buy" | "Advanced Trade Buy" => {
+                buy_records.push(record);
+            }
+            "Sell" | "Advanced Trade Sell" => {
+                sell_records.push(record);
+            }
+            "Send" => {
+                fee_records.push(record);
+            }
+            _ => {
+                // Skip other transaction types
+                println!("Skipping transaction type: {}", record.transaction_type);
             }
         }
-
-        // Process buy transactions
-        for buy_record in buy_records {
-            let amount_sats = btc_to_sats(&buy_record.quantity_transacted)?;
-            let value_cents = usd_to_cents(&buy_record.total_inclusive)?;
-            let timestamp = parse_coinbase_timestamp(&buy_record.timestamp)?;
-
-            let request = CreateBitcoinTransactionRequest {
-                r#type: TransactionType::Buy,
-                amount_sats,
-                fiat_amount_cents: Some(value_cents),
-                fee_fiat_cents: Some(0),
-                memo: Some(format!("Coinbase: {}", buy_record.notes)),
-                timestamp,
-            };
-
-            let transaction = create_bitcoin_transaction(pool.clone(), request).await?;
-            events.push(transaction);
-        }
-
-        // Process fee transactions
-        for fee_record in fee_records {
-            let fee_sats = btc_to_sats(&fee_record.quantity_transacted)?;
-            let timestamp = parse_coinbase_timestamp(&fee_record.timestamp)?;
-
-            let request = CreateBitcoinTransactionRequest {
-                r#type: TransactionType::Fee,
-                amount_sats: fee_sats,
-                fiat_amount_cents: None,
-                fee_fiat_cents: Some(0),
-                memo: Some(format!("Coinbase Fee: {}", fee_record.notes)),
-                timestamp,
-            };
-
-            let transaction = create_bitcoin_transaction(pool.clone(), request).await?;
-            events.push(transaction);
-        }
     }
 
+    // Process buy transactions
+    for record in buy_records {
+        let timestamp = parse_coinbase_timestamp(&record.timestamp)?;
+        let amount_sats = btc_to_sats(&record.quantity_transacted)?;
+        let subtotal = usd_to_cents(&record.subtotal)?;
+        let total_inclusive = usd_to_cents(&record.total_inclusive)?;
+        let fees_and_spread = usd_to_cents(&record.fees_and_spread)?;
+
+        let request = CreateBitcoinTransactionRequest {
+            r#type: TransactionType::Buy,
+            amount_sats,
+            fiat_amount_cents: Some(total_inclusive),
+            fee_fiat_cents: Some(fees_and_spread),
+            memo: Some(format!("Coinbase: {}", record.notes)),
+            timestamp,
+        };
+
+        let transaction = create_bitcoin_transaction(pool.clone(), request).await?;
+        events.push(transaction);
+    }
+
+    // // Process sell transactions
+    // for record in sell_records {
+    //     let timestamp = parse_coinbase_timestamp(&record.timestamp)?;
+    //     let amount_sats = btc_to_sats(&record.quantity_transacted)?;
+    //     let fiat_amount_cents = usd_to_cents(&record.total_inclusive)?;
+
+    //     let request = CreateBitcoinTransactionRequest {
+    //         r#type: TransactionType::Sell,
+    //         amount_sats,
+    //         fiat_amount_cents: Some(fiat_amount_cents),
+    //         fee_fiat_cents: Some(0), // Fees are handled separately
+    //         memo: Some(format!("Coinbase: {}", record.notes)),
+    //         timestamp,
+    //     };
+
+    //     let transaction = create_bitcoin_transaction(pool.clone(), request).await?;
+    //     events.push(transaction);
+    // }
+
+    // // Process fee transactions
+    // for record in fee_records {
+    //     let timestamp = parse_coinbase_timestamp(&record.timestamp)?;
+    //     let amount_sats = btc_to_sats(&record.quantity_transacted)?;
+
+    //     let request = CreateBitcoinTransactionRequest {
+    //         r#type: TransactionType::Fee,
+    //         amount_sats,
+    //         fiat_amount_cents: None, // Fees typically don't have fiat value
+    //         fee_fiat_cents: Some(0),
+    //         memo: Some(format!("Coinbase Fee: {}", record.notes)),
+    //         timestamp,
+    //     };
+
+    //     let transaction = create_bitcoin_transaction(pool.clone(), request).await?;
+    //     events.push(transaction);
+    // }
+
+    println!("Successfully processed {} total transactions", events.len());
     Ok(events)
 }
 

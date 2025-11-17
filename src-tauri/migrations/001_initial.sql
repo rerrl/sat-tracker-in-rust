@@ -8,3 +8,5 @@ CREATE TABLE bitcoin_transactions (
     timestamp DATETIME NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- fiat_amount_cents is the total fiat amount of the transaction, including fees
