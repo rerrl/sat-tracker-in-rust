@@ -278,24 +278,89 @@ async fn process_coinbase_csv(
         events.push(transaction);
     }
 
-    // // Process sell transactions
-    // for record in sell_records {
-    //     let timestamp = parse_coinbase_timestamp(&record.timestamp)?;
-    //     let amount_sats = btc_to_sats(&record.quantity_transacted)?;
-    //     let subtotal_cents = usd_to_cents(&record.total_inclusive)?;
+    // Process sell transactions - group by timestamp (within 5 seconds)
+    sell_records.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
 
-    //     let request = CreateBitcoinTransactionRequest {
-    //         r#type: TransactionType::Sell,
-    //         amount_sats,
-    //         subtotal_cents: Some(subtotal_cents),
-    //         fee_cents: Some(0), // Fees are handled separately
-    //         memo: Some(format!("Coinbase: {}", record.notes)),
-    //         timestamp,
-    //     };
+    let sell_records_count = sell_records.len();
+    let mut grouped_sells: Vec<Vec<CoinbaseRecord>> = Vec::new();
+    let mut current_group: Vec<CoinbaseRecord> = Vec::new();
 
-    //     let transaction = create_bitcoin_transaction(pool.clone(), request).await?;
-    //     events.push(transaction);
-    // }
+    for record in sell_records {
+        if current_group.is_empty() {
+            current_group.push(record);
+        } else {
+            let current_timestamp = parse_coinbase_timestamp(&record.timestamp)?;
+            let last_timestamp =
+                parse_coinbase_timestamp(&current_group.last().unwrap().timestamp)?;
+
+            let time_diff = (current_timestamp - last_timestamp).num_seconds().abs();
+
+            if time_diff <= 5 {
+                // Group with previous transaction (within 5 seconds)
+                current_group.push(record);
+            } else {
+                // Start new group
+                grouped_sells.push(current_group);
+                current_group = vec![record];
+            }
+        }
+    }
+
+    // Don't forget the last group
+    if !current_group.is_empty() {
+        grouped_sells.push(current_group);
+    }
+
+    println!(
+        "Grouped {} sell records into {} transactions",
+        sell_records_count,
+        grouped_sells.len()
+    );
+
+    // Process each group as a single transaction
+    for group in grouped_sells {
+        let first_record = &group[0];
+        let timestamp = parse_coinbase_timestamp(&first_record.timestamp)?;
+
+        // Sum up all amounts and costs in the group
+        let mut total_amount_sats = 0i64;
+        let mut total_subtotal = 0i64;
+        let mut total_inclusive = 0i64;
+        let mut total_fees_and_spread = 0i64;
+        let mut notes = Vec::new();
+
+        for record in &group {
+            total_amount_sats += btc_to_sats(&record.quantity_transacted)?;
+            total_subtotal += usd_to_cents(&record.subtotal)?;
+            total_inclusive += usd_to_cents(&record.total_inclusive)?;
+            total_fees_and_spread += usd_to_cents(&record.fees_and_spread)?;
+            if !record.notes.is_empty() {
+                notes.push(record.notes.clone());
+            }
+        }
+
+        let memo = if group.len() > 1 {
+            format!(
+                "Coinbase (grouped {} transactions): {}",
+                group.len(),
+                notes.join(", ")
+            )
+        } else {
+            format!("Coinbase: {}", notes.join(", "))
+        };
+
+        let request = CreateBitcoinTransactionRequest {
+            r#type: TransactionType::Sell,
+            amount_sats: total_amount_sats,
+            subtotal_cents: Some(total_inclusive),
+            fee_cents: Some(total_fees_and_spread),
+            memo: Some(memo),
+            timestamp,
+        };
+
+        let transaction = create_bitcoin_transaction(pool.clone(), request).await?;
+        events.push(transaction);
+    }
 
     // // Process fee transactions
     // for record in fee_records {
@@ -315,7 +380,7 @@ async fn process_coinbase_csv(
     //     events.push(transaction);
     // }
 
-    println!("Successfully processed {} total transactions", events.len());
+    println!("Successfully processed {} total transactions (buys and sells)", events.len());
     Ok(events)
 }
 
