@@ -10,3 +10,12 @@ CREATE TABLE exchange_transactions (
     provider_id TEXT, -- Add this field
     UNIQUE(provider_id) -- Add unique constraint, allows NULL for manual transactions
 );
+
+CREATE TABLE onchain_fees (
+    id TEXT PRIMARY KEY,
+    amount_sats INTEGER NOT NULL,
+    memo TEXT,
+    timestamp DATETIME NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    tx_hash TEXT
+);

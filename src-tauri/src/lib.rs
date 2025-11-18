@@ -3,6 +3,7 @@ mod commands;
 mod database;
 
 use commands::bitcoin_transaction::{create_bitcoin_transaction, get_bitcoin_transactions, update_bitcoin_transaction, delete_bitcoin_transaction, get_portfolio_metrics, create_undocumented_lumpsum_transactions};
+use commands::onchain_fee::{create_onchain_fee, get_onchain_fees, update_onchain_fee, delete_onchain_fee};
 use commands::import::import_sat_tracker_v1_data;
 use commands::api::{fetch_bitcoin_price, fetch_announcements};
 use commands::encryption::{check_database_status, validate_database_password, encrypt_database, change_database_password, initialize_database_with_password};
@@ -106,7 +107,11 @@ pub fn run() {
             update_menu_for_database_status,
             get_activity_metrics,
             import_csv_data,
-            analyze_csv_file
+            analyze_csv_file,
+            create_onchain_fee,
+            get_onchain_fees,
+            update_onchain_fee,
+            delete_onchain_fee
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
