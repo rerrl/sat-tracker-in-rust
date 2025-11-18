@@ -380,50 +380,132 @@ async fn process_river_csv(
         let fee_currency = record.fee_currency;
         let tag = record.tag;
 
-        // Process Buy transactions
-        if tag == "Buy" {
-            // Validate currencies
-            if sent_currency != "USD" || received_currency != "BTC" {
-                println!("Skipping buy transaction with unexpected currencies: {} -> {}", sent_currency, received_currency);
-                continue;
+        // Parse timestamp
+        let timestamp = parse_river_timestamp(&date)?;
+
+        // Process Buy and Sell transactions
+        match tag.as_str() {
+            "Buy" => {
+                if let Some(transaction) = process_river_buy_transaction(
+                    pool.clone(),
+                    &timestamp,
+                    &sent_amount,
+                    &sent_currency,
+                    &received_amount,
+                    &received_currency,
+                    &fee_amount,
+                ).await? {
+                    events.push(transaction);
+                }
             }
-
-            // Parse timestamp
-            let timestamp = parse_river_timestamp(&date)?;
-
-            // Parse amounts
-            let amount_sats = btc_to_sats(&received_amount)?;
-            let subtotal_cents = usd_to_cents(&sent_amount)?;
-            let fee_cents = usd_to_cents(&fee_amount)?;
-
-            // Create provider ID for River
-            let provider_id = format!("river_{}_{}", timestamp.timestamp(), amount_sats);
-
-            // Check if this transaction already exists
-            if transaction_exists_by_provider_id(pool.inner(), &provider_id).await? {
-                println!("Skipping duplicate River buy transaction with provider_id: {}", provider_id);
-                continue;
+            "Sell" => {
+                if let Some(transaction) = process_river_sell_transaction(
+                    pool.clone(),
+                    &timestamp,
+                    &sent_amount,
+                    &sent_currency,
+                    &received_amount,
+                    &received_currency,
+                    &fee_amount,
+                ).await? {
+                    events.push(transaction);
+                }
             }
-
-            let request = CreateBitcoinTransactionRequest {
-                r#type: TransactionType::Buy,
-                amount_sats,
-                subtotal_cents: Some(subtotal_cents),
-                fee_cents: Some(fee_cents),
-                memo: Some("River".to_string()),
-                timestamp,
-                provider_id: Some(provider_id),
-            };
-
-            let transaction = create_bitcoin_transaction(pool.clone(), request).await?;
-            events.push(transaction);
-            println!("Created River buy transaction: {} sats for ${:.2}", amount_sats, subtotal_cents as f64 / 100.0);
-        } else {
-            println!("Skipping non-buy transaction with tag: {}", tag);
+            _ => {
+                println!("Skipping transaction with unsupported tag: {}", tag);
+            }
         }
     }
 
     Ok(events)
+}
+
+async fn process_river_buy_transaction(
+    pool: State<'_, SqlitePool>,
+    timestamp: &DateTime<Utc>,
+    sent_amount: &str,
+    sent_currency: &str,
+    received_amount: &str,
+    received_currency: &str,
+    fee_amount: &str,
+) -> Result<Option<ExchangeTransaction>, String> {
+    // Validate currencies for buy: USD -> BTC
+    if sent_currency != "USD" || received_currency != "BTC" {
+        println!("Skipping buy transaction with unexpected currencies: {} -> {}", sent_currency, received_currency);
+        return Ok(None);
+    }
+
+    // Parse amounts
+    let amount_sats = btc_to_sats(received_amount)?;
+    let subtotal_cents = usd_to_cents(sent_amount)?;
+    let fee_cents = usd_to_cents(fee_amount)?;
+
+    // Create provider ID for River
+    let provider_id = format!("river_{}_{}", timestamp.timestamp(), amount_sats);
+
+    // Check if this transaction already exists
+    if transaction_exists_by_provider_id(pool.inner(), &provider_id).await? {
+        println!("Skipping duplicate River buy transaction with provider_id: {}", provider_id);
+        return Ok(None);
+    }
+
+    let request = CreateBitcoinTransactionRequest {
+        r#type: TransactionType::Buy,
+        amount_sats,
+        subtotal_cents: Some(subtotal_cents),
+        fee_cents: Some(fee_cents),
+        memo: Some("River".to_string()),
+        timestamp: *timestamp,
+        provider_id: Some(provider_id),
+    };
+
+    let transaction = create_bitcoin_transaction(pool, request).await?;
+    println!("Created River buy transaction: {} sats for ${:.2}", amount_sats, subtotal_cents as f64 / 100.0);
+    Ok(Some(transaction))
+}
+
+async fn process_river_sell_transaction(
+    pool: State<'_, SqlitePool>,
+    timestamp: &DateTime<Utc>,
+    sent_amount: &str,
+    sent_currency: &str,
+    received_amount: &str,
+    received_currency: &str,
+    fee_amount: &str,
+) -> Result<Option<ExchangeTransaction>, String> {
+    // Validate currencies for sell: BTC -> USD
+    if sent_currency != "BTC" || received_currency != "USD" {
+        println!("Skipping sell transaction with unexpected currencies: {} -> {}", sent_currency, received_currency);
+        return Ok(None);
+    }
+
+    // Parse amounts
+    let amount_sats = btc_to_sats(sent_amount)?;
+    let subtotal_cents = usd_to_cents(received_amount)?;
+    let fee_cents = usd_to_cents(fee_amount)?;
+
+    // Create provider ID for River
+    let provider_id = format!("river_{}_{}", timestamp.timestamp(), amount_sats);
+
+    // Check if this transaction already exists
+    if transaction_exists_by_provider_id(pool.inner(), &provider_id).await? {
+        println!("Skipping duplicate River sell transaction with provider_id: {}", provider_id);
+        return Ok(None);
+    }
+
+    let request = CreateBitcoinTransactionRequest {
+        r#type: TransactionType::Sell,
+        amount_sats,
+        subtotal_cents: Some(subtotal_cents),
+        fee_cents: Some(fee_cents),
+        memo: Some("River".to_string()),
+        timestamp: *timestamp,
+        provider_id: Some(provider_id),
+    };
+
+    let transaction = create_bitcoin_transaction(pool, request).await?;
+    println!("Created River sell transaction: {} sats for ${:.2}", amount_sats, subtotal_cents as f64 / 100.0);
+    Ok(Some(transaction))
 }
 
 #[tauri::command]
