@@ -22,10 +22,11 @@ pub async fn create_bitcoin_transaction(
         memo: request.memo.clone(),
         timestamp: request.timestamp,
         created_at: Utc::now(),
+        provider_id: request.provider_id.clone(),
     };
 
     sqlx::query(
-        "INSERT INTO bitcoin_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO bitcoin_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at, provider_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
     .bind(&transaction.id)
     .bind(transaction.r#type.to_string())
@@ -35,6 +36,7 @@ pub async fn create_bitcoin_transaction(
     .bind(&transaction.memo)
     .bind(transaction.timestamp)
     .bind(transaction.created_at)
+    .bind(&transaction.provider_id)
     .execute(pool.inner())
     .await
     .map_err(|e| format!("Database error: {}", e))?;
@@ -57,7 +59,7 @@ pub async fn get_bitcoin_transactions(
         .map_err(|e| format!("Database error: {}", e))?;
 
     let rows = sqlx::query(
-        "SELECT id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at FROM bitcoin_transactions ORDER BY timestamp DESC LIMIT ? OFFSET ?"
+        "SELECT id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at, provider_id FROM bitcoin_transactions ORDER BY timestamp DESC LIMIT ? OFFSET ?"
     )
     .bind(page_size as i64)
     .bind(offset as i64)
@@ -79,6 +81,7 @@ pub async fn get_bitcoin_transactions(
             memo: row.get("memo"),
             timestamp: row.get("timestamp"),
             created_at: row.get("created_at"),
+            provider_id: row.get("provider_id"),
         };
         transactions.push(transaction);
     }
@@ -112,7 +115,7 @@ pub async fn update_bitcoin_transaction(
     request: UpdateBitcoinTransactionRequest,
 ) -> Result<BitcoinTransaction, String> {
     sqlx::query(
-        "UPDATE bitcoin_transactions SET type = ?, amount_sats = ?, subtotal_cents = ?, fee_cents = ?, memo = ?, timestamp = ? WHERE id = ?"
+        "UPDATE bitcoin_transactions SET type = ?, amount_sats = ?, subtotal_cents = ?, fee_cents = ?, memo = ?, timestamp = ?, provider_id = ? WHERE id = ?"
     )
     .bind(request.r#type.to_string())
     .bind(request.amount_sats)
@@ -120,13 +123,14 @@ pub async fn update_bitcoin_transaction(
     .bind(request.fee_cents)
     .bind(&request.memo)
     .bind(request.timestamp)
+    .bind(&request.provider_id)
     .bind(&id)
     .execute(pool.inner())
     .await
     .map_err(|e| format!("Database error: {}", e))?;
 
     let row = sqlx::query(
-        "SELECT id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at FROM bitcoin_transactions WHERE id = ?"
+        "SELECT id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at, provider_id FROM bitcoin_transactions WHERE id = ?"
     )
     .bind(&id)
     .fetch_one(pool.inner())
@@ -145,6 +149,7 @@ pub async fn update_bitcoin_transaction(
         memo: row.get("memo"),
         timestamp: row.get("timestamp"),
         created_at: row.get("created_at"),
+        provider_id: row.get("provider_id"),
     };
 
     println!("Updated bitcoin transaction: {:?}", updated_transaction);
@@ -312,6 +317,7 @@ pub async fn create_undocumented_lumpsum_transactions(
             fee_cents: Some(0),
             memo: Some(final_memo.clone()),
             timestamp: current_date,
+            provider_id: None,
         };
 
         match create_bitcoin_transaction(pool.clone(), request).await {

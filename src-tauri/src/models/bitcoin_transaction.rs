@@ -13,6 +13,7 @@ pub struct BitcoinTransaction {
     pub memo: Option<String>,
     pub timestamp: DateTime<Utc>,
     pub created_at: DateTime<Utc>,
+    pub provider_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -58,6 +59,7 @@ pub struct CreateBitcoinTransactionRequest {
     pub fee_cents: Option<i64>,
     pub memo: Option<String>,
     pub timestamp: DateTime<Utc>,
+    pub provider_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -68,6 +70,7 @@ pub struct UpdateBitcoinTransactionRequest {
     pub fee_cents: Option<i64>,
     pub memo: Option<String>,
     pub timestamp: DateTime<Utc>,
+    pub provider_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -6,6 +6,8 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 use std::collections::HashMap;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 use tauri::State;
 
 #[derive(Debug, Serialize)]
@@ -18,6 +20,8 @@ pub struct CsvPreview {
 
 #[derive(Debug, Deserialize)]
 struct CoinbaseRecord {
+    #[serde(rename = "ID")]
+    id: String,
     #[serde(rename = "Timestamp")]
     timestamp: String,
     #[serde(rename = "Transaction Type")]
@@ -64,6 +68,42 @@ enum CsvFormat {
     River,
 }
 
+// Add this helper function to generate provider IDs
+fn generate_coinbase_provider_id(records: &[CoinbaseRecord]) -> String {
+    if records.len() == 1 {
+        // For single records, use the actual Coinbase transaction ID
+        let record = &records[0];
+        format!("coinbase_{}", record.id)
+    } else {
+        // For grouped records, hash all individual transaction IDs
+        let mut individual_ids: Vec<String> = records
+            .iter()
+            .map(|r| r.id.clone())
+            .collect();
+        
+        individual_ids.sort(); // Ensure consistent ordering
+        let mut hasher = DefaultHasher::new();
+        individual_ids.hash(&mut hasher);
+        format!("coinbase_group_{:x}", hasher.finish())
+    }
+}
+
+// Add this helper function to check for existing transactions
+async fn transaction_exists_by_provider_id(
+    pool: &SqlitePool,
+    provider_id: &str,
+) -> Result<bool, String> {
+    let count: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM bitcoin_transactions WHERE provider_id = ?"
+    )
+    .bind(provider_id)
+    .fetch_one(pool)
+    .await
+    .map_err(|e| format!("Database error checking for existing transaction: {}", e))?;
+    
+    Ok(count > 0)
+}
+
 fn detect_csv_format(content: &str) -> Result<CsvFormat, String> {
     let lines: Vec<&str> = content.lines().collect();
     if lines.is_empty() {
@@ -74,7 +114,7 @@ fn detect_csv_format(content: &str) -> Result<CsvFormat, String> {
     for (i, line) in lines.iter().enumerate() {
         println!("Line {}: {}", i, line);
 
-        if line.contains("Timestamp") && line.contains("Transaction Type") {
+        if line.contains("ID") && line.contains("Timestamp") && line.contains("Transaction Type") {
             println!("Found Coinbase format at line {}", i);
             return Ok(CsvFormat::Coinbase);
         } else if line.contains("Date") && line.contains("Type") && line.contains("Amount (BTC)") {
@@ -147,7 +187,7 @@ async fn process_coinbase_csv(
     let mut headers_line = 0;
 
     for (i, line) in lines.iter().enumerate() {
-        if line.contains("Timestamp") && line.contains("Transaction Type") {
+        if line.contains("ID") && line.contains("Timestamp") && line.contains("Transaction Type") {
             headers_line = i;
             break;
         }
@@ -235,6 +275,14 @@ async fn process_coinbase_csv(
 
     // Process each group as a single transaction
     for group in grouped_buys {
+        let provider_id = generate_coinbase_provider_id(&group);
+        
+        // Check if this transaction already exists
+        if transaction_exists_by_provider_id(pool.inner(), &provider_id).await? {
+            println!("Skipping duplicate buy transaction with provider_id: {}", provider_id);
+            continue;
+        }
+
         let first_record = &group[0];
         let timestamp = parse_coinbase_timestamp(&first_record.timestamp)?;
 
@@ -272,6 +320,7 @@ async fn process_coinbase_csv(
             fee_cents: Some(total_fees_and_spread),
             memo: Some(memo),
             timestamp,
+            provider_id: Some(provider_id),
         };
 
         let transaction = create_bitcoin_transaction(pool.clone(), request).await?;
@@ -319,6 +368,14 @@ async fn process_coinbase_csv(
 
     // Process each group as a single transaction
     for group in grouped_sells {
+        let provider_id = generate_coinbase_provider_id(&group);
+        
+        // Check if this transaction already exists
+        if transaction_exists_by_provider_id(pool.inner(), &provider_id).await? {
+            println!("Skipping duplicate sell transaction with provider_id: {}", provider_id);
+            continue;
+        }
+
         let first_record = &group[0];
         let timestamp = parse_coinbase_timestamp(&first_record.timestamp)?;
 
@@ -356,6 +413,7 @@ async fn process_coinbase_csv(
             fee_cents: Some(total_fees_and_spread),
             memo: Some(memo),
             timestamp,
+            provider_id: Some(provider_id),
         };
 
         let transaction = create_bitcoin_transaction(pool.clone(), request).await?;
@@ -407,7 +465,7 @@ pub async fn analyze_csv_file(file_path: String) -> Result<CsvPreview, String> {
     let mut format = "Unknown".to_string();
 
     for (i, line) in lines.iter().enumerate() {
-        if line.contains("Timestamp") && line.contains("Transaction Type") {
+        if line.contains("ID") && line.contains("Timestamp") && line.contains("Transaction Type") {
             headers_line = i;
             format = "Coinbase".to_string();
             break;

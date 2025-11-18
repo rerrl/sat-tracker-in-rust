@@ -78,6 +78,7 @@ pub async fn import_sat_tracker_v1_data(pool: State<'_, SqlitePool>) -> Result<S
                     fee_cents: Some(0),
                     memo,
                     timestamp,
+                    provider_id: None,
                 };
 
                 match create_bitcoin_transaction(pool.clone(), request).await {

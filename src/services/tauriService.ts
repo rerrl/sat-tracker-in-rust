@@ -10,6 +10,7 @@ export interface BitcoinTransaction {
   memo: string | null;
   timestamp: string; // ISO date string from Rust
   created_at: string; // ISO date string from Rust
+  provider_id: string | null;
 }
 
 export interface CreateBitcoinTransactionRequest {
@@ -19,6 +20,7 @@ export interface CreateBitcoinTransactionRequest {
   fee_cents: number | null;
   memo: string | null;
   timestamp: string; // ISO date string
+  provider_id: string | null;
 }
 
 export interface UpdateBitcoinTransactionRequest {
@@ -28,6 +30,7 @@ export interface UpdateBitcoinTransactionRequest {
   fee_cents: number | null;
   memo: string | null;
   timestamp: string; // ISO date string
+  provider_id: string | null;
 }
 
 // Edit data type for form state (allows string values during editing)
@@ -38,6 +41,7 @@ export interface EditBitcoinTransactionData {
   fee_cents: number | string | null;
   memo: string | null;
   timestamp: string;
+  provider_id: string | null;
 }
 
 export interface PaginatedBitcoinTransactions {
