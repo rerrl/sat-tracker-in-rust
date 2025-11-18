@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { BitcoinTransaction, EditBitcoinTransactionData } from "../services/tauriService";
+import {
+  BitcoinTransaction,
+  EditBitcoinTransactionData,
+} from "../services/tauriService";
 import DateTimeInput from "./DateTimeInput";
 
 const EventItem = React.memo(
@@ -26,7 +29,10 @@ const EventItem = React.memo(
     onCancel: () => void;
     onSelect?: () => void;
     editData: EditBitcoinTransactionData;
-    onEditDataChange: (field: keyof EditBitcoinTransactionData, value: any) => void;
+    onEditDataChange: (
+      field: keyof EditBitcoinTransactionData,
+      value: any
+    ) => void;
   }) => {
     if (isEditing || isCreating) {
       return (
@@ -87,16 +93,16 @@ const EventItem = React.memo(
                 <div className="text-[rgba(247,243,227,0.7)] text-xs">
                   {event.type === "Fee" ? (
                     "N/A"
-                  ) : event.fiat_amount_cents ? (
+                  ) : event.subtotal_cents ? (
                     <span
-                      title={`$${(event.fiat_amount_cents / 100).toFixed(2)}`}
+                      title={`$${(event.subtotal_cents / 100).toFixed(2)}`}
                     >
                       $
-                      {event.fiat_amount_cents >= 99900
+                      {event.subtotal_cents >= 99900
                         ? Math.round(
-                            event.fiat_amount_cents / 100
+                            event.subtotal_cents / 100
                           ).toLocaleString()
-                        : (event.fiat_amount_cents / 100).toFixed(2)}
+                        : (event.subtotal_cents / 100).toFixed(2)}
                     </span>
                   ) : (
                     "-"
@@ -105,9 +111,9 @@ const EventItem = React.memo(
                 <div className="text-[rgba(247,243,227,0.7)] text-xs">
                   {event.type === "Fee"
                     ? "N/A"
-                    : event.fiat_amount_cents && event.amount_sats
+                    : event.subtotal_cents && event.amount_sats
                     ? `$${Math.round(
-                        event.fiat_amount_cents /
+                        event.subtotal_cents /
                           100 /
                           (event.amount_sats / 100000000)
                       ).toLocaleString()}`
@@ -139,7 +145,7 @@ const EventItem = React.memo(
                       const newType = e.target.value;
                       onEditDataChange("type", newType);
                       if (newType === "Fee") {
-                        onEditDataChange("fiat_amount_cents", null);
+                        onEditDataChange("subtotal_cents", null);
                       }
                     }}
                     className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
@@ -181,8 +187,13 @@ const EventItem = React.memo(
               </div>
 
               {/* Second row: Amount, USD Value, Fee (for Buy/Sell), Memo */}
-              <div className={`grid gap-3 ${editData.type === "Fee" ? "grid-cols-[1.5fr_1.3fr_1.5fr]" : "grid-cols-[1.5fr_1.3fr_1.3fr_1.5fr]"}`}>
-
+              <div
+                className={`grid gap-3 ${
+                  editData.type === "Fee"
+                    ? "grid-cols-[1.5fr_1.3fr_1.5fr]"
+                    : "grid-cols-[1.5fr_1.3fr_1.3fr_1.5fr]"
+                }`}
+              >
                 {/* Amount in Sats */}
                 <div>
                   <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
@@ -224,14 +235,14 @@ const EventItem = React.memo(
                     value={
                       editData.type === "Fee"
                         ? ""
-                        : editData.fiat_amount_cents === null ||
-                          editData.fiat_amount_cents === undefined
+                        : editData.subtotal_cents === null ||
+                          editData.subtotal_cents === undefined
                         ? ""
-                        : editData.fiat_amount_cents === ""
+                        : editData.subtotal_cents === ""
                         ? ""
-                        : typeof editData.fiat_amount_cents === "string"
-                        ? editData.fiat_amount_cents
-                        : (editData.fiat_amount_cents / 100).toString()
+                        : typeof editData.subtotal_cents === "string"
+                        ? editData.subtotal_cents
+                        : (editData.subtotal_cents / 100).toString()
                     }
                     onChange={(e) => {
                       if (editData.type === "Fee") return;
@@ -241,22 +252,22 @@ const EventItem = React.memo(
                         /^[0-9]+(\.[0-9]{0,2})?$/.test(value)
                       ) {
                         if (value === "") {
-                          onEditDataChange("fiat_amount_cents", "");
+                          onEditDataChange("subtotal_cents", "");
                         } else {
-                          onEditDataChange("fiat_amount_cents", value);
+                          onEditDataChange("subtotal_cents", value);
                         }
                       }
                     }}
                     onBlur={() => {
                       if (editData.type === "Fee") return;
                       if (
-                        editData.fiat_amount_cents &&
-                        typeof editData.fiat_amount_cents === "string"
+                        editData.subtotal_cents &&
+                        typeof editData.subtotal_cents === "string"
                       ) {
-                        const numValue = parseFloat(editData.fiat_amount_cents);
+                        const numValue = parseFloat(editData.subtotal_cents);
                         if (!isNaN(numValue)) {
                           onEditDataChange(
-                            "fiat_amount_cents",
+                            "subtotal_cents",
                             Math.round(numValue * 100)
                           );
                         }
@@ -281,14 +292,14 @@ const EventItem = React.memo(
                     <input
                       type="text"
                       value={
-                        editData.fee_fiat_cents === null ||
-                        editData.fee_fiat_cents === undefined
+                        editData.fee_cents === null ||
+                        editData.fee_cents === undefined
                           ? ""
-                          : editData.fee_fiat_cents === ""
+                          : editData.fee_cents === ""
                           ? ""
-                          : typeof editData.fee_fiat_cents === "string"
-                          ? editData.fee_fiat_cents
-                          : (editData.fee_fiat_cents / 100).toString()
+                          : typeof editData.fee_cents === "string"
+                          ? editData.fee_cents
+                          : (editData.fee_cents / 100).toString()
                       }
                       onChange={(e) => {
                         const value = e.target.value;
@@ -297,25 +308,25 @@ const EventItem = React.memo(
                           /^[0-9]+(\.[0-9]{0,2})?$/.test(value)
                         ) {
                           if (value === "") {
-                            onEditDataChange("fee_fiat_cents", "");
+                            onEditDataChange("fee_cents", "");
                           } else {
-                            onEditDataChange("fee_fiat_cents", value);
+                            onEditDataChange("fee_cents", value);
                           }
                         }
                       }}
                       onBlur={() => {
                         if (
-                          editData.fee_fiat_cents &&
-                          typeof editData.fee_fiat_cents === "string"
+                          editData.fee_cents &&
+                          typeof editData.fee_cents === "string"
                         ) {
-                          const numValue = parseFloat(editData.fee_fiat_cents);
+                          const numValue = parseFloat(editData.fee_cents);
                           if (!isNaN(numValue)) {
                             onEditDataChange(
-                              "fee_fiat_cents",
+                              "fee_cents",
                               Math.round(numValue * 100)
                             );
                           } else {
-                            onEditDataChange("fee_fiat_cents", null);
+                            onEditDataChange("fee_cents", null);
                           }
                         }
                       }}
@@ -343,75 +354,80 @@ const EventItem = React.memo(
               </div>
 
               {/* Rate display for Buy/Sell */}
-              {editData.type !== "Fee" && 
-                editData.amount_sats && 
-                editData.fiat_amount_cents && 
-                editData.fiat_amount_cents !== "" && (
-                <div className="text-xs text-[rgba(247,243,227,0.7)] space-y-1">
-                  {/* Exchange Rate (without fees) */}
-                  <div>
-                    <span className="font-medium">Exchange Rate:</span> $
-                    {(() => {
-                      const fiatCents = typeof editData.fiat_amount_cents === "string" 
-                        ? parseFloat(editData.fiat_amount_cents) * 100 
-                        : editData.fiat_amount_cents;
-                      const sats = typeof editData.amount_sats === "string" 
-                        ? parseInt(editData.amount_sats) 
-                        : editData.amount_sats;
-                      return (
-                        Math.abs(fiatCents) /
-                        100 /
-                        (Math.abs(sats) / 100_000_000)
-                      ).toLocaleString(undefined, {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      });
-                    })()}
-                  </div>
-                  
-                  {/* Always show Total Cost and Effective Rate when we have fee data (including zero) */}
-                  {(editData.fee_fiat_cents !== null && editData.fee_fiat_cents !== undefined) && (
-                    <>
-                      <div>
-                        <span className="font-medium">Total Cost:</span> $
-                        {(() => {
-                          const fiatCents = typeof editData.fiat_amount_cents === "string" 
-                            ? parseFloat(editData.fiat_amount_cents) * 100 
-                            : editData.fiat_amount_cents;
-                          const feeCents = typeof editData.fee_fiat_cents === "string" 
-                            ? parseFloat(editData.fee_fiat_cents) * 100 
-                            : editData.fee_fiat_cents;
-                          return (
-                            (Math.abs(fiatCents) + Math.abs(feeCents)) / 100
-                          ).toFixed(2);
-                        })()}
-                      </div>
-                      <div>
-                        <span className="font-medium">Effective Rate (fee included):</span> $
-                        {(() => {
-                          const fiatCents = typeof editData.fiat_amount_cents === "string" 
-                            ? parseFloat(editData.fiat_amount_cents) * 100 
-                            : editData.fiat_amount_cents;
-                          const feeCents = typeof editData.fee_fiat_cents === "string" 
-                            ? parseFloat(editData.fee_fiat_cents) * 100 
-                            : editData.fee_fiat_cents;
-                          const sats = typeof editData.amount_sats === "string" 
-                            ? parseInt(editData.amount_sats) 
+              {editData.type !== "Fee" &&
+                editData.amount_sats &&
+                editData.subtotal_cents &&
+                editData.subtotal_cents !== "" && (
+                  <div className="text-xs text-[rgba(247,243,227,0.7)] space-y-1">
+                    {/* Exchange Rate (without fees) */}
+                    <div>
+                      <span className="font-medium">Exchange Rate:</span> $
+                      {(() => {
+                        const fiatCents =
+                          typeof editData.subtotal_cents === "string"
+                            ? parseFloat(editData.subtotal_cents) * 100
+                            : editData.subtotal_cents;
+                        const sats =
+                          typeof editData.amount_sats === "string"
+                            ? parseInt(editData.amount_sats)
                             : editData.amount_sats;
-                          return (
-                            (Math.abs(fiatCents) + Math.abs(feeCents)) /
-                            100 /
-                            (Math.abs(sats) / 100_000_000)
-                          ).toLocaleString(undefined, {
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          });
-                        })()}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
+                        return (
+                          Math.abs(fiatCents) /
+                          100 /
+                          (Math.abs(sats) / 100_000_000)
+                        ).toLocaleString(undefined, {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        });
+                      })()}
+                    </div>
+
+                    {/* Always show Total Cost and Effective Rate when we have fee data (including zero) */}
+                    {editData.fee_cents !== null &&
+                      editData.fee_cents !== undefined && (
+                        <>
+                          <div>
+                            <span className="font-medium">Total Cost:</span> $
+                            {(() => {
+                              const fiatCents =
+                                typeof editData.subtotal_cents === "string"
+                                  ? parseFloat(editData.subtotal_cents) * 100
+                                  : editData.subtotal_cents;
+                              return (Math.abs(fiatCents) / 100).toFixed(2);
+                            })()}
+                          </div>
+                          <div>
+                            <span className="font-medium">
+                              Effective Rate (fee included):
+                            </span>{" "}
+                            $
+                            {(() => {
+                              const fiatCents =
+                                typeof editData.subtotal_cents === "string"
+                                  ? parseFloat(editData.subtotal_cents) * 100
+                                  : editData.subtotal_cents;
+                              const feeCents =
+                                typeof editData.fee_cents === "string"
+                                  ? parseFloat(editData.fee_cents) * 100
+                                  : editData.fee_cents;
+                              const sats =
+                                typeof editData.amount_sats === "string"
+                                  ? parseInt(editData.amount_sats)
+                                  : editData.amount_sats;
+                              return (
+                                (Math.abs(fiatCents) + Math.abs(feeCents)) /
+                                100 /
+                                (Math.abs(sats) / 100_000_000)
+                              ).toLocaleString(undefined, {
+                                minimumFractionDigits: 0,
+                                maximumFractionDigits: 0,
+                              });
+                            })()}
+                          </div>
+                        </>
+                      )}
+                  </div>
+                )}
 
               {/* Action Buttons */}
               <div className="flex justify-between items-center">
@@ -453,9 +469,17 @@ const EventItem = React.memo(
     if (!event) return null;
 
     return (
-      <div className={`border-b border-[rgba(247,243,227,0.1)] ${isSelected ? 'bg-[rgba(247,243,227,0.1)] border-l-4 border-blue-500' : ''}`}>
+      <div
+        className={`border-b border-[rgba(247,243,227,0.1)] ${
+          isSelected
+            ? "bg-[rgba(247,243,227,0.1)] border-l-4 border-blue-500"
+            : ""
+        }`}
+      >
         <div
-          className={`hover:bg-[rgba(247,243,227,0.1)] px-4 py-1 text-xs group cursor-pointer ${isSelected ? 'bg-[rgba(247,243,227,0.1)]' : ''}`}
+          className={`hover:bg-[rgba(247,243,227,0.1)] px-4 py-1 text-xs group cursor-pointer ${
+            isSelected ? "bg-[rgba(247,243,227,0.1)]" : ""
+          }`}
           onClick={onSelect}
         >
           <div className={`events-grid items-center`}>
@@ -510,12 +534,12 @@ const EventItem = React.memo(
             <div className="text-[rgba(247,243,227,0.5)] text-xs">
               {event.type === "Fee" ? (
                 "N/A"
-              ) : event.fiat_amount_cents ? (
-                <span title={`$${(event.fiat_amount_cents / 100).toFixed(2)}`}>
+              ) : event.subtotal_cents ? (
+                <span title={`$${(event.subtotal_cents / 100).toFixed(2)}`}>
                   $
-                  {event.fiat_amount_cents >= 99900
-                    ? Math.round(event.fiat_amount_cents / 100).toLocaleString()
-                    : (event.fiat_amount_cents / 100).toFixed(2)}
+                  {event.subtotal_cents >= 99900
+                    ? Math.round(event.subtotal_cents / 100).toLocaleString()
+                    : (event.subtotal_cents / 100).toFixed(2)}
                 </span>
               ) : (
                 "-"
@@ -524,9 +548,9 @@ const EventItem = React.memo(
             <div className="text-[rgba(247,243,227,0.5)] text-xs">
               {event.type === "Fee"
                 ? "N/A"
-                : event.fiat_amount_cents && event.amount_sats
+                : event.subtotal_cents && event.amount_sats
                 ? `$${Math.round(
-                    event.fiat_amount_cents /
+                    event.subtotal_cents /
                       100 /
                       (event.amount_sats / 100000000)
                   ).toLocaleString()}`
@@ -548,13 +572,18 @@ const EventItem = React.memo(
               {/* Amount Details */}
               <div className="grid grid-cols-2 gap-4 text-xs">
                 <div>
-                  <span className="font-medium text-[rgba(247,243,227,0.8)]">Amount:</span>
+                  <span className="font-medium text-[rgba(247,243,227,0.8)]">
+                    Amount:
+                  </span>
                   <div className="text-[rgba(247,243,227,0.7)]">
-                    {event.amount_sats.toLocaleString()} sats • {(event.amount_sats / 100_000_000).toFixed(8)} BTC
+                    {event.amount_sats.toLocaleString()} sats •{" "}
+                    {(event.amount_sats / 100_000_000).toFixed(8)} BTC
                   </div>
                 </div>
                 <div>
-                  <span className="font-medium text-[rgba(247,243,227,0.8)]">Memo:</span>
+                  <span className="font-medium text-[rgba(247,243,227,0.8)]">
+                    Memo:
+                  </span>
                   <div className="text-[rgba(247,243,227,0.7)] wrap-break-word">
                     {event.memo || "No memo"}
                   </div>
@@ -562,51 +591,77 @@ const EventItem = React.memo(
               </div>
 
               {/* Rate Calculations (for Buy/Sell with USD value) */}
-              {event.type !== "Fee" && event.fiat_amount_cents && event.amount_sats && (
-                <div className="border-t border-[rgba(247,243,227,0.1)] pt-2">
-                  <div className="text-xs text-[rgba(247,243,227,0.7)] space-y-1">
-                    {/* Exchange Rate (without fees) */}
-                    <div>
-                      <span className="font-medium text-[rgba(247,243,227,0.8)]">Exchange Rate:</span> <span className="text-blue-300">$
-                      {(
-                        Math.abs(event.fiat_amount_cents) /
-                        100 /
-                        (Math.abs(event.amount_sats) / 100_000_000)
-                      ).toLocaleString(undefined, {
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                      })}</span>
-                    </div>
-                    
-                    {/* Effective Rate and Fee details (when fee exists) */}
-                    {event.fee_fiat_cents !== null && event.fee_fiat_cents !== undefined && (
-                      <>
-                        <div>
-                          <span className="font-medium text-[rgba(247,243,227,0.8)]">Effective Rate (fee included):</span> <span className="text-orange-300">$
+              {event.type !== "Fee" &&
+                event.subtotal_cents &&
+                event.amount_sats && (
+                  <div className="border-t border-[rgba(247,243,227,0.1)] pt-2">
+                    <div className="text-xs text-[rgba(247,243,227,0.7)] space-y-1">
+                      {/* Exchange Rate (without fees) */}
+                      <div>
+                        <span className="font-medium text-[rgba(247,243,227,0.8)]">
+                          Exchange Rate:
+                        </span>{" "}
+                        <span className="text-blue-300">
+                          $
                           {(
-                            (Math.abs(event.fiat_amount_cents) + Math.abs(event.fee_fiat_cents)) /
+                            Math.abs(event.subtotal_cents) /
                             100 /
                             (Math.abs(event.amount_sats) / 100_000_000)
                           ).toLocaleString(undefined, {
                             minimumFractionDigits: 0,
                             maximumFractionDigits: 0,
-                          })}</span>
-                        </div>
-                        <div>
-                          <span className="font-medium text-[rgba(247,243,227,0.8)]">Fee (USD):</span> <span className="text-red-300">$
-                          {(Math.abs(event.fee_fiat_cents) / 100).toFixed(2)}</span>
-                        </div>
-                        <div>
-                          <span className="font-medium text-[rgba(247,243,227,0.8)]">Total Cost:</span> <span className="text-green-300">$
-                          {(
-                            (Math.abs(event.fiat_amount_cents) + Math.abs(event.fee_fiat_cents)) / 100
-                          ).toFixed(2)}</span>
-                        </div>
-                      </>
-                    )}
+                          })}
+                        </span>
+                      </div>
+
+                      {/* Effective Rate and Fee details (when fee exists) */}
+                      {event.fee_cents !== null &&
+                        event.fee_cents !== undefined && (
+                          <>
+                            <div>
+                              <span className="font-medium text-[rgba(247,243,227,0.8)]">
+                                Effective Rate (fee included):
+                              </span>{" "}
+                              <span className="text-orange-300">
+                                $
+                                {(
+                                  (Math.abs(event.subtotal_cents) +
+                                    Math.abs(event.fee_cents)) /
+                                  100 /
+                                  (Math.abs(event.amount_sats) / 100_000_000)
+                                ).toLocaleString(undefined, {
+                                  minimumFractionDigits: 0,
+                                  maximumFractionDigits: 0,
+                                })}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-medium text-[rgba(247,243,227,0.8)]">
+                                Fee (USD):
+                              </span>{" "}
+                              <span className="text-red-300">
+                                $
+                                {(Math.abs(event.fee_cents) / 100).toFixed(
+                                  2
+                                )}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-medium text-[rgba(247,243,227,0.8)]">
+                                Total Cost:
+                              </span>{" "}
+                              <span className="text-green-300">
+                                $
+                                {(
+                                  Math.abs(event.subtotal_cents) / 100
+                                ).toFixed(2)}
+                              </span>
+                            </div>
+                          </>
+                        )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               {/* Action Button */}
               <div className="flex justify-end border-t border-[rgba(247,243,227,0.1)] pt-2">
@@ -642,10 +697,16 @@ interface EventsListProps {
   onSaveEvent: () => void;
   onDeleteEvent: () => void;
   onCancelEdit: () => void;
-  onEditDataChange: (field: keyof EditBitcoinTransactionData, value: any) => void;
+  onEditDataChange: (
+    field: keyof EditBitcoinTransactionData,
+    value: any
+  ) => void;
   onSaveNewEvent: () => void;
   onCancelNewEvent: () => void;
-  onNewEventDataChange: (field: keyof EditBitcoinTransactionData, value: any) => void;
+  onNewEventDataChange: (
+    field: keyof EditBitcoinTransactionData,
+    value: any
+  ) => void;
 }
 
 const EventsList: React.FC<EventsListProps> = ({
@@ -674,7 +735,7 @@ const EventsList: React.FC<EventsListProps> = ({
   // Handle escape key to close edit/deselect
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         if (editingEventId || isCreatingNew) {
           onCancelEdit();
         } else if (selectedEventId) {
@@ -683,11 +744,17 @@ const EventsList: React.FC<EventsListProps> = ({
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [editingEventId, isCreatingNew, selectedEventId, onCancelEdit, onSelectEvent]);
+  }, [
+    editingEventId,
+    isCreatingNew,
+    selectedEventId,
+    onCancelEdit,
+    onSelectEvent,
+  ]);
 
   // Calculate pagination
   const totalPages = Math.ceil(events.length / pageSize);

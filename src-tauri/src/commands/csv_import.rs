@@ -259,8 +259,8 @@ async fn process_coinbase_csv(
         let request = CreateBitcoinTransactionRequest {
             r#type: TransactionType::Buy,
             amount_sats: total_amount_sats,
-            fiat_amount_cents: Some(total_inclusive),
-            fee_fiat_cents: Some(total_fees_and_spread),
+            subtotal_cents: Some(total_inclusive),
+            fee_cents: Some(total_fees_and_spread),
             memo: Some(memo),
             timestamp,
         };
@@ -273,13 +273,13 @@ async fn process_coinbase_csv(
     // for record in sell_records {
     //     let timestamp = parse_coinbase_timestamp(&record.timestamp)?;
     //     let amount_sats = btc_to_sats(&record.quantity_transacted)?;
-    //     let fiat_amount_cents = usd_to_cents(&record.total_inclusive)?;
+    //     let subtotal_cents = usd_to_cents(&record.total_inclusive)?;
 
     //     let request = CreateBitcoinTransactionRequest {
     //         r#type: TransactionType::Sell,
     //         amount_sats,
-    //         fiat_amount_cents: Some(fiat_amount_cents),
-    //         fee_fiat_cents: Some(0), // Fees are handled separately
+    //         subtotal_cents: Some(subtotal_cents),
+    //         fee_cents: Some(0), // Fees are handled separately
     //         memo: Some(format!("Coinbase: {}", record.notes)),
     //         timestamp,
     //     };
@@ -296,8 +296,8 @@ async fn process_coinbase_csv(
     //     let request = CreateBitcoinTransactionRequest {
     //         r#type: TransactionType::Fee,
     //         amount_sats,
-    //         fiat_amount_cents: None, // Fees typically don't have fiat value
-    //         fee_fiat_cents: Some(0),
+    //         subtotal_cents: None, // Fees typically don't have fiat value
+    //         fee_cents: Some(0),
     //         memo: Some(format!("Coinbase Fee: {}", record.notes)),
     //         timestamp,
     //     };
@@ -344,8 +344,8 @@ async fn process_river_csv(
                 let request = CreateBitcoinTransactionRequest {
                     r#type: TransactionType::Buy,
                     amount_sats,
-                    fiat_amount_cents: Some(value_cents),
-                    fee_fiat_cents: Some(0),
+                    subtotal_cents: Some(value_cents),
+                    fee_cents: Some(0),
                     memo: Some(format!("River: {}", record.description)),
                     timestamp,
                 };
@@ -360,8 +360,8 @@ async fn process_river_csv(
                     let fee_request = CreateBitcoinTransactionRequest {
                         r#type: TransactionType::Fee,
                         amount_sats: fee_sats,
-                        fiat_amount_cents: None,
-                        fee_fiat_cents: Some(0),
+                        subtotal_cents: None,
+                        fee_cents: Some(0),
                         memo: Some(format!("River Fee: {}", record.description)),
                         timestamp,
                     };
@@ -378,8 +378,8 @@ async fn process_river_csv(
                 let request = CreateBitcoinTransactionRequest {
                     r#type: TransactionType::Sell,
                     amount_sats,
-                    fiat_amount_cents: Some(value_cents),
-                    fee_fiat_cents: Some(0),
+                    subtotal_cents: Some(value_cents),
+                    fee_cents: Some(0),
                     memo: Some(format!("River: {}", record.description)),
                     timestamp,
                 };
@@ -394,8 +394,8 @@ async fn process_river_csv(
                     let fee_request = CreateBitcoinTransactionRequest {
                         r#type: TransactionType::Fee,
                         amount_sats: fee_sats,
-                        fiat_amount_cents: None,
-                        fee_fiat_cents: Some(0),
+                        subtotal_cents: None,
+                        fee_cents: Some(0),
                         memo: Some(format!("River Fee: {}", record.description)),
                         timestamp,
                     };

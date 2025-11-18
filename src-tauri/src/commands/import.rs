@@ -74,8 +74,8 @@ pub async fn import_sat_tracker_v1_data(pool: State<'_, SqlitePool>) -> Result<S
                 let request = CreateBitcoinTransactionRequest {
                     r#type: TransactionType::Buy,
                     amount_sats,
-                    fiat_amount_cents: Some(value_cents),
-                    fee_fiat_cents: Some(0),
+                    subtotal_cents: Some(value_cents),
+                    fee_cents: Some(0),
                     memo,
                     timestamp,
                 };
@@ -149,8 +149,8 @@ pub async fn import_sat_tracker_v1_data(pool: State<'_, SqlitePool>) -> Result<S
                 let request = CreateBitcoinTransactionRequest {
                     r#type: transaction_type,
                     amount_sats,
-                    fiat_amount_cents: None, // DeductionEvents don't have USD value
-                    fee_fiat_cents: Some(0),
+                    subtotal_cents: None, // DeductionEvents don't have USD value
+                    fee_cents: Some(0),
                     memo,
                     timestamp,
                 };

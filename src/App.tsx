@@ -75,8 +75,8 @@ function App() {
     setEditData({
       type: transaction.type,
       amount_sats: transaction.amount_sats,
-      fiat_amount_cents: transaction.fiat_amount_cents,
-      fee_fiat_cents: transaction.fee_fiat_cents,
+      subtotal_cents: transaction.subtotal_cents,
+      fee_cents: transaction.fee_cents,
       memo: transaction.memo,
       timestamp: transaction.timestamp,
     });
@@ -91,8 +91,8 @@ function App() {
         request: {
           type: editData.type as "Buy" | "Sell" | "Fee",
           amount_sats: editData.amount_sats,
-          fiat_amount_cents: editData.fiat_amount_cents,
-          fee_fiat_cents: editData.fee_fiat_cents,
+          subtotal_cents: editData.subtotal_cents,
+          fee_cents: editData.fee_cents,
           memo: editData.memo,
           timestamp: editData.timestamp,
         },
@@ -135,8 +135,8 @@ function App() {
     setNewEventData({
       type: "Buy",
       amount_sats: 0,
-      fiat_amount_cents: null,
-      fee_fiat_cents: 0,
+      subtotal_cents: null,
+      fee_cents: 0,
       memo: null,
       timestamp: new Date().toISOString(),
     });
@@ -151,8 +151,8 @@ function App() {
       await createTransactionMutation.mutateAsync({
         type: newEventData.type as "Buy" | "Sell" | "Fee",
         amount_sats: newEventData.amount_sats,
-        fiat_amount_cents: newEventData.fiat_amount_cents,
-        fee_fiat_cents: newEventData.fee_fiat_cents,
+        subtotal_cents: newEventData.subtotal_cents,
+        fee_cents: newEventData.fee_cents,
         memo: newEventData.memo,
         timestamp: newEventData.timestamp,
       });

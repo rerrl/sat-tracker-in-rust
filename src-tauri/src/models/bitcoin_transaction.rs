@@ -8,8 +8,8 @@ pub struct BitcoinTransaction {
     #[sqlx(try_from = "String")]
     pub r#type: TransactionType,
     pub amount_sats: i64,
-    pub fiat_amount_cents: Option<i64>,
-    pub fee_fiat_cents: Option<i64>,
+    pub subtotal_cents: Option<i64>,
+    pub fee_cents: Option<i64>,
     pub memo: Option<String>,
     pub timestamp: DateTime<Utc>,
     pub created_at: DateTime<Utc>,
@@ -57,8 +57,8 @@ impl TryFrom<String> for TransactionType {
 pub struct CreateBitcoinTransactionRequest {
     pub r#type: TransactionType,
     pub amount_sats: i64,
-    pub fiat_amount_cents: Option<i64>,
-    pub fee_fiat_cents: Option<i64>,
+    pub subtotal_cents: Option<i64>,
+    pub fee_cents: Option<i64>,
     pub memo: Option<String>,
     pub timestamp: DateTime<Utc>,
 }
@@ -67,8 +67,8 @@ pub struct CreateBitcoinTransactionRequest {
 pub struct UpdateBitcoinTransactionRequest {
     pub r#type: TransactionType,
     pub amount_sats: i64,
-    pub fiat_amount_cents: Option<i64>,
-    pub fee_fiat_cents: Option<i64>,
+    pub subtotal_cents: Option<i64>,
+    pub fee_cents: Option<i64>,
     pub memo: Option<String>,
     pub timestamp: DateTime<Utc>,
 }

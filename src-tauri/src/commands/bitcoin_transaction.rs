@@ -17,21 +17,21 @@ pub async fn create_bitcoin_transaction(
         id: Uuid::new_v4().to_string(),
         r#type: request.r#type.clone(),
         amount_sats: request.amount_sats,
-        fiat_amount_cents: request.fiat_amount_cents,
-        fee_fiat_cents: request.fee_fiat_cents,
+        subtotal_cents: request.subtotal_cents,
+        fee_cents: request.fee_cents,
         memo: request.memo.clone(),
         timestamp: request.timestamp,
         created_at: Utc::now(),
     };
 
     sqlx::query(
-        "INSERT INTO bitcoin_transactions (id, type, amount_sats, fiat_amount_cents, fee_fiat_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO bitcoin_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
     )
     .bind(&transaction.id)
     .bind(transaction.r#type.to_string())
     .bind(transaction.amount_sats)
-    .bind(transaction.fiat_amount_cents)
-    .bind(transaction.fee_fiat_cents)
+    .bind(transaction.subtotal_cents)
+    .bind(transaction.fee_cents)
     .bind(&transaction.memo)
     .bind(transaction.timestamp)
     .bind(transaction.created_at)
@@ -57,7 +57,7 @@ pub async fn get_bitcoin_transactions(
         .map_err(|e| format!("Database error: {}", e))?;
 
     let rows = sqlx::query(
-        "SELECT id, type, amount_sats, fiat_amount_cents, fee_fiat_cents, memo, timestamp, created_at FROM bitcoin_transactions ORDER BY timestamp DESC LIMIT ? OFFSET ?"
+        "SELECT id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at FROM bitcoin_transactions ORDER BY timestamp DESC LIMIT ? OFFSET ?"
     )
     .bind(page_size as i64)
     .bind(offset as i64)
@@ -74,8 +74,8 @@ pub async fn get_bitcoin_transactions(
                 .parse()
                 .map_err(|e| format!("Invalid transaction type: {}", e))?,
             amount_sats: row.get("amount_sats"),
-            fiat_amount_cents: row.get("fiat_amount_cents"),
-            fee_fiat_cents: row.get("fee_fiat_cents"),
+            subtotal_cents: row.get("subtotal_cents"),
+            fee_cents: row.get("fee_cents"),
             memo: row.get("memo"),
             timestamp: row.get("timestamp"),
             created_at: row.get("created_at"),
@@ -112,12 +112,12 @@ pub async fn update_bitcoin_transaction(
     request: UpdateBitcoinTransactionRequest,
 ) -> Result<BitcoinTransaction, String> {
     sqlx::query(
-        "UPDATE bitcoin_transactions SET type = ?, amount_sats = ?, fiat_amount_cents = ?, fee_fiat_cents = ?, memo = ?, timestamp = ? WHERE id = ?"
+        "UPDATE bitcoin_transactions SET type = ?, amount_sats = ?, subtotal_cents = ?, fee_cents = ?, memo = ?, timestamp = ? WHERE id = ?"
     )
     .bind(request.r#type.to_string())
     .bind(request.amount_sats)
-    .bind(request.fiat_amount_cents)
-    .bind(request.fee_fiat_cents)
+    .bind(request.subtotal_cents)
+    .bind(request.fee_cents)
     .bind(&request.memo)
     .bind(request.timestamp)
     .bind(&id)
@@ -126,7 +126,7 @@ pub async fn update_bitcoin_transaction(
     .map_err(|e| format!("Database error: {}", e))?;
 
     let row = sqlx::query(
-        "SELECT id, type, amount_sats, fiat_amount_cents, fee_fiat_cents, memo, timestamp, created_at FROM bitcoin_transactions WHERE id = ?"
+        "SELECT id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at FROM bitcoin_transactions WHERE id = ?"
     )
     .bind(&id)
     .fetch_one(pool.inner())
@@ -140,8 +140,8 @@ pub async fn update_bitcoin_transaction(
             .parse()
             .map_err(|e| format!("Invalid transaction type: {}", e))?,
         amount_sats: row.get("amount_sats"),
-        fiat_amount_cents: row.get("fiat_amount_cents"),
-        fee_fiat_cents: row.get("fee_fiat_cents"),
+        subtotal_cents: row.get("subtotal_cents"),
+        fee_cents: row.get("fee_cents"),
         memo: row.get("memo"),
         timestamp: row.get("timestamp"),
         created_at: row.get("created_at"),
@@ -180,14 +180,14 @@ pub async fn get_portfolio_metrics(
             COALESCE(SUM(CASE WHEN type = 'buy' THEN amount_sats ELSE 0 END), 0) as total_bought_sats,
             COALESCE(SUM(CASE WHEN type = 'sell' THEN amount_sats ELSE 0 END), 0) as total_sold_sats,
             COALESCE(SUM(CASE WHEN type = 'fee' THEN amount_sats ELSE 0 END), 0) as total_fee_sats,
-            COALESCE(SUM(CASE WHEN type = 'buy' AND fiat_amount_cents IS NOT NULL THEN fiat_amount_cents ELSE 0 END), 0) as total_invested_cents,
-            COALESCE(SUM(CASE WHEN type = 'sell' AND fiat_amount_cents IS NOT NULL THEN fiat_amount_cents ELSE 0 END), 0) as total_extracted_cents,
-            COUNT(CASE WHEN type = 'buy' AND fiat_amount_cents IS NOT NULL THEN 1 END) as buy_count,
-            COUNT(CASE WHEN type = 'sell' AND fiat_amount_cents IS NOT NULL THEN 1 END) as sell_count,
+            COALESCE(SUM(CASE WHEN type = 'buy' AND subtotal_cents IS NOT NULL THEN subtotal_cents ELSE 0 END), 0) as total_invested_cents,
+            COALESCE(SUM(CASE WHEN type = 'sell' AND subtotal_cents IS NOT NULL THEN subtotal_cents ELSE 0 END), 0) as total_extracted_cents,
+            COUNT(CASE WHEN type = 'buy' AND subtotal_cents IS NOT NULL THEN 1 END) as buy_count,
+            COUNT(CASE WHEN type = 'sell' AND subtotal_cents IS NOT NULL THEN 1 END) as sell_count,
             COALESCE(SUM(CASE WHEN type = 'buy' AND timestamp >= datetime('now', '-7 days') THEN amount_sats ELSE 0 END), 0) as sats_stacked_7d,
-            COALESCE(SUM(CASE WHEN type = 'buy' AND fiat_amount_cents IS NOT NULL AND timestamp >= datetime('now', '-7 days') THEN fiat_amount_cents ELSE 0 END), 0) as usd_invested_7d_cents,
+            COALESCE(SUM(CASE WHEN type = 'buy' AND subtotal_cents IS NOT NULL AND timestamp >= datetime('now', '-7 days') THEN subtotal_cents ELSE 0 END), 0) as usd_invested_7d_cents,
             COALESCE(SUM(CASE WHEN type = 'buy' AND timestamp >= datetime('now', '-31 days') THEN amount_sats ELSE 0 END), 0) as sats_stacked_31d,
-            COALESCE(SUM(CASE WHEN type = 'buy' AND fiat_amount_cents IS NOT NULL AND timestamp >= datetime('now', '-31 days') THEN fiat_amount_cents ELSE 0 END), 0) as usd_invested_31d_cents
+            COALESCE(SUM(CASE WHEN type = 'buy' AND subtotal_cents IS NOT NULL AND timestamp >= datetime('now', '-31 days') THEN subtotal_cents ELSE 0 END), 0) as usd_invested_31d_cents
         FROM bitcoin_transactions
         "#
     )
@@ -299,7 +299,7 @@ pub async fn create_undocumented_lumpsum_transactions(
             sats_per_interval
         };
 
-        let fiat_amount_cents = if is_last {
+        let subtotal_cents = if is_last {
             cents_per_interval + remaining_cents
         } else {
             cents_per_interval
@@ -308,8 +308,8 @@ pub async fn create_undocumented_lumpsum_transactions(
         let request = CreateBitcoinTransactionRequest {
             r#type: TransactionType::Buy,
             amount_sats,
-            fiat_amount_cents: Some(fiat_amount_cents),
-            fee_fiat_cents: Some(0),
+            subtotal_cents: Some(subtotal_cents),
+            fee_cents: Some(0),
             memo: Some(final_memo.clone()),
             timestamp: current_date,
         };

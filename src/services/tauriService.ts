@@ -5,8 +5,8 @@ export interface BitcoinTransaction {
   id: string;
   type: "Buy" | "Sell" | "Fee";
   amount_sats: number;
-  fiat_amount_cents: number | null;
-  fee_fiat_cents: number | null;
+  subtotal_cents: number | null;
+  fee_cents: number | null;
   memo: string | null;
   timestamp: string; // ISO date string from Rust
   created_at: string; // ISO date string from Rust
@@ -15,8 +15,8 @@ export interface BitcoinTransaction {
 export interface CreateBitcoinTransactionRequest {
   type: "Buy" | "Sell" | "Fee";
   amount_sats: number;
-  fiat_amount_cents: number | null;
-  fee_fiat_cents: number | null;
+  subtotal_cents: number | null;
+  fee_cents: number | null;
   memo: string | null;
   timestamp: string; // ISO date string
 }
@@ -24,8 +24,8 @@ export interface CreateBitcoinTransactionRequest {
 export interface UpdateBitcoinTransactionRequest {
   type: "Buy" | "Sell" | "Fee";
   amount_sats: number;
-  fiat_amount_cents: number | null;
-  fee_fiat_cents: number | null;
+  subtotal_cents: number | null;
+  fee_cents: number | null;
   memo: string | null;
   timestamp: string; // ISO date string
 }
@@ -34,8 +34,8 @@ export interface UpdateBitcoinTransactionRequest {
 export interface EditBitcoinTransactionData {
   type: "Buy" | "Sell" | "Fee";
   amount_sats: number | string;
-  fiat_amount_cents: number | string | null;
-  fee_fiat_cents: number | string | null;
+  subtotal_cents: number | string | null;
+  fee_cents: number | string | null;
   memo: string | null;
   timestamp: string;
 }

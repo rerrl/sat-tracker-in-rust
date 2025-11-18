@@ -100,13 +100,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // Generate a rounded dollar amount (in hundreds)
         let dollar_amount = rng.gen_range(1..=50) * 100; // $100 to $5000 in $100 increments
-        let fiat_amount_cents = dollar_amount * 100; // Convert to cents
-        let amount_sats = ((fiat_amount_cents as f64 / current_btc_price_cents as f64)
+        let subtotal_cents = dollar_amount * 100; // Convert to cents
+        let amount_sats = ((subtotal_cents as f64 / current_btc_price_cents as f64)
             * 100_000_000.0) as i64;
         
         // Calculate fee (0.5-1.5% of fiat amount)
         let fee_percentage = rng.gen_range(0.5..=1.5);
-        let fee_fiat_cents = (fiat_amount_cents as f64 * fee_percentage / 100.0) as i64;
+        let fee_cents = (subtotal_cents as f64 * fee_percentage / 100.0) as i64;
         
         let memo = if rng.gen_bool(0.3) {
             Some("DCA".to_string())
@@ -115,13 +115,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
 
         sqlx::query(
-            "INSERT INTO bitcoin_transactions (id, type, amount_sats, fiat_amount_cents, fee_fiat_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+            "INSERT INTO bitcoin_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         )
         .bind(Uuid::new_v4().to_string())
         .bind("buy")
         .bind(amount_sats)
-        .bind(fiat_amount_cents)
-        .bind(fee_fiat_cents)
+        .bind(subtotal_cents)
+        .bind(fee_cents)
         .bind(&memo)
         .bind(current_date)
         .bind(Utc::now())
@@ -145,13 +145,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "buy" => {
                 // Generate a rounded dollar amount (in hundreds)
                 let dollar_amount = rng.gen_range(1..=50) * 100; // $100 to $5000 in $100 increments
-                let fiat_amount_cents = dollar_amount * 100; // Convert to cents
-                let amount_sats = ((fiat_amount_cents as f64 / current_btc_price_cents as f64)
+                let subtotal_cents = dollar_amount * 100; // Convert to cents
+                let amount_sats = ((subtotal_cents as f64 / current_btc_price_cents as f64)
                     * 100_000_000.0) as i64;
                 
                 // Calculate fee (0.5-1.5% of fiat amount)
                 let fee_percentage = rng.gen_range(0.5..=1.5);
-                let fee_fiat_cents = (fiat_amount_cents as f64 * fee_percentage / 100.0) as i64;
+                let fee_cents = (subtotal_cents as f64 * fee_percentage / 100.0) as i64;
                 
                 let memo = if rng.gen_bool(0.3) {
                     Some("DCA".to_string())
@@ -160,13 +160,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
 
                 sqlx::query(
-                    "INSERT INTO bitcoin_transactions (id, type, amount_sats, fiat_amount_cents, fee_fiat_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO bitcoin_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
                 )
                 .bind(Uuid::new_v4().to_string())
                 .bind("buy")
                 .bind(amount_sats)
-                .bind(fiat_amount_cents)
-                .bind(fee_fiat_cents)
+                .bind(subtotal_cents)
+                .bind(fee_cents)
                 .bind(&memo)
                 .bind(current_date)
                 .bind(Utc::now())
@@ -176,13 +176,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "sell" => {
                 // Generate a rounded dollar amount (in hundreds)
                 let dollar_amount = rng.gen_range(1..=50) * 100; // $100 to $5000 in $100 increments
-                let fiat_amount_cents = dollar_amount * 100; // Convert to cents
-                let amount_sats = ((fiat_amount_cents as f64 / current_btc_price_cents as f64)
+                let subtotal_cents = dollar_amount * 100; // Convert to cents
+                let amount_sats = ((subtotal_cents as f64 / current_btc_price_cents as f64)
                     * 100_000_000.0) as i64;
                 
                 // Calculate fee (0.5-1.5% of fiat amount)
                 let fee_percentage = rng.gen_range(0.5..=1.5);
-                let fee_fiat_cents = (fiat_amount_cents as f64 * fee_percentage / 100.0) as i64;
+                let fee_cents = (subtotal_cents as f64 * fee_percentage / 100.0) as i64;
                 
                 let memo = if rng.gen_bool(0.4) {
                     Some("Emergency".to_string())
@@ -191,13 +191,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
 
                 sqlx::query(
-                    "INSERT INTO bitcoin_transactions (id, type, amount_sats, fiat_amount_cents, fee_fiat_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO bitcoin_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
                 )
                 .bind(Uuid::new_v4().to_string())
                 .bind("sell")
                 .bind(amount_sats)
-                .bind(fiat_amount_cents)
-                .bind(fee_fiat_cents)
+                .bind(subtotal_cents)
+                .bind(fee_cents)
                 .bind(&memo)
                 .bind(current_date)
                 .bind(Utc::now())
@@ -213,7 +213,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
 
                 sqlx::query(
-                    "INSERT INTO bitcoin_transactions (id, type, amount_sats, fiat_amount_cents, fee_fiat_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO bitcoin_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
                 )
                 .bind(Uuid::new_v4().to_string())
                 .bind("fee")
