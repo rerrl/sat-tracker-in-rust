@@ -126,7 +126,7 @@ pub async fn get_activity_metrics(
     
     // Get all buy transactions ordered by timestamp
     let buy_transactions = sqlx::query(
-        "SELECT timestamp, amount_sats FROM bitcoin_transactions WHERE type = 'buy' ORDER BY timestamp ASC"
+        "SELECT timestamp, amount_sats FROM exchange_transactions WHERE type = 'buy' ORDER BY timestamp ASC"
     )
     .fetch_all(pool.inner())
     .await

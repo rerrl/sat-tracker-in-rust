@@ -1,4 +1,4 @@
-CREATE TABLE bitcoin_transactions (
+CREATE TABLE exchange_transactions (
     id TEXT PRIMARY KEY,
     type TEXT NOT NULL, -- 'buy', 'sell'
     amount_sats INTEGER NOT NULL,

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   TauriService,
-  BitcoinTransaction,
+  ExchangeTransaction,
   CreateBitcoinTransactionRequest,
   UpdateBitcoinTransactionRequest,
 } from "../services/tauriService";
@@ -11,7 +11,7 @@ export const useTransactions = (isDatabaseInitialized: boolean) => {
     queryKey: ["transactions"],
     queryFn: async () => {
       console.log("Fetching all transactions");
-      let allTransactions: BitcoinTransaction[] = [];
+      let allTransactions: ExchangeTransaction[] = [];
       let currentPage = 0;
       let hasMore = true;
       let totalCount = 0;

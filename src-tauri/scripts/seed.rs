@@ -113,7 +113,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         };
 
         sqlx::query(
-            "INSERT INTO bitcoin_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+            "INSERT INTO exchange_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
         )
         .bind(Uuid::new_v4().to_string())
         .bind("buy")
@@ -158,7 +158,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
 
                 sqlx::query(
-                    "INSERT INTO bitcoin_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO exchange_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
                 )
                 .bind(Uuid::new_v4().to_string())
                 .bind("buy")
@@ -189,7 +189,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
 
                 sqlx::query(
-                    "INSERT INTO bitcoin_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO exchange_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
                 )
                 .bind(Uuid::new_v4().to_string())
                 .bind("sell")

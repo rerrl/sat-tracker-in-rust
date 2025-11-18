@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 
 // Types matching your Rust structs
-export interface BitcoinTransaction {
+export interface ExchangeTransaction {
   id: string;
   type: "Buy" | "Sell";
   amount_sats: number;
@@ -45,7 +45,7 @@ export interface EditBitcoinTransactionData {
 }
 
 export interface PaginatedBitcoinTransactions {
-  transactions: BitcoinTransaction[];
+  transactions: ExchangeTransaction[];
   total_count: number;
   page: number;
   page_size: number;
@@ -124,7 +124,7 @@ export class TauriService {
   // Create a new bitcoin transaction
   static async createBitcoinTransaction(
     request: CreateBitcoinTransactionRequest
-  ): Promise<BitcoinTransaction> {
+  ): Promise<ExchangeTransaction> {
     return await invoke("create_bitcoin_transaction", { request });
   }
 
@@ -143,7 +143,7 @@ export class TauriService {
   static async updateBitcoinTransaction(
     id: string,
     request: UpdateBitcoinTransactionRequest
-  ): Promise<BitcoinTransaction> {
+  ): Promise<ExchangeTransaction> {
     return await invoke("update_bitcoin_transaction", { id, request });
   }
 
@@ -165,7 +165,7 @@ export class TauriService {
   // Create undocumented lumpsum transactions
   static async createUndocumentedLumpsumTransactions(
     request: CreateUndocumentedLumpsumRequest
-  ): Promise<BitcoinTransaction[]> {
+  ): Promise<ExchangeTransaction[]> {
     return await invoke("create_undocumented_lumpsum_transactions", {
       startDate: request.start_date,
       endDate: request.end_date,
@@ -223,7 +223,7 @@ export class TauriService {
   }
 
   // Import CSV data
-  static async importCsvData(filePath: string): Promise<BitcoinTransaction[]> {
+  static async importCsvData(filePath: string): Promise<ExchangeTransaction[]> {
     return await invoke("import_csv_data", { filePath });
   }
 

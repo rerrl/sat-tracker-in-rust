@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Modal from "./Modal";
-import { TauriService, BitcoinTransaction } from "../services/tauriService";
+import { TauriService, ExchangeTransaction } from "../services/tauriService";
 
 interface CsvPreview {
   format: string;
@@ -12,7 +12,7 @@ interface CsvPreview {
 interface CsvImportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onImportComplete: (events: BitcoinTransaction[]) => void;
+  onImportComplete: (events: ExchangeTransaction[]) => void;
 }
 
 export default function CsvImportModal({

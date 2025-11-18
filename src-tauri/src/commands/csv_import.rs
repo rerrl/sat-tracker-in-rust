@@ -1,6 +1,6 @@
 use crate::commands::bitcoin_transaction::create_bitcoin_transaction;
 use crate::models::bitcoin_transaction::{
-    BitcoinTransaction, CreateBitcoinTransactionRequest, TransactionType,
+    ExchangeTransaction, CreateBitcoinTransactionRequest, TransactionType,
 };
 use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -94,7 +94,7 @@ async fn transaction_exists_by_provider_id(
     provider_id: &str,
 ) -> Result<bool, String> {
     let count: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM bitcoin_transactions WHERE provider_id = ?"
+        "SELECT COUNT(*) FROM exchange_transactions WHERE provider_id = ?"
     )
     .bind(provider_id)
     .fetch_one(pool)
@@ -181,7 +181,7 @@ fn usd_to_cents(usd_str: &str) -> Result<i64, String> {
 async fn process_coinbase_csv(
     pool: State<'_, SqlitePool>,
     content: &str,
-) -> Result<Vec<BitcoinTransaction>, String> {
+) -> Result<Vec<ExchangeTransaction>, String> {
     // Find the header line first (same logic as analyze_csv_file)
     let lines: Vec<&str> = content.lines().collect();
     let mut headers_line = 0;
@@ -445,7 +445,7 @@ async fn process_coinbase_csv(
 async fn process_river_csv(
     pool: State<'_, SqlitePool>,
     content: &str,
-) -> Result<Vec<BitcoinTransaction>, String> {
+) -> Result<Vec<ExchangeTransaction>, String> {
     // Find the header line first (same logic as analyze_csv_file)
 
     let mut events = Vec::new();
@@ -524,7 +524,7 @@ pub async fn analyze_csv_file(file_path: String) -> Result<CsvPreview, String> {
 pub async fn import_csv_data(
     pool: State<'_, SqlitePool>,
     file_path: String,
-) -> Result<Vec<BitcoinTransaction>, String> {
+) -> Result<Vec<ExchangeTransaction>, String> {
     let content = std::fs::read_to_string(&file_path)
         .map_err(|e| format!("Failed to read file '{}': {}", file_path, e))?;
 

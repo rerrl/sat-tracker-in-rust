@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
-  BitcoinTransaction,
+  ExchangeTransaction,
   EditBitcoinTransactionData,
 } from "../services/tauriService";
 import DateTimeInput from "./DateTimeInput";
@@ -19,7 +19,7 @@ const EventItem = React.memo(
     editData,
     onEditDataChange,
   }: {
-    event: BitcoinTransaction | null;
+    event: ExchangeTransaction | null;
     isEditing: boolean;
     isCreating?: boolean;
     isSelected?: boolean;
@@ -630,7 +630,7 @@ const EventItem = React.memo(
 );
 
 interface EventsListProps {
-  events: BitcoinTransaction[];
+  events: ExchangeTransaction[];
   totalCount: number;
   editingEventId: string | null;
   selectedEventId: string | null;
@@ -638,7 +638,7 @@ interface EventsListProps {
   isCreatingNew: boolean;
   newEventData: EditBitcoinTransactionData;
   onAddNewEvent: () => void;
-  onEditEvent: (event: BitcoinTransaction) => void;
+  onEditEvent: (event: ExchangeTransaction) => void;
   onSelectEvent: (eventId: string | null) => void;
   onSaveEvent: () => void;
   onDeleteEvent: () => void;
@@ -725,7 +725,7 @@ const EventsList: React.FC<EventsListProps> = ({
     onSelectEvent(eventId);
   };
 
-  const handleEditEvent = (event: BitcoinTransaction) => {
+  const handleEditEvent = (event: ExchangeTransaction) => {
     // Only allow editing if the event is selected
     if (selectedEventId !== event.id) {
       return;

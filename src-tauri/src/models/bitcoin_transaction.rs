@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
-pub struct BitcoinTransaction {
+pub struct ExchangeTransaction {
     pub id: String,
     #[sqlx(try_from = "String")]
     pub r#type: TransactionType,
@@ -75,7 +75,7 @@ pub struct UpdateBitcoinTransactionRequest {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PaginatedBitcoinTransactions {
-    pub transactions: Vec<BitcoinTransaction>,
+    pub transactions: Vec<ExchangeTransaction>,
     pub total_count: i64,
     pub page: u32,
     pub page_size: u32,

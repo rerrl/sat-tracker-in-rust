@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import {
   TauriService,
   DatabaseStatus,
-  BitcoinTransaction,
+  ExchangeTransaction,
 } from "./services/tauriService";
 import { useQueryClient } from "@tanstack/react-query";
 import AppHeader from "./components/AppHeader";
@@ -68,7 +68,7 @@ function App() {
   });
 
   // Memoized event handlers
-  const handleEditEvent = useCallback((transaction: BitcoinTransaction) => {
+  const handleEditEvent = useCallback((transaction: ExchangeTransaction) => {
     setIsCreatingNew(false);
     setNewEventData(null);
     setEditingEventId(transaction.id);
@@ -95,6 +95,7 @@ function App() {
           fee_cents: editData.fee_cents,
           memo: editData.memo,
           timestamp: editData.timestamp,
+          provider_id: editData.provider_id,
         },
       });
     } catch (error) {
@@ -155,6 +156,7 @@ function App() {
         fee_cents: newEventData.fee_cents,
         memo: newEventData.memo,
         timestamp: newEventData.timestamp,
+        provider_id: null,
       });
     } catch (error) {
       console.error("Error creating event:", error);

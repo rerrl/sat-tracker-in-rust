@@ -1,5 +1,5 @@
 use crate::models::bitcoin_transaction::{
-    BitcoinTransaction, CreateBitcoinTransactionRequest, PaginatedBitcoinTransactions,
+    ExchangeTransaction, CreateBitcoinTransactionRequest, PaginatedBitcoinTransactions,
     TransactionType, UpdateBitcoinTransactionRequest,
 };
 use crate::models::portfolio_metrics::PortfolioMetrics;
@@ -12,8 +12,8 @@ use uuid::Uuid;
 pub async fn create_bitcoin_transaction(
     pool: State<'_, SqlitePool>,
     request: CreateBitcoinTransactionRequest,
-) -> Result<BitcoinTransaction, String> {
-    let transaction = BitcoinTransaction {
+) -> Result<ExchangeTransaction, String> {
+    let transaction = ExchangeTransaction {
         id: Uuid::new_v4().to_string(),
         r#type: request.r#type.clone(),
         amount_sats: request.amount_sats,
@@ -26,7 +26,7 @@ pub async fn create_bitcoin_transaction(
     };
 
     sqlx::query(
-        "INSERT INTO bitcoin_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at, provider_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO exchange_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at, provider_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
     )
     .bind(&transaction.id)
     .bind(transaction.r#type.to_string())
@@ -53,13 +53,13 @@ pub async fn get_bitcoin_transactions(
 ) -> Result<PaginatedBitcoinTransactions, String> {
     let offset = page * page_size;
 
-    let total_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM bitcoin_transactions")
+    let total_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM exchange_transactions")
         .fetch_one(pool.inner())
         .await
         .map_err(|e| format!("Database error: {}", e))?;
 
     let rows = sqlx::query(
-        "SELECT id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at, provider_id FROM bitcoin_transactions ORDER BY timestamp DESC LIMIT ? OFFSET ?"
+        "SELECT id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at, provider_id FROM exchange_transactions ORDER BY timestamp DESC LIMIT ? OFFSET ?"
     )
     .bind(page_size as i64)
     .bind(offset as i64)
@@ -69,7 +69,7 @@ pub async fn get_bitcoin_transactions(
 
     let mut transactions = Vec::new();
     for row in rows {
-        let transaction = BitcoinTransaction {
+        let transaction = ExchangeTransaction {
             id: row.get("id"),
             r#type: row
                 .get::<String, _>("type")
@@ -113,9 +113,9 @@ pub async fn update_bitcoin_transaction(
     pool: State<'_, SqlitePool>,
     id: String,
     request: UpdateBitcoinTransactionRequest,
-) -> Result<BitcoinTransaction, String> {
+) -> Result<ExchangeTransaction, String> {
     sqlx::query(
-        "UPDATE bitcoin_transactions SET type = ?, amount_sats = ?, subtotal_cents = ?, fee_cents = ?, memo = ?, timestamp = ?, provider_id = ? WHERE id = ?"
+        "UPDATE exchange_transactions SET type = ?, amount_sats = ?, subtotal_cents = ?, fee_cents = ?, memo = ?, timestamp = ?, provider_id = ? WHERE id = ?"
     )
     .bind(request.r#type.to_string())
     .bind(request.amount_sats)
@@ -130,14 +130,14 @@ pub async fn update_bitcoin_transaction(
     .map_err(|e| format!("Database error: {}", e))?;
 
     let row = sqlx::query(
-        "SELECT id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at, provider_id FROM bitcoin_transactions WHERE id = ?"
+        "SELECT id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at, provider_id FROM exchange_transactions WHERE id = ?"
     )
     .bind(&id)
     .fetch_one(pool.inner())
     .await
     .map_err(|e| format!("Database error: {}", e))?;
 
-    let updated_transaction = BitcoinTransaction {
+    let updated_transaction = ExchangeTransaction {
         id: row.get("id"),
         r#type: row
             .get::<String, _>("type")
@@ -161,7 +161,7 @@ pub async fn delete_bitcoin_transaction(
     pool: State<'_, SqlitePool>,
     id: String,
 ) -> Result<(), String> {
-    let result = sqlx::query("DELETE FROM bitcoin_transactions WHERE id = ?")
+    let result = sqlx::query("DELETE FROM exchange_transactions WHERE id = ?")
         .bind(&id)
         .execute(pool.inner())
         .await
@@ -193,7 +193,7 @@ pub async fn get_portfolio_metrics(
             COALESCE(SUM(CASE WHEN type = 'buy' AND subtotal_cents IS NOT NULL AND timestamp >= datetime('now', '-7 days') THEN subtotal_cents ELSE 0 END), 0) as usd_invested_7d_cents,
             COALESCE(SUM(CASE WHEN type = 'buy' AND timestamp >= datetime('now', '-31 days') THEN amount_sats ELSE 0 END), 0) as sats_stacked_31d,
             COALESCE(SUM(CASE WHEN type = 'buy' AND subtotal_cents IS NOT NULL AND timestamp >= datetime('now', '-31 days') THEN subtotal_cents ELSE 0 END), 0) as usd_invested_31d_cents
-        FROM bitcoin_transactions
+        FROM exchange_transactions
         "#
     )
     .fetch_one(pool.inner())
@@ -254,7 +254,7 @@ pub async fn create_undocumented_lumpsum_transactions(
     total_usd_cents: i64,
     frequency: String,
     memo: Option<String>,
-) -> Result<Vec<BitcoinTransaction>, String> {
+) -> Result<Vec<ExchangeTransaction>, String> {
     use chrono::Duration;
     use rand::Rng;
 

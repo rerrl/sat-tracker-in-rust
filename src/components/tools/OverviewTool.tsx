@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { BitcoinTransaction } from "../../services/tauriService";
+import { ExchangeTransaction } from "../../services/tauriService";
 import SatsHoldingsChartSection from "../SatsHoldingsChartSection";
 import AnalyticsSection from "../AnalyticsSection";
 import MainLayout from "../layouts/MainLayout";
@@ -8,7 +8,7 @@ import { usePortfolioMetrics } from "../../hooks/usePortfolioMetrics";
 import MetricsGrid, { MetricItem, BitcoinPriceMetric } from "../MetricsGrid";
 
 interface OverviewToolProps {
-  events: BitcoinTransaction[];
+  events: ExchangeTransaction[];
   eventsLoading: boolean;
   totalCount: number;
   editingEventId: string | null;
@@ -17,7 +17,7 @@ interface OverviewToolProps {
   isCreatingNew: boolean;
   newEventData: any;
   onAddNewEvent: () => void;
-  onEditEvent: (event: BitcoinTransaction) => void;
+  onEditEvent: (event: ExchangeTransaction) => void;
   onSelectEvent: (eventId: string | null) => void;
   onSaveEvent: () => Promise<void>;
   onDeleteEvent: () => Promise<void>;
