@@ -46,20 +46,20 @@ struct CoinbaseRecord {
 struct RiverRecord {
     #[serde(rename = "Date")]
     date: String,
-    #[serde(rename = "Type")]
-    transaction_type: String,
-    #[serde(rename = "Amount (BTC)")]
-    amount_btc: String,
-    #[serde(rename = "Amount (USD)")]
-    amount_usd: String,
-    #[serde(rename = "Fee (BTC)")]
-    fee_btc: String,
-    #[serde(rename = "Fee (USD)")]
-    fee_usd: String,
-    #[serde(rename = "Total (USD)")]
-    total_usd: String,
-    #[serde(rename = "Description")]
-    description: String,
+    #[serde(rename = "Sent Amount")]
+    sent_amount: String,
+    #[serde(rename = "Sent Currency")]
+    sent_currency: String,
+    #[serde(rename = "Received Amount")]
+    received_amount: String,
+    #[serde(rename = "Received Currency")]
+    received_currency: String,
+    #[serde(rename = "Fee Amount")]
+    fee_amount: String,
+    #[serde(rename = "Fee Currency")]
+    fee_currency: String,
+    #[serde(rename = "Tag")]
+    tag: String,
 }
 
 #[derive(Debug)]
@@ -113,7 +113,7 @@ fn detect_csv_format(content: &str) -> Result<CsvFormat, String> {
         if line.contains("ID") && line.contains("Timestamp") && line.contains("Transaction Type") {
             println!("Found Coinbase format at line {}", i);
             return Ok(CsvFormat::Coinbase);
-        } else if line.contains("Date") && line.contains("Type") && line.contains("Amount (BTC)") {
+        } else if line.contains("Date") && line.contains("Sent Amount") && line.contains("Received Amount") && line.contains("Tag") {
             println!("Found River format at line {}", i);
             return Ok(CsvFormat::River);
         }
@@ -156,7 +156,14 @@ fn btc_to_sats(btc_str: &str) -> Result<i64, String> {
 }
 
 fn usd_to_cents(usd_str: &str) -> Result<i64, String> {
-    let cleaned = usd_str.replace("$", "").replace(",", "");
+    let trimmed = usd_str.trim();
+    
+    // Handle empty or null values as zero
+    if trimmed.is_empty() {
+        return Ok(0);
+    }
+    
+    let cleaned = trimmed.replace("$", "").replace(",", "");
     let usd: f64 = cleaned
         .parse()
         .map_err(|e| format!("Failed to parse USD amount '{}': {}", usd_str, e))?;
@@ -331,8 +338,90 @@ async fn process_river_csv(
     content: &str,
 ) -> Result<Vec<ExchangeTransaction>, String> {
     // Find the header line first (same logic as analyze_csv_file)
+    let lines: Vec<&str> = content.lines().collect();
+    let mut headers_line = 0;
 
+    for (i, line) in lines.iter().enumerate() {
+        if line.contains("Date") && line.contains("Sent Amount") && line.contains("Received Amount") && line.contains("Tag") {
+            headers_line = i;
+            break;
+        }
+    }
+
+    // Create CSV content starting from the header line
+    let csv_content = lines[headers_line..].join("\n");
+    let mut reader = csv::Reader::from_reader(csv_content.as_bytes());
     let mut events = Vec::new();
+
+    // Collect all records first so we can sort them
+    let mut all_records = Vec::new();
+    for result in reader.deserialize() {
+        let record: RiverRecord =
+            result.map_err(|e| format!("Failed to parse CSV record: {}", e))?;
+        all_records.push(record);
+    }
+
+    // Sort records by date
+    all_records.sort_by(|a, b| {
+        let date_a = parse_river_timestamp(&a.date).unwrap_or_else(|_| Utc::now());
+        let date_b = parse_river_timestamp(&b.date).unwrap_or_else(|_| Utc::now());
+        date_a.cmp(&date_b)
+    });
+
+    // Process each record
+    for record in all_records {
+        // Destructure the record into variables
+        let date = record.date;
+        let sent_amount = record.sent_amount;
+        let sent_currency = record.sent_currency;
+        let received_amount = record.received_amount;
+        let received_currency = record.received_currency;
+        let fee_amount = record.fee_amount;
+        let fee_currency = record.fee_currency;
+        let tag = record.tag;
+
+        // Process Buy transactions
+        if tag == "Buy" {
+            // Validate currencies
+            if sent_currency != "USD" || received_currency != "BTC" {
+                println!("Skipping buy transaction with unexpected currencies: {} -> {}", sent_currency, received_currency);
+                continue;
+            }
+
+            // Parse timestamp
+            let timestamp = parse_river_timestamp(&date)?;
+
+            // Parse amounts
+            let amount_sats = btc_to_sats(&received_amount)?;
+            let subtotal_cents = usd_to_cents(&sent_amount)?;
+            let fee_cents = usd_to_cents(&fee_amount)?;
+
+            // Create provider ID for River
+            let provider_id = format!("river_{}_{}", timestamp.timestamp(), amount_sats);
+
+            // Check if this transaction already exists
+            if transaction_exists_by_provider_id(pool.inner(), &provider_id).await? {
+                println!("Skipping duplicate River buy transaction with provider_id: {}", provider_id);
+                continue;
+            }
+
+            let request = CreateBitcoinTransactionRequest {
+                r#type: TransactionType::Buy,
+                amount_sats,
+                subtotal_cents: Some(subtotal_cents),
+                fee_cents: Some(fee_cents),
+                memo: Some("River".to_string()),
+                timestamp,
+                provider_id: Some(provider_id),
+            };
+
+            let transaction = create_bitcoin_transaction(pool.clone(), request).await?;
+            events.push(transaction);
+            println!("Created River buy transaction: {} sats for ${:.2}", amount_sats, subtotal_cents as f64 / 100.0);
+        } else {
+            println!("Skipping non-buy transaction with tag: {}", tag);
+        }
+    }
 
     Ok(events)
 }
@@ -353,7 +442,7 @@ pub async fn analyze_csv_file(file_path: String) -> Result<CsvPreview, String> {
             headers_line = i;
             format = "Coinbase".to_string();
             break;
-        } else if line.contains("Date") && line.contains("Type") && line.contains("Amount (BTC)") {
+        } else if line.contains("Date") && line.contains("Sent Amount") && line.contains("Received Amount") && line.contains("Tag") {
             headers_line = i;
             format = "River".to_string();
             break;

@@ -14,47 +14,13 @@ yarn start:dev
 
 **Common Issue:** The Tauri window may open blank initially while Vite finishes compiling. Simply right-click in the window and select "Reload" to refresh the page and the app will load properly. This is normal Tauri development behavior.
 
-- TODO: complete the csv import from coinbase
-- TODO: complete the csv import from river
-- fix sat tracker import v1 (customizable fee for unrecorded events)
+- TODO: river buy, sells, fees import
+- TODO: events return consolidated events (exchange_transactions and onchain_fees combined)
+- TODO: events better subtotal + fee input UX
+- TODO: events edit/add fees
+
 - TODO: remove import v1 data button before release
 
-## App Architecture & Tool System
-
-### **Flexible Tool-Based Design**
-
-The app uses a contextual tool system where each tool makes intelligent use of the available screen sections:
-
-- **🔧 Tool Selector**: Single dropdown to switch between different analysis modes
-- **📊 Chart Section**: Visual representation changes based on selected tool
-- **📋 Insights Section**: Contextual analytics and patterns (scrollable, with future premium insights)
-- **📝 Events Section**: Always visible transaction list for cross-referencing data
-
-### **Current Tools**
-
-- **📊 Overview**: Portfolio dashboard with key metrics and balance chart
-- **🔥 Activity**: GitHub-style stacking heatmap with habit insights and streak tracking
-- **📈 Trends**: Time-based growth analysis and patterns
-- **🎯 Focus**: Deep-dive analysis tools for specific aspects
-
-### **Design Philosophy**
-
-This architecture allows unlimited expansion in any direction based on user needs:
-
-- **Bitcoin data platform**, not just a chart viewer
-- **Contextual intelligence** - each tool provides relevant insights
-- **Premium-ready** - easy integration of advanced features without UI redesign
-- **User-driven growth** - tools can evolve based on actual usage patterns
-
-### **Future Expansion Possibilities**
-
-- Tax reporting and export tools
-- Hardware wallet integration
-- Lightning network tracking
-- Social comparison features
-- Market timing analysis
-- Goal setting and milestone tracking
-- AI-powered insights and recommendations
 
 ## Installation on Linux
 
