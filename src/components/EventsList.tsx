@@ -62,16 +62,10 @@ const EventItem = React.memo(
                     `text-[rgba(247,243,227,1)] text-xs border-l-2 border-[rgba(247,243,227,0.3)] pl-2 ` +
                     (event.type === "Buy"
                       ? "border-green-400"
-                      : event.type === "Sell"
-                      ? "border-red-400"
-                      : "border-yellow-400")
+                      : "border-red-400")
                   }
                 >
-                  {event.type === "Fee" ? (
-                    <span title="On-chain fee">Fee</span>
-                  ) : (
-                    event.type
-                  )}
+                  {event.type}
                 </div>
                 <div className="text-[rgba(247,243,227,1)] text-xs">
                   <span
@@ -91,9 +85,7 @@ const EventItem = React.memo(
                   </span>
                 </div>
                 <div className="text-[rgba(247,243,227,0.7)] text-xs">
-                  {event.type === "Fee" ? (
-                    "N/A"
-                  ) : event.subtotal_cents ? (
+                  {event.subtotal_cents ? (
                     <span
                       title={`$${(event.subtotal_cents / 100).toFixed(2)}`}
                     >
@@ -109,9 +101,7 @@ const EventItem = React.memo(
                   )}
                 </div>
                 <div className="text-[rgba(247,243,227,0.7)] text-xs">
-                  {event.type === "Fee"
-                    ? "N/A"
-                    : event.subtotal_cents && event.amount_sats
+                  {event.subtotal_cents && event.amount_sats
                     ? `$${Math.round(
                         event.subtotal_cents /
                           100 /
@@ -142,11 +132,7 @@ const EventItem = React.memo(
                   <select
                     value={editData.type}
                     onChange={(e) => {
-                      const newType = e.target.value;
-                      onEditDataChange("type", newType);
-                      if (newType === "Fee") {
-                        onEditDataChange("subtotal_cents", null);
-                      }
+                      onEditDataChange("type", e.target.value);
                     }}
                     className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
                     style={{
@@ -165,12 +151,6 @@ const EventItem = React.memo(
                     >
                       Sell
                     </option>
-                    <option
-                      value="Fee"
-                      style={{ backgroundColor: "#1a1a1a", color: "#F7F3E3" }}
-                    >
-                      Fee
-                    </option>
                   </select>
                 </div>
                 <div>
@@ -186,14 +166,8 @@ const EventItem = React.memo(
                 </div>
               </div>
 
-              {/* Second row: Amount, USD Value, Fee (for Buy/Sell), Memo */}
-              <div
-                className={`grid gap-3 ${
-                  editData.type === "Fee"
-                    ? "grid-cols-[1.5fr_1.3fr_1.5fr]"
-                    : "grid-cols-[1.5fr_1.3fr_1.3fr_1.5fr]"
-                }`}
-              >
+              {/* Second row: Amount, USD Value, Fee, Memo */}
+              <div className="grid gap-3 grid-cols-[1.5fr_1.3fr_1.3fr_1.5fr]">
                 {/* Amount in Sats */}
                 <div>
                   <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
@@ -223,20 +197,13 @@ const EventItem = React.memo(
                 {/* USD Value */}
                 <div>
                   <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
-                    USD Value{" "}
-                    {editData.type === "Fee" && (
-                      <span className="text-[rgba(247,243,227,0.4)]">
-                        (N/A)
-                      </span>
-                    )}
+                    USD Value
                   </label>
                   <input
                     type="text"
                     value={
-                      editData.type === "Fee"
-                        ? ""
-                        : editData.subtotal_cents === null ||
-                          editData.subtotal_cents === undefined
+                      editData.subtotal_cents === null ||
+                      editData.subtotal_cents === undefined
                         ? ""
                         : editData.subtotal_cents === ""
                         ? ""
@@ -245,7 +212,6 @@ const EventItem = React.memo(
                         : (editData.subtotal_cents / 100).toString()
                     }
                     onChange={(e) => {
-                      if (editData.type === "Fee") return;
                       const value = e.target.value;
                       if (
                         value === "" ||
@@ -259,7 +225,6 @@ const EventItem = React.memo(
                       }
                     }}
                     onBlur={() => {
-                      if (editData.type === "Fee") return;
                       if (
                         editData.subtotal_cents &&
                         typeof editData.subtotal_cents === "string"
@@ -273,68 +238,61 @@ const EventItem = React.memo(
                         }
                       }
                     }}
-                    disabled={editData.type === "Fee"}
-                    className={`w-full border px-2 py-1 text-xs rounded focus:outline-none ${
-                      editData.type === "Fee"
-                        ? "bg-[rgba(26,26,26,0.5)] border-[rgba(247,243,227,0.2)] text-[rgba(247,243,227,0.4)] cursor-not-allowed"
-                        : "bg-[#1a1a1a] border-[rgba(247,243,227,0.3)] text-[#F7F3E3] focus:border-blue-400"
-                    }`}
-                    placeholder={editData.type === "Fee" ? "N/A" : "500.00"}
+                    className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
+                    placeholder="500.00"
                   />
                 </div>
 
-                {/* Fee (USD) - only show for Buy/Sell */}
-                {editData.type !== "Fee" && (
-                  <div>
-                    <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
-                      Fee (USD)
-                    </label>
-                    <input
-                      type="text"
-                      value={
-                        editData.fee_cents === null ||
-                        editData.fee_cents === undefined
-                          ? ""
-                          : editData.fee_cents === ""
-                          ? ""
-                          : typeof editData.fee_cents === "string"
-                          ? editData.fee_cents
-                          : (editData.fee_cents / 100).toString()
+                {/* Fee (USD) */}
+                <div>
+                  <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
+                    Fee (USD)
+                  </label>
+                  <input
+                    type="text"
+                    value={
+                      editData.fee_cents === null ||
+                      editData.fee_cents === undefined
+                        ? ""
+                        : editData.fee_cents === ""
+                        ? ""
+                        : typeof editData.fee_cents === "string"
+                        ? editData.fee_cents
+                        : (editData.fee_cents / 100).toString()
+                    }
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (
+                        value === "" ||
+                        /^[0-9]+(\.[0-9]{0,2})?$/.test(value)
+                      ) {
+                        if (value === "") {
+                          onEditDataChange("fee_cents", "");
+                        } else {
+                          onEditDataChange("fee_cents", value);
+                        }
                       }
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (
-                          value === "" ||
-                          /^[0-9]+(\.[0-9]{0,2})?$/.test(value)
-                        ) {
-                          if (value === "") {
-                            onEditDataChange("fee_cents", "");
-                          } else {
-                            onEditDataChange("fee_cents", value);
-                          }
+                    }}
+                    onBlur={() => {
+                      if (
+                        editData.fee_cents &&
+                        typeof editData.fee_cents === "string"
+                      ) {
+                        const numValue = parseFloat(editData.fee_cents);
+                        if (!isNaN(numValue)) {
+                          onEditDataChange(
+                            "fee_cents",
+                            Math.round(numValue * 100)
+                          );
+                        } else {
+                          onEditDataChange("fee_cents", null);
                         }
-                      }}
-                      onBlur={() => {
-                        if (
-                          editData.fee_cents &&
-                          typeof editData.fee_cents === "string"
-                        ) {
-                          const numValue = parseFloat(editData.fee_cents);
-                          if (!isNaN(numValue)) {
-                            onEditDataChange(
-                              "fee_cents",
-                              Math.round(numValue * 100)
-                            );
-                          } else {
-                            onEditDataChange("fee_cents", null);
-                          }
-                        }
-                      }}
-                      className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
-                      placeholder="Optional"
-                    />
-                  </div>
-                )}
+                      }
+                    }}
+                    className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
+                    placeholder="Optional"
+                  />
+                </div>
 
                 {/* Memo */}
                 <div>
@@ -353,9 +311,8 @@ const EventItem = React.memo(
                 </div>
               </div>
 
-              {/* Rate display for Buy/Sell */}
-              {editData.type !== "Fee" &&
-                editData.amount_sats &&
+              {/* Rate display */}
+              {editData.amount_sats &&
                 editData.subtotal_cents &&
                 editData.subtotal_cents !== "" && (
                   <div className="text-xs text-[rgba(247,243,227,0.7)] space-y-1">
@@ -504,16 +461,10 @@ const EventItem = React.memo(
                 `text-[rgba(247,243,227,1)] text-xs border-l-2 border-[rgba(247,243,227,0.3)] pl-2 ` +
                 (event.type === "Buy"
                   ? "border-green-400"
-                  : event.type === "Sell"
-                  ? "border-red-400"
-                  : "border-yellow-400")
+                  : "border-red-400")
               }
             >
-              {event.type === "Fee" ? (
-                <span title="On-chain fee">Fee</span>
-              ) : (
-                event.type
-              )}
+              {event.type}
             </div>
             <div className="text-[rgba(247,243,227,1)] text-xs">
               <span
@@ -532,9 +483,7 @@ const EventItem = React.memo(
               </span>
             </div>
             <div className="text-[rgba(247,243,227,0.5)] text-xs">
-              {event.type === "Fee" ? (
-                "N/A"
-              ) : event.subtotal_cents ? (
+              {event.subtotal_cents ? (
                 <span title={`$${(event.subtotal_cents / 100).toFixed(2)}`}>
                   $
                   {event.subtotal_cents >= 99900
@@ -546,9 +495,7 @@ const EventItem = React.memo(
               )}
             </div>
             <div className="text-[rgba(247,243,227,0.5)] text-xs">
-              {event.type === "Fee"
-                ? "N/A"
-                : event.subtotal_cents && event.amount_sats
+              {event.subtotal_cents && event.amount_sats
                 ? `$${Math.round(
                     event.subtotal_cents /
                       100 /
@@ -590,9 +537,8 @@ const EventItem = React.memo(
                 </div>
               </div>
 
-              {/* Rate Calculations (for Buy/Sell with USD value) */}
-              {event.type !== "Fee" &&
-                event.subtotal_cents &&
+              {/* Rate Calculations (with USD value) */}
+              {event.subtotal_cents &&
                 event.amount_sats && (
                   <div className="border-t border-[rgba(247,243,227,0.1)] pt-2">
                     <div className="text-xs text-[rgba(247,243,227,0.7)] space-y-1">

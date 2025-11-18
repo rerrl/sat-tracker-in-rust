@@ -96,78 +96,80 @@ pub async fn import_sat_tracker_v1_data(pool: State<'_, SqlitePool>) -> Result<S
     let deductions_query =
         "SELECT id, date, amountSats, memo, createdAt FROM DeductionEvents ORDER BY createdAt";
 
-    match sqlx::query(deductions_query).fetch_all(&v1_pool).await {
-        Ok(deduction_rows) => {
-            println!("Found {} DeductionEvent records", deduction_rows.len());
+        // TODO: fix this after new table schema
 
-            for row in deduction_rows {
-                let amount_sats: i64 = row.get::<i64, _>("amountSats"); // Make negative since it's a deduction
-                let memo: Option<String> = row.get("memo");
-                let date_str: String = row.get("date");
+    // match sqlx::query(deductions_query).fetch_all(&v1_pool).await {
+    //     Ok(deduction_rows) => {
+    //         println!("Found {} DeductionEvent records", deduction_rows.len());
 
-                // Determine event type based on memo content
-                let transaction_type = if let Some(ref memo_text) = memo {
-                    let memo_lower = memo_text.to_lowercase();
-                    if memo_lower.contains("withdraw") || memo_lower.contains("fee") {
-                        TransactionType::Fee
-                    } else {
-                        TransactionType::Sell
-                    }
-                } else {
-                    TransactionType::Sell
-                };
+    //         for row in deduction_rows {
+    //             let amount_sats: i64 = row.get::<i64, _>("amountSats"); // Make negative since it's a deduction
+    //             let memo: Option<String> = row.get("memo");
+    //             let date_str: String = row.get("date");
 
-                // Parse the timestamp
-                let timestamp = match DateTime::parse_from_rfc3339(&date_str) {
-                    Ok(dt) => dt.with_timezone(&Utc),
-                    Err(_) => {
-                        // Try parsing as SQLite datetime format with milliseconds and timezone
-                        match DateTime::parse_from_str(&date_str, "%Y-%m-%d %H:%M:%S%.3f %z") {
-                            Ok(dt) => dt.with_timezone(&Utc),
-                            Err(_) => {
-                                // Try parsing as SQLite datetime format without timezone
-                                match chrono::NaiveDateTime::parse_from_str(
-                                    &date_str,
-                                    "%Y-%m-%d %H:%M:%S",
-                                ) {
-                                    Ok(naive_dt) => {
-                                        DateTime::from_naive_utc_and_offset(naive_dt, Utc)
-                                    }
-                                    Err(e) => {
-                                        errors.push(format!(
-                                            "Failed to parse timestamp '{}': {}",
-                                            date_str, e
-                                        ));
-                                        continue;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                };
+    //             // Determine event type based on memo content
+    //             let transaction_type = if let Some(ref memo_text) = memo {
+    //                 let memo_lower = memo_text.to_lowercase();
+    //                 if memo_lower.contains("withdraw") || memo_lower.contains("fee") {
+    //                     TransactionType::Fee
+    //                 } else {
+    //                     TransactionType::Sell
+    //                 }
+    //             } else {
+    //                 TransactionType::Sell
+    //             };
 
-                let request = CreateBitcoinTransactionRequest {
-                    r#type: transaction_type,
-                    amount_sats,
-                    subtotal_cents: None, // DeductionEvents don't have USD value
-                    fee_cents: Some(0),
-                    memo,
-                    timestamp,
-                };
+    //             // Parse the timestamp
+    //             let timestamp = match DateTime::parse_from_rfc3339(&date_str) {
+    //                 Ok(dt) => dt.with_timezone(&Utc),
+    //                 Err(_) => {
+    //                     // Try parsing as SQLite datetime format with milliseconds and timezone
+    //                     match DateTime::parse_from_str(&date_str, "%Y-%m-%d %H:%M:%S%.3f %z") {
+    //                         Ok(dt) => dt.with_timezone(&Utc),
+    //                         Err(_) => {
+    //                             // Try parsing as SQLite datetime format without timezone
+    //                             match chrono::NaiveDateTime::parse_from_str(
+    //                                 &date_str,
+    //                                 "%Y-%m-%d %H:%M:%S",
+    //                             ) {
+    //                                 Ok(naive_dt) => {
+    //                                     DateTime::from_naive_utc_and_offset(naive_dt, Utc)
+    //                                 }
+    //                                 Err(e) => {
+    //                                     errors.push(format!(
+    //                                         "Failed to parse timestamp '{}': {}",
+    //                                         date_str, e
+    //                                     ));
+    //                                     continue;
+    //                                 }
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             };
 
-                match create_bitcoin_transaction(pool.clone(), request).await {
-                    Ok(_) => imported_count += 1,
-                    Err(e) => errors.push(format!("Failed to import deduction record: {}", e)),
-                }
-            }
-        }
-        Err(e) => {
-            println!(
-                "⚠️  No DeductionEvents table found or error querying: {}",
-                e
-            );
-        }
-    }
+    //             let request = CreateBitcoinTransactionRequest {
+    //                 r#type: transaction_type,
+    //                 amount_sats,
+    //                 subtotal_cents: None, // DeductionEvents don't have USD value
+    //                 fee_cents: Some(0),
+    //                 memo,
+    //                 timestamp,
+    //             };
+
+    //             match create_bitcoin_transaction(pool.clone(), request).await {
+    //                 Ok(_) => imported_count += 1,
+    //                 Err(e) => errors.push(format!("Failed to import deduction record: {}", e)),
+    //             }
+    //         }
+    //     }
+    //     Err(e) => {
+    //         println!(
+    //             "⚠️  No DeductionEvents table found or error querying: {}",
+    //             e
+    //         );
+    //     }
+    // }
 
     v1_pool.close().await;
 

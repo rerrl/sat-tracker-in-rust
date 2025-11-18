@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 // Types matching your Rust structs
 export interface BitcoinTransaction {
   id: string;
-  type: "Buy" | "Sell" | "Fee";
+  type: "Buy" | "Sell";
   amount_sats: number;
   subtotal_cents: number | null;
   fee_cents: number | null;
@@ -13,7 +13,7 @@ export interface BitcoinTransaction {
 }
 
 export interface CreateBitcoinTransactionRequest {
-  type: "Buy" | "Sell" | "Fee";
+  type: "Buy" | "Sell";
   amount_sats: number;
   subtotal_cents: number | null;
   fee_cents: number | null;
@@ -22,7 +22,7 @@ export interface CreateBitcoinTransactionRequest {
 }
 
 export interface UpdateBitcoinTransactionRequest {
-  type: "Buy" | "Sell" | "Fee";
+  type: "Buy" | "Sell";
   amount_sats: number;
   subtotal_cents: number | null;
   fee_cents: number | null;
@@ -32,7 +32,7 @@ export interface UpdateBitcoinTransactionRequest {
 
 // Edit data type for form state (allows string values during editing)
 export interface EditBitcoinTransactionData {
-  type: "Buy" | "Sell" | "Fee";
+  type: "Buy" | "Sell";
   amount_sats: number | string;
   subtotal_cents: number | string | null;
   fee_cents: number | string | null;

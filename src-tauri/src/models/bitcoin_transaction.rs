@@ -19,7 +19,6 @@ pub struct BitcoinTransaction {
 pub enum TransactionType {
     Buy,
     Sell,
-    Fee,
 }
 
 impl std::fmt::Display for TransactionType {
@@ -27,7 +26,6 @@ impl std::fmt::Display for TransactionType {
         match self {
             TransactionType::Buy => write!(f, "buy"),
             TransactionType::Sell => write!(f, "sell"),
-            TransactionType::Fee => write!(f, "fee"),
         }
     }
 }
@@ -39,7 +37,6 @@ impl std::str::FromStr for TransactionType {
         match s.to_lowercase().as_str() {
             "buy" => Ok(TransactionType::Buy),
             "sell" => Ok(TransactionType::Sell),
-            "fee" => Ok(TransactionType::Fee),
             _ => Err(format!("Invalid transaction type: {}", s)),
         }
     }

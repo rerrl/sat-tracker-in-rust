@@ -8,7 +8,6 @@ use uuid::Uuid;
 pub enum TransactionType {
     Buy,
     Sell,
-    Fee,
 }
 
 impl std::fmt::Display for TransactionType {
@@ -16,7 +15,6 @@ impl std::fmt::Display for TransactionType {
         match self {
             TransactionType::Buy => write!(f, "buy"),
             TransactionType::Sell => write!(f, "sell"),
-            TransactionType::Fee => write!(f, "fee"),
         }
     }
 }
@@ -49,7 +47,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Generate a random number of events between 50 and 250
     let total_events = rng.gen_range(50..=250);
-    println!("🎯 Generating {} events (including 5 initial buys)", total_events);
+    println!(
+        "🎯 Generating {} events (including 5 initial buys)",
+        total_events
+    );
 
     // Calculate event distribution (subtract 5 for initial buys)
     let remaining_events = total_events - 5;
@@ -77,9 +78,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for _ in 0..sell_count {
         event_types.push("sell");
     }
-    for _ in 0..fee_count {
-        event_types.push("fee");
-    }
 
     // Shuffle the event types to spread them out randomly
     event_types.shuffle(&mut rng);
@@ -101,13 +99,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         // Generate a rounded dollar amount (in hundreds)
         let dollar_amount = rng.gen_range(1..=50) * 100; // $100 to $5000 in $100 increments
         let subtotal_cents = dollar_amount * 100; // Convert to cents
-        let amount_sats = ((subtotal_cents as f64 / current_btc_price_cents as f64)
-            * 100_000_000.0) as i64;
-        
+        let amount_sats =
+            ((subtotal_cents as f64 / current_btc_price_cents as f64) * 100_000_000.0) as i64;
+
         // Calculate fee (0.5-1.5% of fiat amount)
         let fee_percentage = rng.gen_range(0.5..=1.5);
         let fee_cents = (subtotal_cents as f64 * fee_percentage / 100.0) as i64;
-        
+
         let memo = if rng.gen_bool(0.3) {
             Some("DCA".to_string())
         } else {
@@ -148,11 +146,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let subtotal_cents = dollar_amount * 100; // Convert to cents
                 let amount_sats = ((subtotal_cents as f64 / current_btc_price_cents as f64)
                     * 100_000_000.0) as i64;
-                
+
                 // Calculate fee (0.5-1.5% of fiat amount)
                 let fee_percentage = rng.gen_range(0.5..=1.5);
                 let fee_cents = (subtotal_cents as f64 * fee_percentage / 100.0) as i64;
-                
+
                 let memo = if rng.gen_bool(0.3) {
                     Some("DCA".to_string())
                 } else {
@@ -179,11 +177,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let subtotal_cents = dollar_amount * 100; // Convert to cents
                 let amount_sats = ((subtotal_cents as f64 / current_btc_price_cents as f64)
                     * 100_000_000.0) as i64;
-                
+
                 // Calculate fee (0.5-1.5% of fiat amount)
                 let fee_percentage = rng.gen_range(0.5..=1.5);
                 let fee_cents = (subtotal_cents as f64 * fee_percentage / 100.0) as i64;
-                
+
                 let memo = if rng.gen_bool(0.4) {
                     Some("Emergency".to_string())
                 } else {
@@ -198,28 +196,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .bind(amount_sats)
                 .bind(subtotal_cents)
                 .bind(fee_cents)
-                .bind(&memo)
-                .bind(current_date)
-                .bind(Utc::now())
-                .execute(&pool)
-                .await?;
-            }
-            "fee" => {
-                let amount_sats = rng.gen_range(100..=10000);
-                let memo = if rng.gen_bool(0.5) {
-                    Some("Network fee".to_string())
-                } else {
-                    None
-                };
-
-                sqlx::query(
-                    "INSERT INTO bitcoin_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-                )
-                .bind(Uuid::new_v4().to_string())
-                .bind("fee")
-                .bind(amount_sats)
-                .bind(None::<i64>) // No fiat amount for pure bitcoin fees
-                .bind(0) // No fiat fees
                 .bind(&memo)
                 .bind(current_date)
                 .bind(Utc::now())

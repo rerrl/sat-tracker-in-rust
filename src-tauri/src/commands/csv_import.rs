@@ -206,10 +206,11 @@ async fn process_coinbase_csv(
             current_group.push(record);
         } else {
             let current_timestamp = parse_coinbase_timestamp(&record.timestamp)?;
-            let last_timestamp = parse_coinbase_timestamp(&current_group.last().unwrap().timestamp)?;
-            
+            let last_timestamp =
+                parse_coinbase_timestamp(&current_group.last().unwrap().timestamp)?;
+
             let time_diff = (current_timestamp - last_timestamp).num_seconds().abs();
-            
+
             if time_diff <= 5 {
                 // Group with previous transaction (within 5 seconds)
                 current_group.push(record);
@@ -226,20 +227,24 @@ async fn process_coinbase_csv(
         grouped_buys.push(current_group);
     }
 
-    println!("Grouped {} buy records into {} transactions", buy_records_count, grouped_buys.len());
+    println!(
+        "Grouped {} buy records into {} transactions",
+        buy_records_count,
+        grouped_buys.len()
+    );
 
     // Process each group as a single transaction
     for group in grouped_buys {
         let first_record = &group[0];
         let timestamp = parse_coinbase_timestamp(&first_record.timestamp)?;
-        
+
         // Sum up all amounts and costs in the group
         let mut total_amount_sats = 0i64;
         let mut total_subtotal = 0i64;
         let mut total_inclusive = 0i64;
         let mut total_fees_and_spread = 0i64;
         let mut notes = Vec::new();
-        
+
         for record in &group {
             total_amount_sats += btc_to_sats(&record.quantity_transacted)?;
             total_subtotal += usd_to_cents(&record.subtotal)?;
@@ -249,9 +254,13 @@ async fn process_coinbase_csv(
                 notes.push(record.notes.clone());
             }
         }
-        
+
         let memo = if group.len() > 1 {
-            format!("Coinbase (grouped {} transactions): {}", group.len(), notes.join(", "))
+            format!(
+                "Coinbase (grouped {} transactions): {}",
+                group.len(),
+                notes.join(", ")
+            )
         } else {
             format!("Coinbase: {}", notes.join(", "))
         };
@@ -315,99 +324,8 @@ async fn process_river_csv(
     content: &str,
 ) -> Result<Vec<BitcoinTransaction>, String> {
     // Find the header line first (same logic as analyze_csv_file)
-    let lines: Vec<&str> = content.lines().collect();
-    let mut headers_line = 0;
 
-    for (i, line) in lines.iter().enumerate() {
-        if line.contains("Date") && line.contains("Type") && line.contains("Amount (BTC)") {
-            headers_line = i;
-            break;
-        }
-    }
-
-    // Create CSV content starting from the header line
-    let csv_content = lines[headers_line..].join("\n");
-    let mut reader = csv::Reader::from_reader(csv_content.as_bytes());
     let mut events = Vec::new();
-
-    for result in reader.deserialize() {
-        let record: RiverRecord =
-            result.map_err(|e| format!("Failed to parse CSV record: {}", e))?;
-
-        let timestamp = parse_river_timestamp(&record.date)?;
-
-        match record.transaction_type.as_str() {
-            "buy" => {
-                let amount_sats = btc_to_sats(&record.amount_btc)?;
-                let value_cents = usd_to_cents(&record.total_usd)?;
-
-                let request = CreateBitcoinTransactionRequest {
-                    r#type: TransactionType::Buy,
-                    amount_sats,
-                    subtotal_cents: Some(value_cents),
-                    fee_cents: Some(0),
-                    memo: Some(format!("River: {}", record.description)),
-                    timestamp,
-                };
-
-                let transaction = create_bitcoin_transaction(pool.clone(), request).await?;
-                events.push(transaction);
-
-                // Handle fees if present
-                if !record.fee_btc.is_empty() && record.fee_btc != "0" {
-                    let fee_sats = btc_to_sats(&record.fee_btc)?;
-
-                    let fee_request = CreateBitcoinTransactionRequest {
-                        r#type: TransactionType::Fee,
-                        amount_sats: fee_sats,
-                        subtotal_cents: None,
-                        fee_cents: Some(0),
-                        memo: Some(format!("River Fee: {}", record.description)),
-                        timestamp,
-                    };
-
-                    let fee_transaction =
-                        create_bitcoin_transaction(pool.clone(), fee_request).await?;
-                    events.push(fee_transaction);
-                }
-            }
-            "sell" => {
-                let amount_sats = btc_to_sats(&record.amount_btc)?;
-                let value_cents = usd_to_cents(&record.total_usd)?;
-
-                let request = CreateBitcoinTransactionRequest {
-                    r#type: TransactionType::Sell,
-                    amount_sats,
-                    subtotal_cents: Some(value_cents),
-                    fee_cents: Some(0),
-                    memo: Some(format!("River: {}", record.description)),
-                    timestamp,
-                };
-
-                let transaction = create_bitcoin_transaction(pool.clone(), request).await?;
-                events.push(transaction);
-
-                // Handle fees if present
-                if !record.fee_btc.is_empty() && record.fee_btc != "0" {
-                    let fee_sats = btc_to_sats(&record.fee_btc)?;
-
-                    let fee_request = CreateBitcoinTransactionRequest {
-                        r#type: TransactionType::Fee,
-                        amount_sats: fee_sats,
-                        subtotal_cents: None,
-                        fee_cents: Some(0),
-                        memo: Some(format!("River Fee: {}", record.description)),
-                        timestamp,
-                    };
-
-                    let fee_transaction =
-                        create_bitcoin_transaction(pool.clone(), fee_request).await?;
-                    events.push(fee_transaction);
-                }
-            }
-            _ => continue, // Skip other transaction types
-        }
-    }
 
     Ok(events)
 }

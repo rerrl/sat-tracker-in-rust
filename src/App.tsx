@@ -89,7 +89,7 @@ function App() {
       await updateTransactionMutation.mutateAsync({
         id: editingEventId,
         request: {
-          type: editData.type as "Buy" | "Sell" | "Fee",
+          type: editData.type as "Buy" | "Sell",
           amount_sats: editData.amount_sats,
           subtotal_cents: editData.subtotal_cents,
           fee_cents: editData.fee_cents,
@@ -149,7 +149,7 @@ function App() {
 
     try {
       await createTransactionMutation.mutateAsync({
-        type: newEventData.type as "Buy" | "Sell" | "Fee",
+        type: newEventData.type as "Buy" | "Sell",
         amount_sats: newEventData.amount_sats,
         subtotal_cents: newEventData.subtotal_cents,
         fee_cents: newEventData.fee_cents,
