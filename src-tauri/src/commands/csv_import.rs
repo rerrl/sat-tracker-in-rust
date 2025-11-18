@@ -163,17 +163,7 @@ fn usd_to_cents(usd_str: &str) -> Result<i64, String> {
     Ok(((usd * 100.0).round() as i64).abs())
 }
 
-// TODO: update this:
-// - first, lets strip everythign that is not BTC (where asset !== "BTC")
-// - then lets group all the transactions by type (buy, sell, fee/withdrawal) taking into account the platform (coinbase/advanced)
-// - then for each group, we need to group the transactions by timestamp (within 60 seconds) and create a new txn object
-// - then we need to add the buys/sells/fees to the db
-
-// Buy records have the transaction type set as "Buy" or "Advanced Trade Buy"
-// Sell records have the transaction type set as "Sell" or "Advanced Trade Sell"
-// Fee records have the transaction type as "Send" ("Pro Withdrawal" looks like its a duplicate, so we'll ignore it)
-
-// Next steps: generate a coinbase csv with buy/sell in both regualr and advanced platforms
+// Fee records not supported with Coinbase CSVs as this data is not available in the CSV
 async fn process_coinbase_csv(
     pool: State<'_, SqlitePool>,
     content: &str,
@@ -210,7 +200,6 @@ async fn process_coinbase_csv(
     // Group transactions by type
     let mut buy_records = Vec::new();
     let mut sell_records = Vec::new();
-    let mut fee_records = Vec::new();
 
     for record in btc_records {
         match record.transaction_type.as_str() {
@@ -219,9 +208,6 @@ async fn process_coinbase_csv(
             }
             "Sell" | "Advanced Trade Sell" => {
                 sell_records.push(record);
-            }
-            "Send" => {
-                fee_records.push(record);
             }
             _ => {
                 // Skip other transaction types

@@ -151,8 +151,8 @@ export default function CsvImportModal({
             <div className="bg-[rgba(247,243,227,0.05)] border border-[rgba(247,243,227,0.1)] rounded p-3">
               <p className="text-xs text-[rgba(247,243,227,0.6)] mb-2">Supported exchanges:</p>
               <ul className="text-xs text-[#F7F3E3] space-y-1">
-                <li>• Coinbase (transaction exports)</li>
-                <li>• River (transaction exports)</li>
+                <li>• Coinbase (Imports Buys and Sells)</li>
+                <li>• River (Imports Buys, Sells and Withdrawal Fees)</li>
                 <li>• More formats coming soon...</li>
               </ul>
             </div>
