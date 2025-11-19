@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 export interface MetricItem {
   label: string;
   value: string;
-  color: 'orange' | 'green' | 'blue';
+  color: 'orange' | 'green' | 'blue' | 'red';
   subValue?: string;
   subValueColor?: 'green' | 'red';
   hint?: string;
@@ -31,7 +31,7 @@ interface MetricsGridProps {
 const MetricsGrid: React.FC<MetricsGridProps> = ({ bitcoinPrice, metrics }) => {
   const [hoveredMetric, setHoveredMetric] = useState<number | null>(null);
   const [hoveredBitcoinPrice, setHoveredBitcoinPrice] = useState(false);
-  const getColorClasses = (color: 'orange' | 'green' | 'blue') => {
+  const getColorClasses = (color: 'orange' | 'green' | 'blue' | 'red') => {
     switch (color) {
       case 'orange':
         return {
@@ -50,6 +50,18 @@ const MetricsGrid: React.FC<MetricsGridProps> = ({ bitcoinPrice, metrics }) => {
           bg: 'bg-[rgba(97,218,251,0.1)]',
           border: 'border-[rgba(97,218,251,0.2)]',
           text: 'text-[#61dafb]'
+        };
+      case 'red':
+        return {
+          bg: 'bg-[rgba(240,128,128,0.1)]',
+          border: 'border-[rgba(240,128,128,0.2)]',
+          text: 'text-lightcoral'
+        };
+      default:
+        return {
+          bg: 'bg-[rgba(247,147,26,0.1)]',
+          border: 'border-[rgba(247,147,26,0.2)]',
+          text: 'text-[#f7931a]'
         };
     }
   };

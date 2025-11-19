@@ -178,6 +178,24 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
       bitcoinPrice,
     });
 
+    // Helper function to calculate unrealized gain
+    const calculateUnrealizedGain = () => {
+      if (
+        metricsLoading ||
+        !portfolioMetrics?.current_sats ||
+        !portfolioMetrics?.total_invested_cents
+      ) {
+        return null;
+      }
+      const currentValue =
+        ((portfolioMetrics.current_sats || 0) / 100_000_000) * bitcoinPrice;
+      const totalInvested =
+        (portfolioMetrics.total_invested_cents || 0) / 100;
+      return currentValue - totalInvested;
+    };
+
+    const unrealizedGain = calculateUnrealizedGain();
+
     return [
       {
         label: "Portfolio Value",
@@ -224,30 +242,19 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
       },
       {
         label: "Unrealized Gain",
-        value: (() => {
-          if (
-            metricsLoading ||
-            !portfolioMetrics?.current_sats ||
-            !portfolioMetrics?.total_invested_cents
-          ) {
-            return "...";
-          }
-          const currentValue =
-            ((portfolioMetrics.current_sats || 0) / 100_000_000) * bitcoinPrice;
-          const totalInvested =
-            (portfolioMetrics.total_invested_cents || 0) / 100;
-          const unrealizedGain = currentValue - totalInvested;
-          return unrealizedGain >= 0
-            ? `+$${unrealizedGain.toLocaleString(undefined, {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-              })}`
-            : `-$${Math.abs(unrealizedGain).toLocaleString(undefined, {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-              })}`;
-        })(),
-        color: "green",
+        value: unrealizedGain === null
+          ? "..."
+          : unrealizedGain >= 0
+          ? `+$${unrealizedGain.toLocaleString(undefined, {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0,
+            })}`
+          : `-$${Math.abs(unrealizedGain).toLocaleString(undefined, {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0,
+            })}`,
+        color: unrealizedGain === null ? "green" : unrealizedGain >= 0 ? "green" : "red",
+        hint: unrealizedGain === null ? "Unrealized gain/loss" : unrealizedGain >= 0 ? undefined : "HODL",
       },
     ];
   }, [metricsLoading, portfolioMetrics, bitcoinPrice]);
