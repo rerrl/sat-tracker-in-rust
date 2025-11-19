@@ -104,6 +104,33 @@ export interface ActivityMetrics {
   heatmap_data: YearHeatmapData[];
 }
 
+export interface UnifiedEvent {
+  id: string;
+  record_type: string; // "exchange_transaction" or "onchain_fee"
+  amount_sats: number;
+  memo: string | null;
+  timestamp: string;
+  created_at: string;
+  
+  // Exchange-specific fields (null for onchain fees)
+  subtotal_cents: number | null;
+  fee_cents: number | null;
+  provider_id: string | null;
+  transaction_type: string | null; // "buy", "sell", or "fee"
+  
+  // Onchain-specific fields (null for exchange transactions)
+  tx_hash: string | null;
+}
+
+export interface PaginatedUnifiedEvents {
+  events: UnifiedEvent[];
+  total_count: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  has_more: boolean;
+}
+
 export interface YearHeatmapData {
   year: number;
   weeks: WeekData[];
@@ -237,6 +264,17 @@ export class TauriService {
   // Analyze CSV file
   static async analyzeCsvFile(filePath: string): Promise<CsvPreview> {
     return await invoke("analyze_csv_file", { filePath });
+  }
+
+  // Get unified events (both exchange transactions and onchain fees)
+  static async getUnifiedEvents(
+    page: number = 0,
+    pageSize: number = 100
+  ): Promise<PaginatedUnifiedEvents> {
+    return await invoke("get_unified_events", {
+      page,
+      pageSize,
+    });
   }
 }
 

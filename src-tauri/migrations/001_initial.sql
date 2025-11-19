@@ -19,3 +19,7 @@ CREATE TABLE onchain_fees (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     tx_hash TEXT
 );
+
+-- Add timestamp indexes for efficient unified queries
+CREATE INDEX idx_exchange_transactions_timestamp ON exchange_transactions(timestamp DESC);
+CREATE INDEX idx_onchain_fees_timestamp ON onchain_fees(timestamp DESC);

@@ -5,9 +5,6 @@ import { ExchangeTransaction } from "../services/tauriService";
 
 interface ToolContainerProps {
   selectedTool: string;
-  events: ExchangeTransaction[];
-  eventsLoading: boolean;
-  totalCount: number;
   editingEventId: string | null;
   selectedEventId: string | null;
   editData: any;
@@ -27,9 +24,6 @@ interface ToolContainerProps {
 
 const ToolContainer: React.FC<ToolContainerProps> = ({
   selectedTool,
-  events,
-  eventsLoading,
-  totalCount,
   editingEventId,
   selectedEventId,
   editData,
@@ -47,9 +41,6 @@ const ToolContainer: React.FC<ToolContainerProps> = ({
   onNewEventDataChange,
 }) => {
   const sharedProps = {
-    events,
-    eventsLoading,
-    totalCount,
     editingEventId,
     selectedEventId,
     editData,

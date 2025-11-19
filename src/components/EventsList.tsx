@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import {
   ExchangeTransaction,
   EditBitcoinTransactionData,
+  UnifiedEvent,
 } from "../services/tauriService";
 import DateTimeInput from "./DateTimeInput";
+import { useCombinedEvents } from "../hooks/useCombinedEvents";
 
 const EventItem = React.memo(
   ({
@@ -19,7 +21,7 @@ const EventItem = React.memo(
     editData,
     onEditDataChange,
   }: {
-    event: ExchangeTransaction | null;
+    event: UnifiedEvent | null;
     isEditing: boolean;
     isCreating?: boolean;
     isSelected?: boolean;
@@ -60,12 +62,17 @@ const EventItem = React.memo(
                 <div
                   className={
                     `text-[rgba(247,243,227,1)] text-xs border-l-2 border-[rgba(247,243,227,0.3)] pl-2 ` +
-                    (event.type === "Buy"
+                    (event.transaction_type === "buy"
                       ? "border-green-400"
-                      : "border-red-400")
+                      : event.transaction_type === "sell"
+                      ? "border-red-400"
+                      : "border-yellow-400")
                   }
                 >
-                  {event.type}
+                  {event.transaction_type === "buy" ? "Buy" : 
+                   event.transaction_type === "sell" ? "Sell" : 
+                   event.transaction_type === "fee" ? "Fee" : 
+                   event.transaction_type}
                 </div>
                 <div className="text-[rgba(247,243,227,1)] text-xs">
                   <span
@@ -97,7 +104,7 @@ const EventItem = React.memo(
                         : (event.subtotal_cents / 100).toFixed(2)}
                     </span>
                   ) : (
-                    "-"
+                    ""
                   )}
                 </div>
                 <div className="text-[rgba(247,243,227,0.7)] text-xs">
@@ -107,6 +114,8 @@ const EventItem = React.memo(
                           100 /
                           (event.amount_sats / 100000000)
                       ).toLocaleString()}`
+                    : event.record_type === "onchain_fee" 
+                    ? "-"
                     : "-"}
                 </div>
                 <div
@@ -459,12 +468,17 @@ const EventItem = React.memo(
             <div
               className={
                 `text-[rgba(247,243,227,1)] text-xs border-l-2 border-[rgba(247,243,227,0.3)] pl-2 ` +
-                (event.type === "Buy"
+                (event.transaction_type === "buy"
                   ? "border-green-400"
-                  : "border-red-400")
+                  : event.transaction_type === "sell"
+                  ? "border-red-400"
+                  : "border-yellow-400")
               }
             >
-              {event.type}
+              {event.transaction_type === "buy" ? "Buy" : 
+               event.transaction_type === "sell" ? "Sell" : 
+               event.transaction_type === "fee" ? "Fee" : 
+               event.transaction_type}
             </div>
             <div className="text-[rgba(247,243,227,1)] text-xs">
               <span
@@ -501,6 +515,8 @@ const EventItem = React.memo(
                       100 /
                       (event.amount_sats / 100000000)
                   ).toLocaleString()}`
+                : event.record_type === "onchain_fee" 
+                ? "-"
                 : "-"}
             </div>
             <div
@@ -630,15 +646,13 @@ const EventItem = React.memo(
 );
 
 interface EventsListProps {
-  events: ExchangeTransaction[];
-  totalCount: number;
   editingEventId: string | null;
   selectedEventId: string | null;
   editData: EditBitcoinTransactionData;
   isCreatingNew: boolean;
   newEventData: EditBitcoinTransactionData;
   onAddNewEvent: () => void;
-  onEditEvent: (event: ExchangeTransaction) => void;
+  onEditEvent: (event: UnifiedEvent) => void;
   onSelectEvent: (eventId: string | null) => void;
   onSaveEvent: () => void;
   onDeleteEvent: () => void;
@@ -656,8 +670,6 @@ interface EventsListProps {
 }
 
 const EventsList: React.FC<EventsListProps> = ({
-  events,
-  totalCount,
   editingEventId,
   selectedEventId,
   editData,
@@ -674,6 +686,12 @@ const EventsList: React.FC<EventsListProps> = ({
   onCancelNewEvent,
   onNewEventDataChange,
 }) => {
+  // Get events data using the hook
+  const {
+    events,
+    totalCount,
+    loading: eventsLoading,
+  } = useCombinedEvents(true);
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 50;
@@ -725,7 +743,7 @@ const EventsList: React.FC<EventsListProps> = ({
     onSelectEvent(eventId);
   };
 
-  const handleEditEvent = (event: ExchangeTransaction) => {
+  const handleEditEvent = (event: UnifiedEvent) => {
     // Only allow editing if the event is selected
     if (selectedEventId !== event.id) {
       return;

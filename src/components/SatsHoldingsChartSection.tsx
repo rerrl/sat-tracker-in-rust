@@ -1,14 +1,13 @@
-import React, { useState } from 'react';
-import { ExchangeTransaction } from '../services/tauriService';
-import SatsHoldingsChart from './SatsHoldingsChart';
+import React from "react";
+import SatsHoldingsChart from "./SatsHoldingsChart";
 
 interface SatsHoldingsChartSectionProps {
-  events: ExchangeTransaction[];
+  // No props needed - chart will get data via hook
 }
 
-const SatsHoldingsChartSection: React.FC<SatsHoldingsChartSectionProps> = ({ events }) => {
-  const [showPremiumTag, setShowPremiumTag] = useState(false);
-
+const SatsHoldingsChartSection: React.FC<
+  SatsHoldingsChartSectionProps
+> = () => {
   return (
     <>
       {/* Chart Header */}
@@ -37,7 +36,7 @@ const SatsHoldingsChartSection: React.FC<SatsHoldingsChartSectionProps> = ({ eve
       {/* Chart Area */}
       <div className="flex-1 p-4 min-h-0 overflow-hidden">
         <div className="w-full h-full">
-          <SatsHoldingsChart events={events} />
+          <SatsHoldingsChart />
         </div>
       </div>
     </>

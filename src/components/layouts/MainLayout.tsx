@@ -9,9 +9,7 @@ interface MainLayoutProps {
   // Right side analytics content
   analyticsContent: React.ReactNode;
 
-  // Events list props (since this seems consistent across tools)
-  events: ExchangeTransaction[];
-  totalCount: number;
+  // Events list props (editing state only)
   editingEventId: string | null;
   selectedEventId: string | null;
   editData: any;
@@ -32,8 +30,6 @@ interface MainLayoutProps {
 const MainLayout: React.FC<MainLayoutProps> = ({
   leftContent,
   analyticsContent,
-  events,
-  totalCount,
   editingEventId,
   selectedEventId,
   editData,
@@ -66,8 +62,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 
         {/* Events List - Remaining 50% height */}
         <EventsList
-          events={events}
-          totalCount={totalCount}
           editingEventId={editingEventId}
           selectedEventId={selectedEventId}
           editData={editData}

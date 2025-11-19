@@ -5,12 +5,10 @@ import AnalyticsSection from "../AnalyticsSection";
 import MainLayout from "../layouts/MainLayout";
 import { useBitcoinPrice } from "../../hooks/useBitcoinPrice";
 import { usePortfolioMetrics } from "../../hooks/usePortfolioMetrics";
+import { useCombinedEvents } from "../../hooks/useCombinedEvents";
 import MetricsGrid, { MetricItem, BitcoinPriceMetric } from "../MetricsGrid";
 
 interface OverviewToolProps {
-  events: ExchangeTransaction[];
-  eventsLoading: boolean;
-  totalCount: number;
   editingEventId: string | null;
   selectedEventId: string | null;
   editData: any;
@@ -29,9 +27,6 @@ interface OverviewToolProps {
 }
 
 const OverviewTool: React.FC<OverviewToolProps> = ({
-  events,
-  eventsLoading,
-  totalCount,
   editingEventId,
   selectedEventId,
   editData,
@@ -48,6 +43,13 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
   onCancelNewEvent,
   onNewEventDataChange,
 }) => {
+  // Get events data using the hook
+  const {
+    events,
+    totalCount,
+    loading: eventsLoading,
+  } = useCombinedEvents(true);
+
   console.log(
     "[OverviewTool] Component rendering, events count:",
     events.length,
@@ -265,7 +267,7 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
       "[OverviewTool] Creating chart component with events:",
       events.length
     );
-    return <SatsHoldingsChartSection events={events} />;
+    return <SatsHoldingsChartSection />;
   }, [events]);
 
   const overviewLeftContent = (
@@ -362,8 +364,6 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
     <MainLayout
       leftContent={overviewLeftContent}
       analyticsContent={overviewAnalytics}
-      events={events}
-      totalCount={totalCount}
       editingEventId={editingEventId}
       selectedEventId={selectedEventId}
       editData={editData}

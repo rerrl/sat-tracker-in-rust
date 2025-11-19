@@ -15,11 +15,10 @@ import Modal from "./components/Modal";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
 import {
-  useTransactions,
   useCreateTransaction,
   useUpdateTransaction,
   useDeleteTransaction,
-} from "./hooks/useTransactions";
+} from "./hooks/useCombinedEvents";
 
 function App() {
   // Database initialization state
@@ -38,11 +37,6 @@ function App() {
   const [showEncryptionSettings, setShowEncryptionSettings] = useState(false);
   const [showCsvImportModal, setShowCsvImportModal] = useState(false);
 
-  const {
-    transactions,
-    totalCount,
-    loading: eventsLoading,
-  } = useTransactions(isDatabaseInitialized);
 
   const createTransactionMutation = useCreateTransaction();
   const updateTransactionMutation = useUpdateTransaction();
@@ -287,7 +281,7 @@ function App() {
         });
 
       // Invalidate all queries to refetch
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["combinedEvents"] });
       queryClient.invalidateQueries({ queryKey: ["portfolioMetrics"] });
       queryClient.invalidateQueries({ queryKey: ["activityMetrics"] });
 
@@ -343,7 +337,7 @@ function App() {
             console.log("Import result:", result);
 
             // Invalidate all queries to refetch after import
-            queryClient.invalidateQueries({ queryKey: ["transactions"] });
+            queryClient.invalidateQueries({ queryKey: ["combinedEvents"] });
             queryClient.invalidateQueries({ queryKey: ["portfolioMetrics"] });
             queryClient.invalidateQueries({ queryKey: ["activityMetrics"] });
 
@@ -408,9 +402,6 @@ function App() {
 
         <ToolContainer
           selectedTool={selectedTool}
-          events={transactions}
-          eventsLoading={eventsLoading}
-          totalCount={totalCount}
           editingEventId={editingEventId}
           selectedEventId={selectedEventId}
           editData={editData}
@@ -442,7 +433,7 @@ function App() {
         onClose={() => setShowCsvImportModal(false)}
         onImportComplete={(events) => {
           // Invalidate all queries to refetch after import
-          queryClient.invalidateQueries({ queryKey: ["transactions"] });
+          queryClient.invalidateQueries({ queryKey: ["combinedEvents"] });
           queryClient.invalidateQueries({ queryKey: ["portfolioMetrics"] });
           queryClient.invalidateQueries({ queryKey: ["activityMetrics"] });
 

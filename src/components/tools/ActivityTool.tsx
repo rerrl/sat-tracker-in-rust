@@ -8,9 +8,6 @@ import MetricsGrid, { MetricItem, BitcoinPriceMetric } from "../MetricsGrid";
 import AnalyticsSection from "../AnalyticsSection";
 
 interface ActivityToolProps {
-  events: ExchangeTransaction[];
-  eventsLoading: boolean;
-  totalCount: number;
   editingEventId: string | null;
   selectedEventId: string | null;
   editData: any;
@@ -29,10 +26,6 @@ interface ActivityToolProps {
 }
 
 const ActivityTool: React.FC<ActivityToolProps> = ({
-  events,
-  // @ts-ignore
-  eventsLoading,
-  totalCount,
   editingEventId,
   selectedEventId,
   editData,
@@ -295,8 +288,6 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
     <MainLayout
       leftContent={activityLeftContent}
       analyticsContent={activityAnalytics}
-      events={events}
-      totalCount={totalCount}
       editingEventId={editingEventId}
       selectedEventId={selectedEventId}
       editData={editData}

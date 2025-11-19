@@ -5,3 +5,4 @@ pub mod encryption;
 pub mod activity_metrics;
 pub mod csv_import;
 pub mod onchain_fee;
+pub mod unified_events;
