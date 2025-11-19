@@ -120,6 +120,13 @@ export interface DayData {
   level: number; // 0-4 for color intensity
 }
 
+export interface CsvPreview {
+  format: string;
+  bitcoin_transactions_found: number;
+  headers_found_at_line: number;
+  total_rows_in_file: number;
+}
+
 export class TauriService {
   // Create a new bitcoin transaction
   static async createBitcoinTransaction(
@@ -228,7 +235,7 @@ export class TauriService {
   }
 
   // Analyze CSV file
-  static async analyzeCsvFile(filePath: string): Promise<any> {
+  static async analyzeCsvFile(filePath: string): Promise<CsvPreview> {
     return await invoke("analyze_csv_file", { filePath });
   }
 }

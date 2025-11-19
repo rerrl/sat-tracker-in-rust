@@ -14,7 +14,6 @@ yarn start:dev
 
 **Common Issue:** The Tauri window may open blank initially while Vite finishes compiling. Simply right-click in the window and select "Reload" to refresh the page and the app will load properly. This is normal Tauri development behavior.
 
-- TODO: river buy, sells, fees import
 - TODO: events return consolidated events (exchange_transactions and onchain_fees combined)
 - TODO: events better subtotal + fee input UX
 - TODO: events edit/add fees

@@ -4,9 +4,9 @@ import { TauriService, ExchangeTransaction } from "../services/tauriService";
 
 interface CsvPreview {
   format: string;
-  sample_records: any[];
-  total_records: number;
+  bitcoin_transactions_found: number;
   headers_found_at_line: number;
+  total_rows_in_file: number;
 }
 
 interface CsvImportModalProps {
@@ -103,9 +103,9 @@ export default function CsvImportModal({
   };
 
   const getSubtitle = () => {
-    if (step === "select") return "Select your exchange CSV file";
-    if (step === "preview") return "Review detected data before importing";
-    if (step === "importing") return "Importing your transactions...";
+    if (step === "select") return "Select your Bitcoin exchange CSV file";
+    if (step === "preview") return "Review detected Bitcoin transactions before importing";
+    if (step === "importing") return "Importing your Bitcoin transactions...";
     return "";
   };
 
@@ -113,7 +113,7 @@ export default function CsvImportModal({
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="Import CSV Data"
+      title="Import Bitcoin Transactions"
       subtitle={getSubtitle()}
       maxWidth="600px"
       maxHeight="80vh"
@@ -127,7 +127,7 @@ export default function CsvImportModal({
             {/* File Selection */}
             <div>
               <label className="block text-[rgba(247,243,227,0.8)] font-medium mb-2">
-                Select CSV File
+                Select Bitcoin Exchange CSV File
               </label>
               <div className="flex gap-3">
                 <input
@@ -149,11 +149,11 @@ export default function CsvImportModal({
 
             {/* Supported Formats */}
             <div className="bg-[rgba(247,243,227,0.05)] border border-[rgba(247,243,227,0.1)] rounded p-3">
-              <p className="text-xs text-[rgba(247,243,227,0.6)] mb-2">Supported exchanges:</p>
+              <p className="text-xs text-[rgba(247,243,227,0.6)] mb-2">Supported Bitcoin exchanges:</p>
               <ul className="text-xs text-[#F7F3E3] space-y-1">
-                <li>• Coinbase (Imports Buys and Sells)</li>
-                <li>• River (Imports Buys, Sells and Withdrawal Fees)</li>
-                <li>• More formats coming soon...</li>
+                <li>• Coinbase (Bitcoin buys and sells)</li>
+                <li>• River (Bitcoin buys and sells)</li>
+                <li>• More Bitcoin exchanges coming soon...</li>
               </ul>
             </div>
           </div>
@@ -167,18 +167,19 @@ export default function CsvImportModal({
                 ✅ Format Detected: {preview.format}
               </p>
               <p className="text-xs text-[rgba(247,243,227,0.6)]">
-                Found {preview.total_records} records (headers at line {preview.headers_found_at_line})
+                Found {preview.bitcoin_transactions_found} Bitcoin transactions 
+                (from {preview.total_rows_in_file} total rows, headers at line {preview.headers_found_at_line})
               </p>
             </div>
 
-            {/* Sample Data Preview */}
-            <div>
-              <p className="text-sm text-[rgba(247,243,227,0.8)] mb-2">Sample Records:</p>
-              <div className="bg-[#090C08] border border-[rgba(247,243,227,0.3)] rounded p-3 text-xs">
-                <pre className="text-[#F7F3E3] whitespace-pre-wrap overflow-x-auto">
-                  {JSON.stringify(preview.sample_records, null, 2)}
-                </pre>
-              </div>
+            {/* Summary instead of sample data */}
+            <div className="bg-[rgba(247,243,227,0.05)] border border-[rgba(247,243,227,0.1)] rounded p-3">
+              <p className="text-sm text-[rgba(247,243,227,0.8)] mb-2">Import Summary:</p>
+              <ul className="text-xs text-[#F7F3E3] space-y-1">
+                <li>• {preview.bitcoin_transactions_found} Bitcoin buy/sell transactions detected</li>
+                <li>• Non-Bitcoin assets will be ignored</li>
+                <li>• Duplicate transactions will be skipped</li>
+              </ul>
             </div>
 
             {/* File Info */}
@@ -191,7 +192,7 @@ export default function CsvImportModal({
         {step === "importing" && (
           <div className="text-center py-8">
             <div className="text-4xl mb-4">⏳</div>
-            <p className="text-[#F7F3E3] mb-2">Processing your CSV file...</p>
+            <p className="text-[#F7F3E3] mb-2">Processing your Bitcoin transactions...</p>
             <p className="text-xs text-[rgba(247,243,227,0.6)]">
               This may take a moment for large files
             </p>
@@ -229,7 +230,7 @@ export default function CsvImportModal({
                 onClick={handleImport}
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 text-sm rounded"
               >
-                Import {preview!.total_records} Records
+                Import {preview!.bitcoin_transactions_found} Bitcoin Transactions
               </button>
             </>
           )}

@@ -6,16 +6,15 @@ use chrono::{DateTime, NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 use std::collections::hash_map::DefaultHasher;
-use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use tauri::State;
 
 #[derive(Debug, Serialize)]
 pub struct CsvPreview {
     format: String,
-    sample_records: Vec<serde_json::Value>,
-    total_records: usize,
+    bitcoin_transactions_found: usize,
     headers_found_at_line: usize,
+    total_rows_in_file: usize,
 }
 
 #[derive(Debug, Deserialize)]
@@ -539,39 +538,45 @@ pub async fn analyze_csv_file(file_path: String) -> Result<CsvPreview, String> {
     let csv_content = lines[headers_line..].join("\n");
     let mut reader = csv::Reader::from_reader(csv_content.as_bytes());
 
-    let mut sample_records = Vec::new();
-    let mut total_records = 0;
+    let mut bitcoin_transactions_found = 0;
+    let mut total_rows_in_file = 0;
 
-    // Get headers first before iterating
-    let headers = reader.headers().map(|h| h.clone()).ok();
-
-    for (i, result) in reader.records().enumerate() {
+    // Count Bitcoin transactions based on format
+    for result in reader.records() {
         if let Ok(record) = result {
-            total_records += 1;
+            total_rows_in_file += 1;
 
-            // Take first 3 records as samples
-            if i < 3 {
-                let mut record_map = serde_json::Map::new();
-                if let Some(ref headers) = headers {
-                    for (j, field) in record.iter().enumerate() {
-                        if let Some(header) = headers.get(j) {
-                            record_map.insert(
-                                header.to_string(),
-                                serde_json::Value::String(field.to_string()),
-                            );
+            match format.as_str() {
+                "Coinbase" => {
+                    // Check if this is a Bitcoin transaction
+                    if let Some(asset) = record.get(3) { // Asset column
+                        if asset == "BTC" {
+                            if let Some(tx_type) = record.get(2) { // Transaction Type column
+                                if matches!(tx_type, "Buy" | "Sell" | "Advanced Trade Buy" | "Advanced Trade Sell") {
+                                    bitcoin_transactions_found += 1;
+                                }
+                            }
                         }
                     }
                 }
-                sample_records.push(serde_json::Value::Object(record_map));
+                "River" => {
+                    // Check if this is a buy/sell transaction
+                    if let Some(tag) = record.get(7) { // Tag column
+                        if matches!(tag, "Buy" | "Sell") {
+                            bitcoin_transactions_found += 1;
+                        }
+                    }
+                }
+                _ => {}
             }
         }
     }
 
     Ok(CsvPreview {
         format,
-        sample_records,
-        total_records,
+        bitcoin_transactions_found,
         headers_found_at_line: headers_line + 1, // 1-indexed for user display
+        total_rows_in_file,
     })
 }
 
