@@ -189,8 +189,7 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
       }
       const currentValue =
         ((portfolioMetrics.current_sats || 0) / 100_000_000) * bitcoinPrice;
-      const totalInvested =
-        (portfolioMetrics.total_invested_cents || 0) / 100;
+      const totalInvested = (portfolioMetrics.total_invested_cents || 0) / 100;
       return currentValue - totalInvested;
     };
 
@@ -211,18 +210,30 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
         color: "orange",
         hint: "Current portfolio value with 24-hour change based on Bitcoin price movement alone",
         subValue: (() => {
-          if (metricsLoading || !portfolioMetrics?.current_sats || percentChange24hr === null) {
+          if (
+            metricsLoading ||
+            !portfolioMetrics?.current_sats ||
+            percentChange24hr === null
+          ) {
             return undefined;
           }
-          const currentPortfolioValue = ((portfolioMetrics.current_sats || 0) / 100_000_000) * bitcoinPrice;
-          const dailyDollarChange = currentPortfolioValue * (percentChange24hr / 100);
+          const currentPortfolioValue =
+            ((portfolioMetrics.current_sats || 0) / 100_000_000) * bitcoinPrice;
+          const dailyDollarChange =
+            currentPortfolioValue * (percentChange24hr / 100);
           const sign = dailyDollarChange >= 0 ? "+" : "";
-          return `${sign}$${Math.abs(dailyDollarChange).toLocaleString(undefined, {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-          })} (24hr)`;
+          return `${sign}$${Math.abs(dailyDollarChange).toLocaleString(
+            undefined,
+            {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0,
+            }
+          )} (24hr)`;
         })(),
-        subValueColor: percentChange24hr !== null && percentChange24hr >= 0 ? 'green' : 'red',
+        subValueColor:
+          percentChange24hr !== null && percentChange24hr >= 0
+            ? "green"
+            : "red",
       },
       {
         label: "Current Sats",
@@ -242,19 +253,30 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
       },
       {
         label: "Unrealized Gain",
-        value: unrealizedGain === null
-          ? "..."
-          : unrealizedGain >= 0
-          ? `+$${unrealizedGain.toLocaleString(undefined, {
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
-            })}`
-          : `-$${Math.abs(unrealizedGain).toLocaleString(undefined, {
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
-            })}`,
-        color: unrealizedGain === null ? "green" : unrealizedGain >= 0 ? "green" : "red",
-        hint: unrealizedGain === null ? "Unrealized gain/loss" : unrealizedGain >= 0 ? undefined : "HODL",
+        value:
+          unrealizedGain === null
+            ? "..."
+            : unrealizedGain >= 0
+            ? `+$${unrealizedGain.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+              })}`
+            : `-$${Math.abs(unrealizedGain).toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+              })}`,
+        color:
+          unrealizedGain === null
+            ? "green"
+            : unrealizedGain >= 0
+            ? "green"
+            : "red",
+        hint:
+          unrealizedGain === null
+            ? "Unrealized gain/loss"
+            : unrealizedGain >= 0
+            ? undefined
+            : "HODL",
       },
     ];
   }, [metricsLoading, portfolioMetrics, bitcoinPrice]);
