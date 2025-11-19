@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct PortfolioMetrics {
+pub struct OverviewMetrics {
     pub current_sats: i64,
     pub total_sats_stacked: i64,
     pub avg_buy_price: Option<f64>,

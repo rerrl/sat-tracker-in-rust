@@ -92,7 +92,7 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
     }
   }, [liveBitcoinPrice, customBitcoinPrice, bitcoinPriceLoading]);
 
-  // Log portfolio metrics changes
+  // Log overview metrics changes
   useEffect(() => {
     console.log("[OverviewTool] Portfolio metrics effect:", {
       portfolioMetrics,

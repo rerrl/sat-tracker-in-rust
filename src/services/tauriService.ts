@@ -53,7 +53,7 @@ export interface PaginatedBitcoinTransactions {
   has_more: boolean;
 }
 
-export interface PortfolioMetrics {
+export interface OverviewMetrics {
   current_sats: number;
   total_sats_stacked: number;
   avg_buy_price: number | null;
@@ -186,9 +186,9 @@ export class TauriService {
     return await invoke("delete_bitcoin_transaction", { id });
   }
 
-  // Get portfolio metrics
-  static async getPortfolioMetrics(): Promise<PortfolioMetrics> {
-    return await invoke("get_portfolio_metrics");
+  // Get overview metrics
+  static async getOverviewMetrics(): Promise<OverviewMetrics> {
+    return await invoke("get_overview_metrics");
   }
 
   // Import Sat Tracker v1 data
@@ -284,7 +284,7 @@ export const {
   getBitcoinTransactions,
   updateBitcoinTransaction,
   deleteBitcoinTransaction,
-  getPortfolioMetrics,
+  getOverviewMetrics,
   importSatTrackerV1Data,
   createUndocumentedLumpsumTransactions,
 } = TauriService;
