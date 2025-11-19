@@ -54,13 +54,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Calculate event distribution (subtract 5 for initial buys)
     let remaining_events = total_events - 5;
-    let buy_count = (remaining_events as f32 * 0.75) as usize;
-    let sell_count = (remaining_events as f32 * 0.15) as usize;
-    let fee_count = remaining_events - buy_count - sell_count;
+    let buy_count = (remaining_events as f32 * 0.85) as usize;
+    let sell_count = remaining_events - buy_count;
 
     println!(
-        "📊 Distribution: 5 initial buys + {} buys, {} sells, {} fees",
-        buy_count, sell_count, fee_count
+        "📊 Distribution: 5 initial buys + {} buys, {} sells",
+        buy_count, sell_count
     );
 
     // Start with $30k Bitcoin price (in cents)
@@ -78,6 +77,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     for _ in 0..sell_count {
         event_types.push("sell");
     }
+
+    // Provider names for generating unique provider IDs
+    let provider_names = ["Coinbase", "Kraken", "Strike", "River"];
 
     // Shuffle the event types to spread them out randomly
     event_types.shuffle(&mut rng);
@@ -112,8 +114,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             None
         };
 
+        let provider_id = if rng.gen_bool(0.7) {
+            let provider_name = provider_names.choose(&mut rng).unwrap();
+            Some(format!("{}_{}_{}_{}", provider_name.to_lowercase(), current_date.timestamp(), amount_sats, rng.gen::<u32>()))
+        } else {
+            None
+        };
+
         sqlx::query(
-            "INSERT INTO exchange_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+            "INSERT INTO exchange_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at, provider_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
         )
         .bind(Uuid::new_v4().to_string())
         .bind("buy")
@@ -123,6 +132,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .bind(&memo)
         .bind(current_date)
         .bind(Utc::now())
+        .bind(&provider_id)
         .execute(&pool)
         .await?;
 
@@ -157,8 +167,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     None
                 };
 
+                let provider_id = if rng.gen_bool(0.7) {
+                    let provider_name = provider_names.choose(&mut rng).unwrap();
+                    Some(format!("{}_{}_{}_{}", provider_name.to_lowercase(), current_date.timestamp(), amount_sats, rng.gen::<u32>()))
+                } else {
+                    None
+                };
+
                 sqlx::query(
-                    "INSERT INTO exchange_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO exchange_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at, provider_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
                 )
                 .bind(Uuid::new_v4().to_string())
                 .bind("buy")
@@ -168,6 +185,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .bind(&memo)
                 .bind(current_date)
                 .bind(Utc::now())
+                .bind(&provider_id)
                 .execute(&pool)
                 .await?;
             }
@@ -188,8 +206,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     None
                 };
 
+                let provider_id = if rng.gen_bool(0.7) {
+                    let provider_name = provider_names.choose(&mut rng).unwrap();
+                    Some(format!("{}_{}_{}_{}", provider_name.to_lowercase(), current_date.timestamp(), amount_sats, rng.gen::<u32>()))
+                } else {
+                    None
+                };
+
                 sqlx::query(
-                    "INSERT INTO exchange_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO exchange_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at, provider_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
                 )
                 .bind(Uuid::new_v4().to_string())
                 .bind("sell")
@@ -199,6 +224,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .bind(&memo)
                 .bind(current_date)
                 .bind(Utc::now())
+                .bind(&provider_id)
                 .execute(&pool)
                 .await?;
             }
@@ -217,8 +243,52 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         current_btc_price_cents as f64 / 100.0
     );
 
-    println!("✅ Created {} total events", events_created);
+    println!("✅ Created {} total exchange transactions", events_created);
 
+    // Generate onchain fee transactions
+    let onchain_fee_count = rng.gen_range(3..=8);
+    println!("⚡ Creating {} onchain fee transactions...", onchain_fee_count);
+
+    let fee_memos = [
+        "Lightning channel open",
+        "Lightning channel close", 
+        "Cold storage transfer",
+        "Mining pool payout",
+        "DeFi interaction",
+    ];
+
+    for _ in 0..onchain_fee_count {
+        let amount_sats = rng.gen_range(1000..=50000); // 1k to 50k sats
+        let memo = if rng.gen_bool(0.6) {
+            Some(fee_memos.choose(&mut rng).unwrap().to_string())
+        } else {
+            None
+        };
+        
+        let tx_hash = if rng.gen_bool(0.8) {
+            // Generate a fake transaction hash
+            Some(format!("{:064x}", rng.gen::<u64>()))
+        } else {
+            None
+        };
+        
+        sqlx::query(
+            "INSERT INTO onchain_fees (id, amount_sats, memo, timestamp, created_at, tx_hash) VALUES (?, ?, ?, ?, ?, ?)"
+        )
+        .bind(Uuid::new_v4().to_string())
+        .bind(amount_sats)
+        .bind(&memo)
+        .bind(current_date)
+        .bind(Utc::now())
+        .bind(&tx_hash)
+        .execute(&pool)
+        .await?;
+        
+        // Add 7-30 days between onchain fee transactions
+        current_date = current_date + Duration::days(rng.gen_range(7..=30));
+    }
+
+    println!("✅ Created {} onchain fee transactions", onchain_fee_count);
     println!("🎉 Done!");
     Ok(())
 }
