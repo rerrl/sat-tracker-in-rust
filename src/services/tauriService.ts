@@ -61,6 +61,7 @@ export interface OverviewMetrics {
   avg_sell_price: number | null;
   fiat_extracted_cents: number;
   total_sats_spent: number;
+  total_onchain_fees_paid_sats: number;
   sats_stacked_7d: number;
   usd_invested_7d_cents: number;
   sats_stacked_31d: number;
@@ -111,13 +112,13 @@ export interface UnifiedEvent {
   memo: string | null;
   timestamp: string;
   created_at: string;
-  
+
   // Exchange-specific fields (null for onchain fees)
   subtotal_cents: number | null;
   fee_cents: number | null;
   provider_id: string | null;
   transaction_type: string | null; // "buy", "sell", or "fee"
-  
+
   // Onchain-specific fields (null for exchange transactions)
   tx_hash: string | null;
 }
@@ -188,7 +189,9 @@ export class TauriService {
 
   // Get overview metrics
   static async getOverviewMetrics(): Promise<OverviewMetrics> {
-    return await invoke("get_overview_metrics");
+    const metrics = await invoke<OverviewMetrics>("get_overview_metrics");
+    console.log("Retrieved overview metrics:", metrics);
+    return metrics;
   }
 
   // Import Sat Tracker v1 data
