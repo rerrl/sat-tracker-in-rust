@@ -35,13 +35,14 @@ export interface UpdateExchangeTransactionRequest {
 
 // Edit data type for form state (allows string values during editing)
 export interface EditBitcoinTransactionData {
-  type: "Buy" | "Sell";
+  type: "Buy" | "Sell" | "Fee";
   amount_sats: number | string;
   subtotal_cents: number | string | null;
   fee_cents: number | string | null;
   memo: string | null;
   timestamp: string;
   provider_id: string | null;
+  tx_hash?: string | null; // For onchain fees
 }
 
 export interface PaginatedBitcoinTransactions {
