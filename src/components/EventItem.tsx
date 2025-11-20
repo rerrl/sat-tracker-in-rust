@@ -259,7 +259,12 @@ const EventItem = React.memo<EventItemProps>(
                     onChange={(e) => {
                       onEditDataChange("type", e.target.value);
                     }}
-                    className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
+                    disabled={!isCreating && event?.transaction_type === "fee"}
+                    className={`w-full border text-[#F7F3E3] px-2 py-1 text-xs rounded focus:outline-none ${
+                      !isCreating && event?.transaction_type === "fee"
+                        ? "bg-[#0f0f0f] border-[rgba(247,243,227,0.2)] cursor-not-allowed opacity-60"
+                        : "bg-[#1a1a1a] border-[rgba(247,243,227,0.3)] focus:border-blue-400"
+                    }`}
                     style={{
                       colorScheme: "dark",
                     }}
@@ -282,15 +287,17 @@ const EventItem = React.memo<EventItemProps>(
                     >
                       Sell
                     </option>
-                    <option
-                      value="Fee"
-                      style={{
-                        backgroundColor: "#1a1a1a",
-                        color: "#F7F3E3",
-                      }}
-                    >
-                      Onchain Fee
-                    </option>
+                    {(isCreating || (!isCreating && event?.transaction_type === "fee")) && (
+                      <option
+                        value="Fee"
+                        style={{
+                          backgroundColor: "#1a1a1a",
+                          color: "#F7F3E3",
+                        }}
+                      >
+                        Onchain Fee
+                      </option>
+                    )}
                   </select>
                 </div>
                 <div>
