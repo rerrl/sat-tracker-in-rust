@@ -2,7 +2,7 @@ mod models;
 mod commands;
 mod database;
 
-use commands::bitcoin_transaction::{create_bitcoin_transaction, get_bitcoin_transactions, update_bitcoin_transaction, delete_bitcoin_transaction};
+use commands::exchange_transaction::{create_exchange_transaction, get_exchange_transactions, update_exchange_transaction, delete_exchange_transaction};
 use commands::onchain_fee::{create_onchain_fee, get_onchain_fees, update_onchain_fee, delete_onchain_fee};
 use commands::unified_events::get_unified_events;
 use commands::api::{fetch_bitcoin_price, fetch_announcements};
@@ -100,10 +100,10 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
-            create_bitcoin_transaction,
-            get_bitcoin_transactions,
-            update_bitcoin_transaction,
-            delete_bitcoin_transaction,
+            create_exchange_transaction,
+            get_exchange_transactions,
+            update_exchange_transaction,
+            delete_exchange_transaction,
             get_overview_metrics,
             import_sat_tracker_v1_data,
             create_undocumented_lumpsum_transactions,

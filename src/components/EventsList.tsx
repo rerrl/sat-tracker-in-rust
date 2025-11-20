@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
-  ExchangeTransaction,
   EditBitcoinTransactionData,
   UnifiedEvent,
 } from "../services/tauriService";
 import DateTimeInput from "./DateTimeInput";
-import { useCombinedEvents } from "../hooks/useCombinedEvents";
+import {
+  useCombinedEvents,
+  useCreateExchangeTransaction,
+  useUpdateExchangeTransaction,
+  useDeleteExchangeTransaction,
+} from "../hooks/useCombinedEvents";
 
 const EventItem = React.memo(
   ({
@@ -69,10 +73,13 @@ const EventItem = React.memo(
                       : "border-yellow-400")
                   }
                 >
-                  {event.transaction_type === "buy" ? "Buy" : 
-                   event.transaction_type === "sell" ? "Sell" : 
-                   event.transaction_type === "fee" ? "Fee" : 
-                   event.transaction_type}
+                  {event.transaction_type === "buy"
+                    ? "Buy"
+                    : event.transaction_type === "sell"
+                    ? "Sell"
+                    : event.transaction_type === "fee"
+                    ? "Fee"
+                    : event.transaction_type}
                 </div>
                 <div className="text-[rgba(247,243,227,1)] text-xs">
                   <span
@@ -93,9 +100,7 @@ const EventItem = React.memo(
                 </div>
                 <div className="text-[rgba(247,243,227,0.7)] text-xs">
                   {event.subtotal_cents ? (
-                    <span
-                      title={`$${(event.subtotal_cents / 100).toFixed(2)}`}
-                    >
+                    <span title={`$${(event.subtotal_cents / 100).toFixed(2)}`}>
                       $
                       {event.subtotal_cents >= 99900
                         ? Math.round(
@@ -114,7 +119,7 @@ const EventItem = React.memo(
                           100 /
                           (event.amount_sats / 100000000)
                       ).toLocaleString()}`
-                    : event.record_type === "onchain_fee" 
+                    : event.record_type === "onchain_fee"
                     ? "-"
                     : "-"}
                 </div>
@@ -475,10 +480,13 @@ const EventItem = React.memo(
                   : "border-yellow-400")
               }
             >
-              {event.transaction_type === "buy" ? "Buy" : 
-               event.transaction_type === "sell" ? "Sell" : 
-               event.transaction_type === "fee" ? "Fee" : 
-               event.transaction_type}
+              {event.transaction_type === "buy"
+                ? "Buy"
+                : event.transaction_type === "sell"
+                ? "Sell"
+                : event.transaction_type === "fee"
+                ? "Fee"
+                : event.transaction_type}
             </div>
             <div className="text-[rgba(247,243,227,1)] text-xs">
               <span
@@ -498,11 +506,14 @@ const EventItem = React.memo(
             </div>
             <div className="text-[rgba(247,243,227,0.5)] text-xs">
               {event.subtotal_cents ? (
-                <span title={`$${(event.subtotal_cents / 100).toFixed(2)}`}>
+                <span title={`Total: $${((event.subtotal_cents + (event.fee_cents || 0)) / 100).toFixed(2)} (Subtotal: $${(event.subtotal_cents / 100).toFixed(2)}${event.fee_cents ? ` + Fee: $${(event.fee_cents / 100).toFixed(2)}` : ''})`}>
                   $
-                  {event.subtotal_cents >= 99900
-                    ? Math.round(event.subtotal_cents / 100).toLocaleString()
-                    : (event.subtotal_cents / 100).toFixed(2)}
+                  {(() => {
+                    const totalCents = event.subtotal_cents + (event.fee_cents || 0);
+                    return totalCents >= 99900
+                      ? Math.round(totalCents / 100).toLocaleString()
+                      : (totalCents / 100).toFixed(2);
+                  })()}
                 </span>
               ) : (
                 "-"
@@ -511,11 +522,9 @@ const EventItem = React.memo(
             <div className="text-[rgba(247,243,227,0.5)] text-xs">
               {event.subtotal_cents && event.amount_sats
                 ? `$${Math.round(
-                    event.subtotal_cents /
-                      100 /
-                      (event.amount_sats / 100000000)
+                    (event.subtotal_cents + (event.fee_cents || 0)) / 100 / (event.amount_sats / 100000000)
                   ).toLocaleString()}`
-                : event.record_type === "onchain_fee" 
+                : event.record_type === "onchain_fee"
                 ? "-"
                 : "-"}
             </div>
@@ -554,76 +563,79 @@ const EventItem = React.memo(
               </div>
 
               {/* Rate Calculations (with USD value) */}
-              {event.subtotal_cents &&
-                event.amount_sats && (
-                  <div className="border-t border-[rgba(247,243,227,0.1)] pt-2">
-                    <div className="text-xs text-[rgba(247,243,227,0.7)] space-y-1">
-                      {/* Exchange Rate (without fees) */}
-                      <div>
-                        <span className="font-medium text-[rgba(247,243,227,0.8)]">
-                          Exchange Rate:
-                        </span>{" "}
-                        <span className="text-blue-300">
-                          $
+              {event.subtotal_cents && event.amount_sats && (
+                <div className="border-t border-[rgba(247,243,227,0.1)] pt-2">
+                  <div className="text-xs text-[rgba(247,243,227,0.7)] space-y-1">
+                    {/* Exchange Rate with Effective Rate inline */}
+                    <div>
+                      <span className="font-medium text-[rgba(247,243,227,0.8)]">
+                        Exchange Rate{event.fee_cents !== null && event.fee_cents !== undefined ? " (Effective)" : ""}:
+                      </span>{" "}
+                      <span className="text-blue-300">
+                        $
+                        {(
+                          Math.abs(event.subtotal_cents) /
+                          100 /
+                          (Math.abs(event.amount_sats) / 100_000_000)
+                        ).toLocaleString(undefined, {
+                          minimumFractionDigits: 0,
+                          maximumFractionDigits: 0,
+                        })}
+                      </span>
+                      {event.fee_cents !== null && event.fee_cents !== undefined && (
+                        <span className="text-orange-300">
+                          {" "}($
                           {(
-                            Math.abs(event.subtotal_cents) /
+                            (Math.abs(event.subtotal_cents) +
+                              Math.abs(event.fee_cents)) /
                             100 /
                             (Math.abs(event.amount_sats) / 100_000_000)
                           ).toLocaleString(undefined, {
                             minimumFractionDigits: 0,
                             maximumFractionDigits: 0,
-                          })}
+                          })})
                         </span>
-                      </div>
-
-                      {/* Effective Rate and Fee details (when fee exists) */}
-                      {event.fee_cents !== null &&
-                        event.fee_cents !== undefined && (
-                          <>
-                            <div>
-                              <span className="font-medium text-[rgba(247,243,227,0.8)]">
-                                Effective Rate (fee included):
-                              </span>{" "}
-                              <span className="text-orange-300">
-                                $
-                                {(
-                                  (Math.abs(event.subtotal_cents) +
-                                    Math.abs(event.fee_cents)) /
-                                  100 /
-                                  (Math.abs(event.amount_sats) / 100_000_000)
-                                ).toLocaleString(undefined, {
-                                  minimumFractionDigits: 0,
-                                  maximumFractionDigits: 0,
-                                })}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="font-medium text-[rgba(247,243,227,0.8)]">
-                                Fee (USD):
-                              </span>{" "}
-                              <span className="text-red-300">
-                                $
-                                {(Math.abs(event.fee_cents) / 100).toFixed(
-                                  2
-                                )}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="font-medium text-[rgba(247,243,227,0.8)]">
-                                Total Cost:
-                              </span>{" "}
-                              <span className="text-green-300">
-                                $
-                                {(
-                                  Math.abs(event.subtotal_cents) / 100
-                                ).toFixed(2)}
-                              </span>
-                            </div>
-                          </>
-                        )}
+                      )}
                     </div>
+
+                    {/* Subtotal */}
+                    <div>
+                      <span className="font-medium text-[rgba(247,243,227,0.8)]">
+                        Subtotal:
+                      </span>{" "}
+                      <span className="text-green-300">
+                        ${(Math.abs(event.subtotal_cents) / 100).toFixed(2)}
+                      </span>
+                    </div>
+
+                    {/* Fee and Total Cost (when fee exists) */}
+                    {event.fee_cents !== null &&
+                      event.fee_cents !== undefined && (
+                        <>
+                          <div>
+                            <span className="font-medium text-[rgba(247,243,227,0.8)]">
+                              Fee:
+                            </span>{" "}
+                            <span className="text-red-300">
+                              ${(Math.abs(event.fee_cents) / 100).toFixed(2)}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="font-medium text-[rgba(247,243,227,0.8)]">
+                              Total Cost:
+                            </span>{" "}
+                            <span className="text-yellow-300">
+                              $
+                              {(
+                                (Math.abs(event.subtotal_cents) + Math.abs(event.fee_cents)) / 100
+                              ).toFixed(2)}
+                            </span>
+                          </div>
+                        </>
+                      )}
                   </div>
-                )}
+                </div>
+              )}
 
               {/* Action Button */}
               <div className="flex justify-end border-t border-[rgba(247,243,227,0.1)] pt-2">
@@ -646,64 +658,187 @@ const EventItem = React.memo(
 );
 
 interface EventsListProps {
-  editingEventId: string | null;
-  selectedEventId: string | null;
-  editData: EditBitcoinTransactionData;
-  isCreatingNew: boolean;
-  newEventData: EditBitcoinTransactionData;
-  onAddNewEvent: () => void;
-  onEditEvent: (event: UnifiedEvent) => void;
-  onSelectEvent: (eventId: string | null) => void;
-  onSaveEvent: () => void;
-  onDeleteEvent: () => void;
-  onCancelEdit: () => void;
-  onEditDataChange: (
-    field: keyof EditBitcoinTransactionData,
-    value: any
-  ) => void;
-  onSaveNewEvent: () => void;
-  onCancelNewEvent: () => void;
-  onNewEventDataChange: (
-    field: keyof EditBitcoinTransactionData,
-    value: any
-  ) => void;
+  // No more prop drilling - EventsList manages its own state!
 }
 
-const EventsList: React.FC<EventsListProps> = ({
-  editingEventId,
-  selectedEventId,
-  editData,
-  isCreatingNew,
-  newEventData,
-  onAddNewEvent,
-  onEditEvent,
-  onSelectEvent,
-  onSaveEvent,
-  onDeleteEvent,
-  onCancelEdit,
-  onEditDataChange,
-  onSaveNewEvent,
-  onCancelNewEvent,
-  onNewEventDataChange,
-}) => {
-  // Get events data using the hook
+const EventsList: React.FC<EventsListProps> = () => {
+  // Internal state management
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [editData, setEditData] = useState<EditBitcoinTransactionData | null>(
+    null
+  );
+  const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [newEventData, setNewEventData] =
+    useState<EditBitcoinTransactionData | null>(null);
+
+  // Get events data and mutations
   const {
     events,
     totalCount,
     loading: eventsLoading,
   } = useCombinedEvents(true);
+
+  const createExchangeTransactionMutation = useCreateExchangeTransaction();
+  const updateExchangeTransactionMutation = useUpdateExchangeTransaction();
+  const deleteExchangeTransactionMutation = useDeleteExchangeTransaction();
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0);
   const pageSize = 50;
+
+  // Internal event handlers
+  const handleEditEvent = useCallback(
+    (event: UnifiedEvent) => {
+      if (selectedEventId !== event.id) return;
+
+      setIsCreatingNew(false);
+      setNewEventData(null);
+      setEditingEventId(event.id);
+      setEditData({
+        type: event.transaction_type === "buy" ? "Buy" : "Sell",
+        amount_sats: event.amount_sats,
+        subtotal_cents: event.subtotal_cents,
+        fee_cents: event.fee_cents,
+        memo: event.memo,
+        timestamp: event.timestamp,
+        provider_id: null,
+      });
+    },
+    [selectedEventId]
+  );
+
+  const handleSelectEvent = useCallback(
+    (eventId: string | null) => {
+      if (editingEventId || isCreatingNew) return;
+      setSelectedEventId(eventId);
+    },
+    [editingEventId, isCreatingNew]
+  );
+
+  const handleAddNewEvent = useCallback(() => {
+    if (selectedEventId) {
+      setSelectedEventId(null);
+    }
+    setIsCreatingNew(true);
+    setNewEventData({
+      type: "Buy",
+      amount_sats: 0,
+      subtotal_cents: null,
+      fee_cents: 0,
+      memo: null,
+      timestamp: new Date().toISOString(),
+      provider_id: null,
+    });
+    setEditingEventId(null);
+    setEditData(null);
+  }, [selectedEventId]);
+
+  const handleSaveEvent = useCallback(async () => {
+    if (!editingEventId || !editData) return;
+
+    try {
+      await updateExchangeTransactionMutation.mutateAsync({
+        id: editingEventId,
+        request: {
+          type: editData.type as "Buy" | "Sell",
+          amount_sats: editData.amount_sats,
+          subtotal_cents: editData.subtotal_cents,
+          fee_cents: editData.fee_cents,
+          memo: editData.memo,
+          timestamp: editData.timestamp,
+          provider_id: editData.provider_id,
+        },
+      });
+    } catch (error) {
+      console.error("Error updating event:", error);
+    } finally {
+      setEditingEventId(null);
+      setEditData(null);
+    }
+  }, [editingEventId, editData, updateExchangeTransactionMutation]);
+
+  const handleDeleteEvent = useCallback(async () => {
+    if (!editingEventId) return;
+
+    try {
+      await deleteExchangeTransactionMutation.mutateAsync(editingEventId);
+    } catch (error) {
+      console.error("Error deleting event:", error);
+    } finally {
+      setEditingEventId(null);
+      setEditData(null);
+    }
+  }, [editingEventId, deleteExchangeTransactionMutation]);
+
+  const handleCancelEdit = useCallback(() => {
+    setEditingEventId(null);
+    setEditData(null);
+  }, []);
+
+  const handleEditDataChange = useCallback(
+    (field: keyof EditBitcoinTransactionData, value: any) => {
+      setEditData((prev) =>
+        prev
+          ? {
+              ...prev,
+              [field]: value,
+            }
+          : null
+      );
+    },
+    []
+  );
+
+  const handleSaveNewEvent = useCallback(async () => {
+    if (!newEventData) return;
+
+    try {
+      await createExchangeTransactionMutation.mutateAsync({
+        type: newEventData.type as "Buy" | "Sell",
+        amount_sats: newEventData.amount_sats,
+        subtotal_cents: newEventData.subtotal_cents,
+        fee_cents: newEventData.fee_cents,
+        memo: newEventData.memo,
+        timestamp: newEventData.timestamp,
+        provider_id: null,
+      });
+    } catch (error) {
+      console.error("Error creating event:", error);
+    } finally {
+      setIsCreatingNew(false);
+      setNewEventData(null);
+    }
+  }, [newEventData, createExchangeTransactionMutation]);
+
+  const handleCancelNewEvent = useCallback(() => {
+    setIsCreatingNew(false);
+    setNewEventData(null);
+  }, []);
+
+  const handleNewEventDataChange = useCallback(
+    (field: keyof EditBitcoinTransactionData, value: any) => {
+      setNewEventData((prev) =>
+        prev
+          ? {
+              ...prev,
+              [field]: value,
+            }
+          : null
+      );
+    },
+    []
+  );
 
   // Handle escape key to close edit/deselect
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         if (editingEventId || isCreatingNew) {
-          onCancelEdit();
+          handleCancelEdit();
+          handleCancelNewEvent();
         } else if (selectedEventId) {
-          onSelectEvent(null);
+          setSelectedEventId(null);
         }
       }
     };
@@ -716,8 +851,8 @@ const EventsList: React.FC<EventsListProps> = ({
     editingEventId,
     isCreatingNew,
     selectedEventId,
-    onCancelEdit,
-    onSelectEvent,
+    handleCancelEdit,
+    handleCancelNewEvent,
   ]);
 
   // Calculate pagination
@@ -732,31 +867,6 @@ const EventsList: React.FC<EventsListProps> = ({
 
   const handleNextPage = () => {
     setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
-  };
-
-  // Enhanced event handlers to ensure proper UX flow
-  const handleSelectEvent = (eventId: string | null) => {
-    // Don't allow selection changes while editing
-    if (editingEventId || isCreatingNew) {
-      return;
-    }
-    onSelectEvent(eventId);
-  };
-
-  const handleEditEvent = (event: UnifiedEvent) => {
-    // Only allow editing if the event is selected
-    if (selectedEventId !== event.id) {
-      return;
-    }
-    onEditEvent(event);
-  };
-
-  const handleAddNewEvent = () => {
-    // Clear any selection when creating new
-    if (selectedEventId) {
-      onSelectEvent(null);
-    }
-    onAddNewEvent();
   };
   return (
     <div className="h-1/2 flex flex-col">
@@ -820,17 +930,17 @@ const EventsList: React.FC<EventsListProps> = ({
       {/* Events List - Scrollable */}
       <div className="flex-1 overflow-y-auto">
         {/* New Event Row using EventItem */}
-        {isCreatingNew && (
+        {isCreatingNew && newEventData && (
           <EventItem
             event={null}
             isEditing={false}
             isCreating={true}
             onEdit={() => {}}
-            onSave={onSaveNewEvent}
+            onSave={handleSaveNewEvent}
             onDelete={() => {}}
-            onCancel={onCancelNewEvent}
+            onCancel={handleCancelNewEvent}
             editData={newEventData}
-            onEditDataChange={onNewEventDataChange}
+            onEditDataChange={handleNewEventDataChange}
           />
         )}
 
@@ -845,11 +955,22 @@ const EventsList: React.FC<EventsListProps> = ({
             onSelect={() =>
               handleSelectEvent(selectedEventId === event.id ? null : event.id)
             }
-            onSave={onSaveEvent}
-            onDelete={onDeleteEvent}
-            onCancel={onCancelEdit}
-            editData={editData}
-            onEditDataChange={onEditDataChange}
+            onSave={handleSaveEvent}
+            onDelete={handleDeleteEvent}
+            onCancel={handleCancelEdit}
+            editData={
+              editData ||
+              newEventData || {
+                type: "Buy",
+                amount_sats: 0,
+                subtotal_cents: null,
+                fee_cents: null,
+                memo: null,
+                timestamp: new Date().toISOString(),
+                provider_id: null,
+              }
+            }
+            onEditDataChange={handleEditDataChange}
           />
         ))}
 

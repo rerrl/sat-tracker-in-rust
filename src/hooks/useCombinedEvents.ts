@@ -46,4 +46,4 @@ export const useCombinedEvents = (isDatabaseInitialized: boolean) => {
 };
 
 // Keep the existing transaction mutations for backward compatibility
-export { useCreateTransaction, useUpdateTransaction, useDeleteTransaction } from './useTransactions';
+export { useCreateExchangeTransaction, useUpdateExchangeTransaction, useDeleteExchangeTransaction } from './useExchangeTransactions';

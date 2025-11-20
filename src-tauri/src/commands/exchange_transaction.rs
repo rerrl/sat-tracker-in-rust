@@ -1,16 +1,16 @@
-use crate::models::bitcoin_transaction::{
-    ExchangeTransaction, CreateBitcoinTransactionRequest, PaginatedBitcoinTransactions,
-    TransactionType, UpdateBitcoinTransactionRequest,
+use crate::models::exchange_transaction::{
+    CreateExchangeTransactionRequest, ExchangeTransaction, PaginatedBitcoinTransactions,
+    UpdateExchangeTransactionRequest,
 };
 use chrono::{DateTime, Utc};
-use sqlx::{SqlitePool, Row};
+use sqlx::{Row, SqlitePool};
 use tauri::State;
 use uuid::Uuid;
 
 #[tauri::command]
-pub async fn create_bitcoin_transaction(
+pub async fn create_exchange_transaction(
     pool: State<'_, SqlitePool>,
-    request: CreateBitcoinTransactionRequest,
+    request: CreateExchangeTransactionRequest,
 ) -> Result<ExchangeTransaction, String> {
     let transaction = ExchangeTransaction {
         id: Uuid::new_v4().to_string(),
@@ -45,7 +45,7 @@ pub async fn create_bitcoin_transaction(
 }
 
 #[tauri::command]
-pub async fn get_bitcoin_transactions(
+pub async fn get_exchange_transactions(
     pool: State<'_, SqlitePool>,
     page: u32,
     page_size: u32,
@@ -108,10 +108,10 @@ pub async fn get_bitcoin_transactions(
 }
 
 #[tauri::command]
-pub async fn update_bitcoin_transaction(
+pub async fn update_exchange_transaction(
     pool: State<'_, SqlitePool>,
     id: String,
-    request: UpdateBitcoinTransactionRequest,
+    request: UpdateExchangeTransactionRequest,
 ) -> Result<ExchangeTransaction, String> {
     sqlx::query(
         "UPDATE exchange_transactions SET type = ?, amount_sats = ?, subtotal_cents = ?, fee_cents = ?, memo = ?, timestamp = ?, provider_id = ? WHERE id = ?"
@@ -156,7 +156,7 @@ pub async fn update_bitcoin_transaction(
 }
 
 #[tauri::command]
-pub async fn delete_bitcoin_transaction(
+pub async fn delete_exchange_transaction(
     pool: State<'_, SqlitePool>,
     id: String,
 ) -> Result<(), String> {
@@ -173,5 +173,3 @@ pub async fn delete_bitcoin_transaction(
     println!("Deleted bitcoin transaction with id: {}", id);
     Ok(())
 }
-
-

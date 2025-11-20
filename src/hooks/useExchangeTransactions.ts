@@ -2,22 +2,22 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   TauriService,
   ExchangeTransaction,
-  CreateBitcoinTransactionRequest,
-  UpdateBitcoinTransactionRequest,
+  CreateExchangeTransactionRequest,
+  UpdateExchangeTransactionRequest,
 } from "../services/tauriService";
 
-export const useTransactions = (isDatabaseInitialized: boolean) => {
+export const useExchangeTransactions = (isDatabaseInitialized: boolean) => {
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["transactions"],
+    queryKey: ["exchangeTransactions"],
     queryFn: async () => {
-      console.log("Fetching all transactions");
+      console.log("Fetching all exchange transactions");
       let allTransactions: ExchangeTransaction[] = [];
       let currentPage = 0;
       let hasMore = true;
       let totalCount = 0;
 
       while (hasMore) {
-        const result = await TauriService.getBitcoinTransactions(
+        const result = await TauriService.getExchangeTransactions(
           currentPage,
           1000
         );
@@ -50,21 +50,21 @@ export const useTransactions = (isDatabaseInitialized: boolean) => {
   };
 };
 
-export const useCreateTransaction = () => {
+export const useCreateExchangeTransaction = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (request: CreateBitcoinTransactionRequest) =>
-      TauriService.createBitcoinTransaction(request),
+    mutationFn: (request: CreateExchangeTransactionRequest) =>
+      TauriService.createExchangeTransaction(request),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["exchangeTransactions"] });
       queryClient.invalidateQueries({ queryKey: ["portfolioMetrics"] });
       queryClient.invalidateQueries({ queryKey: ["activityMetrics"] });
     },
   });
 };
 
-export const useUpdateTransaction = () => {
+export const useUpdateExchangeTransaction = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -73,23 +73,23 @@ export const useUpdateTransaction = () => {
       request,
     }: {
       id: string;
-      request: UpdateBitcoinTransactionRequest;
-    }) => TauriService.updateBitcoinTransaction(id, request),
+      request: UpdateExchangeTransactionRequest;
+    }) => TauriService.updateExchangeTransaction(id, request),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["exchangeTransactions"] });
       queryClient.invalidateQueries({ queryKey: ["portfolioMetrics"] });
       queryClient.invalidateQueries({ queryKey: ["activityMetrics"] });
     },
   });
 };
 
-export const useDeleteTransaction = () => {
+export const useDeleteExchangeTransaction = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => TauriService.deleteBitcoinTransaction(id),
+    mutationFn: (id: string) => TauriService.deleteExchangeTransaction(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["exchangeTransactions"] });
       queryClient.invalidateQueries({ queryKey: ["portfolioMetrics"] });
       queryClient.invalidateQueries({ queryKey: ["activityMetrics"] });
     },

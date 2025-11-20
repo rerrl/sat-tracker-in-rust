@@ -52,7 +52,7 @@ impl TryFrom<String> for TransactionType {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct CreateBitcoinTransactionRequest {
+pub struct CreateExchangeTransactionRequest {
     pub r#type: TransactionType,
     pub amount_sats: i64,
     pub subtotal_cents: Option<i64>,
@@ -63,7 +63,7 @@ pub struct CreateBitcoinTransactionRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct UpdateBitcoinTransactionRequest {
+pub struct UpdateExchangeTransactionRequest {
     pub r#type: TransactionType,
     pub amount_sats: i64,
     pub subtotal_cents: Option<i64>,

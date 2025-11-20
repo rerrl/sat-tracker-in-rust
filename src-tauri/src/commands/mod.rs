@@ -1,4 +1,4 @@
-pub mod bitcoin_transaction;
+pub mod exchange_transaction;
 pub mod api;
 pub mod activity_tool;
 pub mod onchain_fee;

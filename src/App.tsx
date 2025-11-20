@@ -1,9 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import {
-  TauriService,
-  DatabaseStatus,
-  ExchangeTransaction,
-} from "./services/tauriService";
+import { useState, useEffect } from "react";
+import { TauriService, DatabaseStatus } from "./services/tauriService";
 import { useQueryClient } from "@tanstack/react-query";
 import AppHeader from "./components/AppHeader";
 import ToolContainer from "./components/ToolContainer";
@@ -14,11 +10,6 @@ import CsvImportModal from "./components/CsvImportModal";
 import Modal from "./components/Modal";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
-import {
-  useCreateTransaction,
-  useUpdateTransaction,
-  useDeleteTransaction,
-} from "./hooks/useCombinedEvents";
 
 function App() {
   // Database initialization state
@@ -37,19 +28,7 @@ function App() {
   const [showEncryptionSettings, setShowEncryptionSettings] = useState(false);
   const [showCsvImportModal, setShowCsvImportModal] = useState(false);
 
-
-  const createTransactionMutation = useCreateTransaction();
-  const updateTransactionMutation = useUpdateTransaction();
-  const deleteTransactionMutation = useDeleteTransaction();
-
   const queryClient = useQueryClient();
-
-  // UI state for editing (keep these)
-  const [editingEventId, setEditingEventId] = useState<string | null>(null);
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  const [editData, setEditData] = useState<any>(null);
-  const [isCreatingNew, setIsCreatingNew] = useState(false);
-  const [newEventData, setNewEventData] = useState<any>(null);
 
   // Lumpsum modal state
   const [lumpsumData, setLumpsumData] = useState({
@@ -60,121 +39,6 @@ function App() {
     frequency: "weekly" as "daily" | "weekly" | "monthly",
     memo: "",
   });
-
-  // Memoized event handlers
-  const handleEditEvent = useCallback((transaction: ExchangeTransaction) => {
-    setIsCreatingNew(false);
-    setNewEventData(null);
-    setEditingEventId(transaction.id);
-    setEditData({
-      type: transaction.type,
-      amount_sats: transaction.amount_sats,
-      subtotal_cents: transaction.subtotal_cents,
-      fee_cents: transaction.fee_cents,
-      memo: transaction.memo,
-      timestamp: transaction.timestamp,
-    });
-  }, []);
-
-  const handleSaveEvent = useCallback(async () => {
-    if (!editingEventId || !editData) return;
-
-    try {
-      await updateTransactionMutation.mutateAsync({
-        id: editingEventId,
-        request: {
-          type: editData.type as "Buy" | "Sell",
-          amount_sats: editData.amount_sats,
-          subtotal_cents: editData.subtotal_cents,
-          fee_cents: editData.fee_cents,
-          memo: editData.memo,
-          timestamp: editData.timestamp,
-          provider_id: editData.provider_id,
-        },
-      });
-    } catch (error) {
-      console.error("Error updating event:", error);
-    } finally {
-      setEditingEventId(null);
-      setEditData(null);
-    }
-  }, [editingEventId, editData, updateTransactionMutation]);
-
-  const handleDeleteEvent = useCallback(async () => {
-    if (!editingEventId) return;
-
-    try {
-      await deleteTransactionMutation.mutateAsync(editingEventId);
-    } catch (error) {
-      console.error("Error deleting event:", error);
-    } finally {
-      setEditingEventId(null);
-      setEditData(null);
-    }
-  }, [editingEventId, deleteTransactionMutation]);
-
-  const handleCancelEdit = useCallback(() => {
-    setEditingEventId(null);
-    setEditData(null);
-  }, []);
-
-  const handleEditDataChange = useCallback((field: string, value: any) => {
-    setEditData((prev: any) => ({
-      ...prev,
-      [field]: value,
-    }));
-  }, []);
-
-  const handleAddNewEvent = useCallback(() => {
-    setIsCreatingNew(true);
-    setNewEventData({
-      type: "Buy",
-      amount_sats: 0,
-      subtotal_cents: null,
-      fee_cents: 0,
-      memo: null,
-      timestamp: new Date().toISOString(),
-    });
-    setEditingEventId(null);
-    setEditData(null);
-  }, []);
-
-  const handleSaveNewEvent = useCallback(async () => {
-    if (!newEventData) return;
-
-    try {
-      await createTransactionMutation.mutateAsync({
-        type: newEventData.type as "Buy" | "Sell",
-        amount_sats: newEventData.amount_sats,
-        subtotal_cents: newEventData.subtotal_cents,
-        fee_cents: newEventData.fee_cents,
-        memo: newEventData.memo,
-        timestamp: newEventData.timestamp,
-        provider_id: null,
-      });
-    } catch (error) {
-      console.error("Error creating event:", error);
-    } finally {
-      setIsCreatingNew(false);
-      setNewEventData(null);
-    }
-  }, [newEventData, createTransactionMutation]);
-
-  const handleCancelNewEvent = useCallback(() => {
-    setIsCreatingNew(false);
-    setNewEventData(null);
-  }, []);
-
-  const handleNewEventDataChange = useCallback((field: string, value: any) => {
-    setNewEventData((prev: any) => ({
-      ...prev,
-      [field]: value,
-    }));
-  }, []);
-
-  const handleSelectEvent = useCallback((eventId: string | null) => {
-    setSelectedEventId(eventId);
-  }, []);
 
   // Database initialization functions
 
@@ -307,24 +171,6 @@ function App() {
     checkDatabaseStatusAndInitialize();
   }, []);
 
-  // Keyboard event listener for shared state
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        if (editingEventId) {
-          handleCancelEdit();
-        } else if (isCreatingNew) {
-          handleCancelNewEvent();
-        }
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [editingEventId, isCreatingNew]);
-
   // Set up menu event listeners once database is initialized
   useEffect(() => {
     if (isDatabaseInitialized) {
@@ -400,24 +246,7 @@ function App() {
           setShowToolDropdown={setShowToolDropdown}
         />
 
-        <ToolContainer
-          selectedTool={selectedTool}
-          editingEventId={editingEventId}
-          selectedEventId={selectedEventId}
-          editData={editData}
-          isCreatingNew={isCreatingNew}
-          newEventData={newEventData}
-          onAddNewEvent={handleAddNewEvent}
-          onEditEvent={handleEditEvent}
-          onSelectEvent={handleSelectEvent}
-          onSaveEvent={handleSaveEvent}
-          onDeleteEvent={handleDeleteEvent}
-          onCancelEdit={handleCancelEdit}
-          onEditDataChange={handleEditDataChange}
-          onSaveNewEvent={handleSaveNewEvent}
-          onCancelNewEvent={handleCancelNewEvent}
-          onNewEventDataChange={handleNewEventDataChange}
-        />
+        <ToolContainer selectedTool={selectedTool} />
       </div>
 
       <LumpsumModal

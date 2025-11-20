@@ -8,40 +8,10 @@ import MetricsGrid, { MetricItem, BitcoinPriceMetric } from "../MetricsGrid";
 import AnalyticsSection from "../AnalyticsSection";
 
 interface ActivityToolProps {
-  editingEventId: string | null;
-  selectedEventId: string | null;
-  editData: any;
-  isCreatingNew: boolean;
-  newEventData: any;
-  onAddNewEvent: () => void;
-  onEditEvent: (event: ExchangeTransaction) => void;
-  onSelectEvent: (eventId: string | null) => void;
-  onSaveEvent: () => Promise<void>;
-  onDeleteEvent: () => Promise<void>;
-  onCancelEdit: () => void;
-  onEditDataChange: (field: string, value: any) => void;
-  onSaveNewEvent: () => Promise<void>;
-  onCancelNewEvent: () => void;
-  onNewEventDataChange: (field: string, value: any) => void;
+  // All event-related props removed!
 }
 
-const ActivityTool: React.FC<ActivityToolProps> = ({
-  editingEventId,
-  selectedEventId,
-  editData,
-  isCreatingNew,
-  newEventData,
-  onAddNewEvent,
-  onEditEvent,
-  onSelectEvent,
-  onSaveEvent,
-  onDeleteEvent,
-  onCancelEdit,
-  onEditDataChange,
-  onSaveNewEvent,
-  onCancelNewEvent,
-  onNewEventDataChange,
-}) => {
+const ActivityTool: React.FC<ActivityToolProps> = () => {
   // Load activity metrics
   const { activityMetrics, loading: activityLoading } =
     useActivityMetrics(true);
@@ -288,21 +258,6 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
     <MainLayout
       leftContent={activityLeftContent}
       analyticsContent={activityAnalytics}
-      editingEventId={editingEventId}
-      selectedEventId={selectedEventId}
-      editData={editData}
-      isCreatingNew={isCreatingNew}
-      newEventData={newEventData}
-      onAddNewEvent={onAddNewEvent}
-      onEditEvent={onEditEvent}
-      onSelectEvent={onSelectEvent}
-      onSaveEvent={onSaveEvent}
-      onDeleteEvent={onDeleteEvent}
-      onCancelEdit={onCancelEdit}
-      onEditDataChange={onEditDataChange}
-      onSaveNewEvent={onSaveNewEvent}
-      onCancelNewEvent={onCancelNewEvent}
-      onNewEventDataChange={onNewEventDataChange}
     />
   );
 };

@@ -38,7 +38,7 @@ pub struct AnnouncementsResponse {
 #[tauri::command]
 pub async fn fetch_bitcoin_price() -> Result<BitcoinPriceResponse, String> {
     let client = reqwest::Client::builder()
-        .user_agent("SatTracker/1.0")
+        .user_agent(format!("SatTracker/{}", env!("CARGO_PKG_VERSION")))
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 
@@ -66,7 +66,7 @@ pub async fn fetch_bitcoin_price() -> Result<BitcoinPriceResponse, String> {
 #[tauri::command]
 pub async fn fetch_announcements() -> Result<AnnouncementsResponse, String> {
     let client = reqwest::Client::builder()
-        .user_agent("SatTracker/1.0")
+        .user_agent(format!("SatTracker/{}", env!("CARGO_PKG_VERSION")))
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 

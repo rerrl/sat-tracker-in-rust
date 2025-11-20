@@ -1,6 +1,5 @@
 import React from "react";
 import EventsList from "../EventsList";
-import { ExchangeTransaction } from "../../services/tauriService";
 
 interface MainLayoutProps {
   // Left side content
@@ -8,43 +7,11 @@ interface MainLayoutProps {
 
   // Right side analytics content
   analyticsContent: React.ReactNode;
-
-  // Events list props (editing state only)
-  editingEventId: string | null;
-  selectedEventId: string | null;
-  editData: any;
-  isCreatingNew: boolean;
-  newEventData: any;
-  onAddNewEvent: () => void;
-  onEditEvent: (event: ExchangeTransaction) => void;
-  onSelectEvent: (eventId: string | null) => void;
-  onSaveEvent: () => Promise<void>;
-  onDeleteEvent: () => Promise<void>;
-  onCancelEdit: () => void;
-  onEditDataChange: (field: string, value: any) => void;
-  onSaveNewEvent: () => Promise<void>;
-  onCancelNewEvent: () => void;
-  onNewEventDataChange: (field: string, value: any) => void;
 }
 
 const MainLayout: React.FC<MainLayoutProps> = ({
   leftContent,
   analyticsContent,
-  editingEventId,
-  selectedEventId,
-  editData,
-  isCreatingNew,
-  newEventData,
-  onAddNewEvent,
-  onEditEvent,
-  onSelectEvent,
-  onSaveEvent,
-  onDeleteEvent,
-  onCancelEdit,
-  onEditDataChange,
-  onSaveNewEvent,
-  onCancelNewEvent,
-  onNewEventDataChange,
 }) => {
   return (
     <div className="flex h-full min-h-0 max-h-full overflow-hidden">
@@ -61,23 +28,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         </div>
 
         {/* Events List - Remaining 50% height */}
-        <EventsList
-          editingEventId={editingEventId}
-          selectedEventId={selectedEventId}
-          editData={editData}
-          isCreatingNew={isCreatingNew}
-          newEventData={newEventData}
-          onAddNewEvent={onAddNewEvent}
-          onEditEvent={onEditEvent}
-          onSelectEvent={onSelectEvent}
-          onSaveEvent={onSaveEvent}
-          onDeleteEvent={onDeleteEvent}
-          onCancelEdit={onCancelEdit}
-          onEditDataChange={onEditDataChange}
-          onSaveNewEvent={onSaveNewEvent}
-          onCancelNewEvent={onCancelNewEvent}
-          onNewEventDataChange={onNewEventDataChange}
-        />
+        <EventsList />
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
-use crate::commands::bitcoin_transaction::create_bitcoin_transaction;
-use crate::models::bitcoin_transaction::{
-    CreateBitcoinTransactionRequest, ExchangeTransaction, TransactionType,
+use crate::commands::exchange_transaction::create_exchange_transaction;
+use crate::models::exchange_transaction::{
+    CreateExchangeTransactionRequest, ExchangeTransaction, TransactionType,
 };
 use chrono::{DateTime, NaiveDateTime, Utc};
 use rusqlite::Connection;
@@ -406,7 +406,7 @@ pub async fn import_sat_tracker_v1_data(pool: State<'_, SqlitePool>) -> Result<S
                     }
                 };
 
-                let request = CreateBitcoinTransactionRequest {
+                let request = CreateExchangeTransactionRequest {
                     r#type: TransactionType::Buy,
                     amount_sats,
                     subtotal_cents: Some(value_cents),
@@ -416,7 +416,7 @@ pub async fn import_sat_tracker_v1_data(pool: State<'_, SqlitePool>) -> Result<S
                     provider_id: None,
                 };
 
-                match create_bitcoin_transaction(pool.clone(), request).await {
+                match create_exchange_transaction(pool.clone(), request).await {
                     Ok(_) => imported_count += 1,
                     Err(e) => errors.push(format!("Failed to import buy record: {}", e)),
                 }
@@ -732,17 +732,17 @@ async fn process_coinbase_csv(
                 format!("Coinbase: {}", notes.join(", "))
             };
 
-            let request = CreateBitcoinTransactionRequest {
+            let request = CreateExchangeTransactionRequest {
                 r#type: tx_type.clone(),
                 amount_sats: total_amount_sats,
-                subtotal_cents: Some(total_inclusive),
+                subtotal_cents: Some(total_subtotal),
                 fee_cents: Some(total_fees_and_spread),
                 memo: Some(memo),
                 timestamp,
                 provider_id: Some(provider_id),
             };
 
-            let transaction = create_bitcoin_transaction(pool.clone(), request).await?;
+            let transaction = create_exchange_transaction(pool.clone(), request).await?;
             events.push(transaction);
         }
     }
@@ -816,7 +816,7 @@ pub async fn create_undocumented_lumpsum_transactions(
             cents_per_interval
         };
 
-        let request = CreateBitcoinTransactionRequest {
+        let request = CreateExchangeTransactionRequest {
             r#type: TransactionType::Buy,
             amount_sats,
             subtotal_cents: Some(subtotal_cents),
@@ -826,7 +826,7 @@ pub async fn create_undocumented_lumpsum_transactions(
             provider_id: None,
         };
 
-        match create_bitcoin_transaction(pool.clone(), request).await {
+        match create_exchange_transaction(pool.clone(), request).await {
             Ok(transaction) => created_transactions.push(transaction),
             Err(e) => return Err(format!("Failed to create transaction {}: {}", i + 1, e)),
         }
@@ -940,7 +940,7 @@ async fn process_river_buy_transaction(
         return Ok(None);
     }
 
-    let request = CreateBitcoinTransactionRequest {
+    let request = CreateExchangeTransactionRequest {
         r#type: TransactionType::Buy,
         amount_sats,
         subtotal_cents: Some(subtotal_cents),
@@ -950,7 +950,7 @@ async fn process_river_buy_transaction(
         provider_id: Some(provider_id),
     };
 
-    let transaction = create_bitcoin_transaction(pool, request).await?;
+    let transaction = create_exchange_transaction(pool, request).await?;
     println!("Created River buy transaction: {} sats for ${:.2}", amount_sats, subtotal_cents as f64 / 100.0);
     Ok(Some(transaction))
 }
@@ -980,7 +980,7 @@ async fn process_river_sell_transaction(
         return Ok(None);
     }
 
-    let request = CreateBitcoinTransactionRequest {
+    let request = CreateExchangeTransactionRequest {
         r#type: TransactionType::Sell,
         amount_sats,
         subtotal_cents: Some(subtotal_cents),
@@ -990,7 +990,7 @@ async fn process_river_sell_transaction(
         provider_id: Some(provider_id),
     };
 
-    let transaction = create_bitcoin_transaction(pool, request).await?;
+    let transaction = create_exchange_transaction(pool, request).await?;
     println!("Created River sell transaction: {} sats for ${:.2}", amount_sats, subtotal_cents as f64 / 100.0);
     Ok(Some(transaction))
 }

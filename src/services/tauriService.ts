@@ -13,7 +13,7 @@ export interface ExchangeTransaction {
   provider_id: string | null;
 }
 
-export interface CreateBitcoinTransactionRequest {
+export interface CreateExchangeTransactionRequest {
   type: "Buy" | "Sell";
   amount_sats: number;
   subtotal_cents: number | null;
@@ -23,7 +23,7 @@ export interface CreateBitcoinTransactionRequest {
   provider_id: string | null;
 }
 
-export interface UpdateBitcoinTransactionRequest {
+export interface UpdateExchangeTransactionRequest {
   type: "Buy" | "Sell";
   amount_sats: number;
   subtotal_cents: number | null;
@@ -157,34 +157,34 @@ export interface CsvPreview {
 
 export class TauriService {
   // Create a new bitcoin transaction
-  static async createBitcoinTransaction(
-    request: CreateBitcoinTransactionRequest
+  static async createExchangeTransaction(
+    request: CreateExchangeTransactionRequest
   ): Promise<ExchangeTransaction> {
-    return await invoke("create_bitcoin_transaction", { request });
+    return await invoke("create_exchange_transaction", { request });
   }
 
   // Get paginated bitcoin transactions with simple parameters
-  static async getBitcoinTransactions(
+  static async getExchangeTransactions(
     page: number = 0,
     pageSize: number = 100
   ): Promise<PaginatedBitcoinTransactions> {
-    return await invoke("get_bitcoin_transactions", {
+    return await invoke("get_exchange_transactions", {
       page,
       pageSize,
     });
   }
 
   // Update a bitcoin transaction
-  static async updateBitcoinTransaction(
+  static async updateExchangeTransaction(
     id: string,
-    request: UpdateBitcoinTransactionRequest
+    request: UpdateExchangeTransactionRequest
   ): Promise<ExchangeTransaction> {
-    return await invoke("update_bitcoin_transaction", { id, request });
+    return await invoke("update_exchange_transaction", { id, request });
   }
 
   // Delete a bitcoin transaction
-  static async deleteBitcoinTransaction(id: string): Promise<void> {
-    return await invoke("delete_bitcoin_transaction", { id });
+  static async deleteExchangeTransaction(id: string): Promise<void> {
+    return await invoke("delete_exchange_transaction", { id });
   }
 
   // Get overview metrics
@@ -283,10 +283,10 @@ export class TauriService {
 
 // Export individual functions for convenience
 export const {
-  createBitcoinTransaction,
-  getBitcoinTransactions,
-  updateBitcoinTransaction,
-  deleteBitcoinTransaction,
+  createExchangeTransaction,
+  getExchangeTransactions,
+  updateExchangeTransaction,
+  deleteExchangeTransaction,
   getOverviewMetrics,
   importSatTrackerV1Data,
   createUndocumentedLumpsumTransactions,
