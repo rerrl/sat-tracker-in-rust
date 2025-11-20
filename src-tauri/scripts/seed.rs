@@ -1,22 +1,20 @@
-use chrono::{Utc, Duration};
+use chrono::{Duration, Utc};
 use rand::seq::SliceRandom;
 use rand::Rng;
 use sqlx::{migrate::MigrateDatabase, Sqlite, SqlitePool};
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
-pub enum BalanceChangeType {
+pub enum TransactionType {
     Buy,
     Sell,
-    Fee,
 }
 
-impl std::fmt::Display for BalanceChangeType {
+impl std::fmt::Display for TransactionType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            BalanceChangeType::Buy => write!(f, "Buy"),
-            BalanceChangeType::Sell => write!(f, "Sell"),
-            BalanceChangeType::Fee => write!(f, "Fee"),
+            TransactionType::Buy => write!(f, "buy"),
+            TransactionType::Sell => write!(f, "sell"),
         }
     }
 }
@@ -49,16 +47,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Generate a random number of events between 50 and 250
     let total_events = rng.gen_range(50..=250);
-    println!("🎯 Generating {} events", total_events);
+    println!(
+        "🎯 Generating {} events (including 5 initial buys)",
+        total_events
+    );
 
-    // Calculate event distribution
-    let buy_count = (total_events as f32 * 0.75) as usize;
-    let sell_count = (total_events as f32 * 0.15) as usize;
-    let fee_count = total_events - buy_count - sell_count;
+    // Calculate event distribution (subtract 5 for initial buys)
+    let remaining_events = total_events - 5;
+    let buy_count = (remaining_events as f32 * 0.85) as usize;
+    let sell_count = remaining_events - buy_count;
 
     println!(
-        "📊 Distribution: {} buys, {} sells, {} fees",
-        buy_count, sell_count, fee_count
+        "📊 Distribution: 5 initial buys + {} buys, {} sells",
+        buy_count, sell_count
     );
 
     // Start with $30k Bitcoin price (in cents)
@@ -71,24 +72,76 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a vector of event types based on distribution
     let mut event_types = Vec::new();
     for _ in 0..buy_count {
-        event_types.push("Buy");
+        event_types.push("buy");
     }
     for _ in 0..sell_count {
-        event_types.push("Sell");
+        event_types.push("sell");
     }
-    for _ in 0..fee_count {
-        event_types.push("Fee");
-    }
+
+    // Provider names for generating unique provider IDs
+    let provider_names = ["Coinbase", "Kraken", "Strike", "River"];
 
     // Shuffle the event types to spread them out randomly
     event_types.shuffle(&mut rng);
 
     let mut events_created = 0;
-    
+
     // Start from January 15, 2023
     let mut current_date = chrono::DateTime::parse_from_rfc3339("2023-01-15T10:00:00Z")
         .unwrap()
         .with_timezone(&Utc);
+
+    // First, create 5 initial buy events
+    println!("🚀 Creating 5 initial buy events...");
+    for i in 0..5 {
+        // Increase Bitcoin price by $500-$2000 for each event
+        let price_increase = rng.gen_range(50000..=200000); // $500-$2000 in cents
+        current_btc_price_cents += price_increase;
+
+        // Generate a rounded dollar amount (in hundreds)
+        let dollar_amount = rng.gen_range(1..=50) * 100; // $100 to $5000 in $100 increments
+        let subtotal_cents = dollar_amount * 100; // Convert to cents
+        let amount_sats =
+            ((subtotal_cents as f64 / current_btc_price_cents as f64) * 100_000_000.0) as i64;
+
+        // Calculate fee (0.5-1.5% of fiat amount)
+        let fee_percentage = rng.gen_range(0.5..=1.5);
+        let fee_cents = (subtotal_cents as f64 * fee_percentage / 100.0) as i64;
+
+        let memo = if rng.gen_bool(0.3) {
+            Some("DCA".to_string())
+        } else {
+            None
+        };
+
+        let provider_id = if rng.gen_bool(0.7) {
+            let provider_name = provider_names.choose(&mut rng).unwrap();
+            Some(format!("{}_{}_{}_{}", provider_name.to_lowercase(), current_date.timestamp(), amount_sats, rng.gen::<u32>()))
+        } else {
+            None
+        };
+
+        sqlx::query(
+            "INSERT INTO exchange_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at, provider_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        )
+        .bind(Uuid::new_v4().to_string())
+        .bind("buy")
+        .bind(amount_sats)
+        .bind(subtotal_cents)
+        .bind(fee_cents)
+        .bind(&memo)
+        .bind(current_date)
+        .bind(Utc::now())
+        .bind(&provider_id)
+        .execute(&pool)
+        .await?;
+
+        events_created += 1;
+
+        // Add 3-5 days to current_date
+        let days_to_add = rng.gen_range(3..=5);
+        current_date = current_date + Duration::days(days_to_add);
+    }
 
     // Create events in shuffled order
     for event_type in event_types {
@@ -97,74 +150,81 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         current_btc_price_cents += price_increase;
 
         match event_type {
-            "Buy" => {
+            "buy" => {
                 // Generate a rounded dollar amount (in hundreds)
                 let dollar_amount = rng.gen_range(1..=50) * 100; // $100 to $5000 in $100 increments
-                let value_cents = dollar_amount * 100; // Convert to cents
-                let amount_sats =
-                    ((value_cents as f64 / current_btc_price_cents as f64) * 100_000_000.0) as i64;
+                let subtotal_cents = dollar_amount * 100; // Convert to cents
+                let amount_sats = ((subtotal_cents as f64 / current_btc_price_cents as f64)
+                    * 100_000_000.0) as i64;
+
+                // Calculate fee (0.5-1.5% of fiat amount)
+                let fee_percentage = rng.gen_range(0.5..=1.5);
+                let fee_cents = (subtotal_cents as f64 * fee_percentage / 100.0) as i64;
+
                 let memo = if rng.gen_bool(0.3) {
                     Some("DCA".to_string())
                 } else {
                     None
                 };
 
+                let provider_id = if rng.gen_bool(0.7) {
+                    let provider_name = provider_names.choose(&mut rng).unwrap();
+                    Some(format!("{}_{}_{}_{}", provider_name.to_lowercase(), current_date.timestamp(), amount_sats, rng.gen::<u32>()))
+                } else {
+                    None
+                };
+
                 sqlx::query(
-                    "INSERT INTO balance_change_events (id, amount_sats, value_cents, event_type, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO exchange_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at, provider_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
                 )
                 .bind(Uuid::new_v4().to_string())
+                .bind("buy")
                 .bind(amount_sats)
-                .bind(value_cents)
-                .bind("Buy")
+                .bind(subtotal_cents)
+                .bind(fee_cents)
                 .bind(&memo)
                 .bind(current_date)
                 .bind(Utc::now())
+                .bind(&provider_id)
                 .execute(&pool)
                 .await?;
             }
-            "Sell" => {
+            "sell" => {
                 // Generate a rounded dollar amount (in hundreds)
                 let dollar_amount = rng.gen_range(1..=50) * 100; // $100 to $5000 in $100 increments
-                let value_cents = dollar_amount * 100; // Convert to cents
-                let amount_sats =
-                    ((value_cents as f64 / current_btc_price_cents as f64) * 100_000_000.0) as i64;
+                let subtotal_cents = dollar_amount * 100; // Convert to cents
+                let amount_sats = ((subtotal_cents as f64 / current_btc_price_cents as f64)
+                    * 100_000_000.0) as i64;
+
+                // Calculate fee (0.5-1.5% of fiat amount)
+                let fee_percentage = rng.gen_range(0.5..=1.5);
+                let fee_cents = (subtotal_cents as f64 * fee_percentage / 100.0) as i64;
+
                 let memo = if rng.gen_bool(0.4) {
                     Some("Emergency".to_string())
                 } else {
                     None
                 };
 
-                sqlx::query(
-                    "INSERT INTO balance_change_events (id, amount_sats, value_cents, event_type, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
-                )
-                .bind(Uuid::new_v4().to_string())
-                .bind(amount_sats)
-                .bind(value_cents)
-                .bind("Sell")
-                .bind(&memo)
-                .bind(current_date)
-                .bind(Utc::now())
-                .execute(&pool)
-                .await?;
-            }
-            "Fee" => {
-                let amount_sats = rng.gen_range(100..=10000);
-                let memo = if rng.gen_bool(0.5) {
-                    Some("Network fee".to_string())
+                let provider_id = if rng.gen_bool(0.7) {
+                    let provider_name = provider_names.choose(&mut rng).unwrap();
+                    Some(format!("{}_{}_{}_{}", provider_name.to_lowercase(), current_date.timestamp(), amount_sats, rng.gen::<u32>()))
                 } else {
                     None
                 };
 
                 sqlx::query(
-                    "INSERT INTO balance_change_events (id, amount_sats, value_cents, event_type, memo, timestamp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO exchange_transactions (id, type, amount_sats, subtotal_cents, fee_cents, memo, timestamp, created_at, provider_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
                 )
                 .bind(Uuid::new_v4().to_string())
+                .bind("sell")
                 .bind(amount_sats)
-                .bind(0)
-                .bind("Fee")
+                .bind(subtotal_cents)
+                .bind(fee_cents)
                 .bind(&memo)
                 .bind(current_date)
                 .bind(Utc::now())
+                .bind(&provider_id)
                 .execute(&pool)
                 .await?;
             }
@@ -172,7 +232,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         events_created += 1;
-        
+
         // Add 3-5 days to current_date
         let days_to_add = rng.gen_range(3..=5);
         current_date = current_date + Duration::days(days_to_add);
@@ -183,8 +243,52 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         current_btc_price_cents as f64 / 100.0
     );
 
-    println!("✅ Created {} total events", events_created);
+    println!("✅ Created {} total exchange transactions", events_created);
 
+    // Generate onchain fee transactions
+    let onchain_fee_count = rng.gen_range(3..=8);
+    println!("⚡ Creating {} onchain fee transactions...", onchain_fee_count);
+
+    let fee_memos = [
+        "Lightning channel open",
+        "Lightning channel close", 
+        "Cold storage transfer",
+        "Mining pool payout",
+        "DeFi interaction",
+    ];
+
+    for _ in 0..onchain_fee_count {
+        let amount_sats = rng.gen_range(1000..=50000); // 1k to 50k sats
+        let memo = if rng.gen_bool(0.6) {
+            Some(fee_memos.choose(&mut rng).unwrap().to_string())
+        } else {
+            None
+        };
+        
+        let tx_hash = if rng.gen_bool(0.8) {
+            // Generate a fake transaction hash
+            Some(format!("{:064x}", rng.gen::<u64>()))
+        } else {
+            None
+        };
+        
+        sqlx::query(
+            "INSERT INTO onchain_fees (id, amount_sats, memo, timestamp, created_at, tx_hash) VALUES (?, ?, ?, ?, ?, ?)"
+        )
+        .bind(Uuid::new_v4().to_string())
+        .bind(amount_sats)
+        .bind(&memo)
+        .bind(current_date)
+        .bind(Utc::now())
+        .bind(&tx_hash)
+        .execute(&pool)
+        .await?;
+        
+        // Add 7-30 days between onchain fee transactions
+        current_date = current_date + Duration::days(rng.gen_range(7..=30));
+    }
+
+    println!("✅ Created {} onchain fee transactions", onchain_fee_count);
     println!("🎉 Done!");
     Ok(())
 }

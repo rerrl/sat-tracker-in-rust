@@ -2,13 +2,13 @@ use crate::models::activity_metrics::{ActivityMetrics, YearHeatmapData, WeekData
 use chrono::{Utc, DateTime, Datelike, Weekday, Duration, IsoWeek, TimeZone};
 use sqlx::{SqlitePool, Row};
 use tauri::State;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
-fn calculate_heatmap_data(buy_events: &[sqlx::sqlite::SqliteRow]) -> Vec<YearHeatmapData> {
+fn calculate_heatmap_data(buy_transactions: &[sqlx::sqlite::SqliteRow]) -> Vec<YearHeatmapData> {
     let mut years_data: HashMap<i32, Vec<(DateTime<Utc>, i64)>> = HashMap::new();
     
-    // Group events by year
-    for row in buy_events {
+    // Group transactions by year
+    for row in buy_transactions {
         let timestamp: DateTime<Utc> = row.get("timestamp");
         let amount_sats: i64 = row.get("amount_sats");
         let year = timestamp.year();
@@ -16,7 +16,7 @@ fn calculate_heatmap_data(buy_events: &[sqlx::sqlite::SqliteRow]) -> Vec<YearHea
         years_data.entry(year).or_insert_with(Vec::new).push((timestamp, amount_sats));
     }
     
-    // Add current year if no events
+    // Add current year if no transactions
     let current_year = Utc::now().year();
     if !years_data.contains_key(&current_year) {
         years_data.insert(current_year, Vec::new());
@@ -24,8 +24,8 @@ fn calculate_heatmap_data(buy_events: &[sqlx::sqlite::SqliteRow]) -> Vec<YearHea
     
     let mut result = Vec::new();
     
-    for (year, events) in years_data {
-        let heatmap_data = generate_year_heatmap_data(year, &events);
+    for (year, transactions) in years_data {
+        let heatmap_data = generate_year_heatmap_data(year, &transactions);
         result.push(heatmap_data);
     }
     
@@ -35,11 +35,11 @@ fn calculate_heatmap_data(buy_events: &[sqlx::sqlite::SqliteRow]) -> Vec<YearHea
     result
 }
 
-fn generate_year_heatmap_data(year: i32, events: &[(DateTime<Utc>, i64)]) -> YearHeatmapData {
+fn generate_year_heatmap_data(year: i32, transactions: &[(DateTime<Utc>, i64)]) -> YearHeatmapData {
     // Calculate daily sats for this year
     let mut daily_sats: HashMap<String, i64> = HashMap::new();
     
-    for (timestamp, amount_sats) in events {
+    for (timestamp, amount_sats) in transactions {
         if timestamp.year() == year {
             // Use local date components to avoid timezone issues
             let date_key = format!("{:04}-{:02}-{:02}", 
@@ -124,15 +124,15 @@ pub async fn get_activity_metrics(
     let now = Utc::now();
     let current_year = now.year();
     
-    // Get all buy events ordered by timestamp
-    let buy_events = sqlx::query(
-        "SELECT timestamp, amount_sats FROM balance_change_events WHERE event_type = 'Buy' ORDER BY timestamp ASC"
+    // Get all buy transactions ordered by timestamp
+    let buy_transactions = sqlx::query(
+        "SELECT timestamp, amount_sats FROM exchange_transactions WHERE type = 'buy' ORDER BY timestamp ASC"
     )
     .fetch_all(pool.inner())
     .await
     .map_err(|e| format!("Database error: {}", e))?;
 
-    if buy_events.is_empty() {
+    if buy_transactions.is_empty() {
         return Ok(ActivityMetrics {
             current_streak_weeks: 0,
             longest_streak_weeks: 0,
@@ -148,15 +148,15 @@ pub async fn get_activity_metrics(
     }
 
     // Parse timestamps and calculate metrics
-    let mut event_dates: Vec<DateTime<Utc>> = Vec::new();
+    let mut transaction_dates: Vec<DateTime<Utc>> = Vec::new();
     let mut sats_this_year = 0i64;
     let current_year = Utc::now().year();
 
-    for row in &buy_events {
+    for row in &buy_transactions {
         let timestamp: DateTime<Utc> = row.get("timestamp");
         let amount_sats: i64 = row.get("amount_sats");
         
-        event_dates.push(timestamp);
+        transaction_dates.push(timestamp);
         
         if timestamp.year() == current_year {
             sats_this_year += amount_sats;
@@ -164,13 +164,13 @@ pub async fn get_activity_metrics(
     }
 
     // Calculate streaks
-    let (current_streak, longest_streak) = calculate_weekly_streaks(&event_dates);
+    let (current_streak, longest_streak) = calculate_weekly_streaks(&transaction_dates);
 
     // Calculate best stacking day
-    let (best_day, best_day_percentage) = calculate_best_stacking_day(&event_dates);
+    let (best_day, best_day_percentage) = calculate_best_stacking_day(&transaction_dates);
 
     // Calculate consistency score (weighted percentage of weeks with purchases in rolling 52-week period)
-    let consistency_score = calculate_weekly_consistency_score(&event_dates);
+    let consistency_score = calculate_weekly_consistency_score(&transaction_dates);
 
     // Determine consistency rating
     let consistency_rating = match consistency_score {
@@ -184,7 +184,7 @@ pub async fn get_activity_metrics(
     let (weeks_to_milestone, milestone_desc) = calculate_next_weekly_milestone(current_streak);
 
     // Calculate heatmap data
-    let heatmap_data = calculate_heatmap_data(&buy_events);
+    let heatmap_data = calculate_heatmap_data(&buy_transactions);
 
     Ok(ActivityMetrics {
         current_streak_weeks: current_streak,
@@ -200,13 +200,13 @@ pub async fn get_activity_metrics(
     })
 }
 
-fn calculate_weekly_streaks(event_dates: &[DateTime<Utc>]) -> (i32, i32) {
-    if event_dates.is_empty() {
+fn calculate_weekly_streaks(transaction_dates: &[DateTime<Utc>]) -> (i32, i32) {
+    if transaction_dates.is_empty() {
         return (0, 0);
     }
 
-    // Group events by ISO week (year + week number)
-    let mut unique_weeks: Vec<IsoWeek> = event_dates
+    // Group transactions by ISO week (year + week number)
+    let mut unique_weeks: Vec<IsoWeek> = transaction_dates
         .iter()
         .map(|dt| dt.iso_week())
         .collect();
@@ -268,14 +268,14 @@ fn week_difference(week1: &IsoWeek, week2: &IsoWeek) -> i32 {
     year_diff * 52 + week_diff
 }
 
-fn calculate_best_stacking_day(event_dates: &[DateTime<Utc>]) -> (Option<String>, f64) {
-    if event_dates.is_empty() {
+fn calculate_best_stacking_day(transaction_dates: &[DateTime<Utc>]) -> (Option<String>, f64) {
+    if transaction_dates.is_empty() {
         return (None, 0.0);
     }
 
     let mut day_counts = [0; 7]; // Monday = 0, Sunday = 6
     
-    for date in event_dates {
+    for date in transaction_dates {
         let weekday_index = match date.weekday() {
             Weekday::Mon => 0,
             Weekday::Tue => 1,
@@ -288,9 +288,9 @@ fn calculate_best_stacking_day(event_dates: &[DateTime<Utc>]) -> (Option<String>
         day_counts[weekday_index] += 1;
     }
 
-    let total_events = event_dates.len() as f64;
+    let total_transactions = transaction_dates.len() as f64;
     let max_count = *day_counts.iter().max().unwrap();
-    let max_percentage = (max_count as f64 / total_events) * 100.0;
+    let max_percentage = (max_count as f64 / total_transactions) * 100.0;
 
     let best_day = day_counts
         .iter()
@@ -311,34 +311,34 @@ fn calculate_best_stacking_day(event_dates: &[DateTime<Utc>]) -> (Option<String>
     (best_day, max_percentage)
 }
 
-fn calculate_weekly_consistency_score(event_dates: &[DateTime<Utc>]) -> f64 {
-    if event_dates.is_empty() {
+fn calculate_weekly_consistency_score(transaction_dates: &[DateTime<Utc>]) -> f64 {
+    if transaction_dates.is_empty() {
         return 0.0;
     }
 
     let now = Utc::now();
     
     // Determine the period to analyze - up to 52 weeks or all available data if less
-    let earliest_event = event_dates.iter().min().unwrap();
-    let weeks_of_data = ((now - *earliest_event).num_weeks() + 1).min(52);
+    let earliest_transaction = transaction_dates.iter().min().unwrap();
+    let weeks_of_data = ((now - *earliest_transaction).num_weeks() + 1).min(52);
     
     if weeks_of_data <= 0 {
         return 0.0;
     }
 
     let period_start = now - Duration::weeks(weeks_of_data - 1);
-    let recent_events: Vec<_> = event_dates
+    let recent_transactions: Vec<_> = transaction_dates
         .iter()
         .filter(|&&date| date >= period_start)
         .collect();
 
-    if recent_events.is_empty() {
+    if recent_transactions.is_empty() {
         return 0.0;
     }
 
     // Get unique weeks with purchases in the period
     let mut unique_weeks = std::collections::HashSet::new();
-    for date in recent_events {
+    for date in recent_transactions {
         unique_weeks.insert(date.iso_week());
     }
 

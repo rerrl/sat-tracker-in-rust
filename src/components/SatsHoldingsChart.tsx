@@ -11,7 +11,8 @@ import {
   Filler,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
-import { BalanceChangeEvent } from "../services/tauriService";
+import { useUnifiedEvents } from "../hooks/useUnifiedEvents";
+import { UnifiedEvent } from "../services/tauriService";
 
 ChartJS.register(
   CategoryScale,
@@ -24,12 +25,12 @@ ChartJS.register(
   Filler
 );
 
-interface SatsHoldingsChartProps {
-  events: BalanceChangeEvent[];
-}
 
-export default function SatsHoldingsChart({ events }: SatsHoldingsChartProps) {
+export default function SatsHoldingsChart() {
   const chartRef = useRef<any>(null);
+  
+  // Get events data using the hook
+  const { events } = useUnifiedEvents(true);
 
   // Force chart resize when container changes
   useEffect(() => {
@@ -68,13 +69,13 @@ export default function SatsHoldingsChart({ events }: SatsHoldingsChartProps) {
     const dataPoints: Array<{
       date: Date;
       balance: number;
-      event: BalanceChangeEvent | null;
+      event: UnifiedEvent | null;
     }> = sortedEvents.map((event) => {
       // Apply the correct sign based on event type
       let balanceChange = 0;
-      if (event.event_type === "Buy") {
+      if (event.transaction_type === "buy") {
         balanceChange = event.amount_sats; // Positive - adds to balance
-      } else if (event.event_type === "Sell" || event.event_type === "Fee") {
+      } else if (event.transaction_type === "sell" || event.transaction_type === "fee") {
         balanceChange = -event.amount_sats; // Negative - subtracts from balance
       }
 

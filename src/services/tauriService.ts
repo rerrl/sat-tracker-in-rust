@@ -1,34 +1,52 @@
 import { invoke } from "@tauri-apps/api/core";
 
 // Types matching your Rust structs
-export interface BalanceChangeEvent {
+export interface ExchangeTransaction {
   id: string;
+  type: "Buy" | "Sell";
   amount_sats: number;
-  value_cents: number | null;
-  event_type: "Buy" | "Sell" | "Fee";
+  subtotal_cents: number | null;
+  fee_cents: number | null;
   memo: string | null;
   timestamp: string; // ISO date string from Rust
   created_at: string; // ISO date string from Rust
+  provider_id: string | null;
 }
 
-export interface CreateBalanceChangeEventRequest {
+export interface CreateExchangeTransactionRequest {
+  type: "Buy" | "Sell";
   amount_sats: number;
-  value_cents: number | null;
-  event_type: "Buy" | "Sell" | "Fee";
+  subtotal_cents: number | null;
+  fee_cents: number | null;
   memo: string | null;
   timestamp: string; // ISO date string
+  provider_id: string | null;
 }
 
-export interface UpdateBalanceChangeEventRequest {
+export interface UpdateExchangeTransactionRequest {
+  type: "Buy" | "Sell";
   amount_sats: number;
-  value_cents: number | null;
-  event_type: "Buy" | "Sell" | "Fee";
+  subtotal_cents: number | null;
+  fee_cents: number | null;
   memo: string | null;
   timestamp: string; // ISO date string
+  provider_id: string | null;
 }
 
-export interface PaginatedBalanceChangeEvents {
-  events: BalanceChangeEvent[];
+// Edit data type for form state (allows string values during editing)
+export interface EditBitcoinTransactionData {
+  type: "Buy" | "Sell" | "Fee";
+  amount_sats: number | string;
+  subtotal_cents: number | string | null;
+  fee_cents: number | string | null;
+  memo: string | null;
+  timestamp: string;
+  provider_id: string | null;
+  tx_hash?: string | null; // For onchain fees
+}
+
+export interface PaginatedBitcoinTransactions {
+  transactions: ExchangeTransaction[];
   total_count: number;
   page: number;
   page_size: number;
@@ -36,7 +54,7 @@ export interface PaginatedBalanceChangeEvents {
   has_more: boolean;
 }
 
-export interface PortfolioMetrics {
+export interface OverviewMetrics {
   current_sats: number;
   total_sats_stacked: number;
   avg_buy_price: number | null;
@@ -44,6 +62,7 @@ export interface PortfolioMetrics {
   avg_sell_price: number | null;
   fiat_extracted_cents: number;
   total_sats_spent: number;
+  total_onchain_fees_paid_sats: number;
   sats_stacked_7d: number;
   usd_invested_7d_cents: number;
   sats_stacked_31d: number;
@@ -87,6 +106,65 @@ export interface ActivityMetrics {
   heatmap_data: YearHeatmapData[];
 }
 
+export interface OnchainFee {
+  id: string;
+  amount_sats: number;
+  memo: string | null;
+  timestamp: string; // ISO date string from Rust
+  created_at: string; // ISO date string from Rust
+  tx_hash: string | null;
+}
+
+export interface CreateOnchainFeeRequest {
+  amount_sats: number;
+  memo: string | null;
+  timestamp: string; // ISO date string
+  tx_hash: string | null;
+}
+
+export interface UpdateOnchainFeeRequest {
+  amount_sats: number;
+  memo: string | null;
+  timestamp: string; // ISO date string
+  tx_hash: string | null;
+}
+
+export interface PaginatedOnchainFees {
+  fees: OnchainFee[];
+  total_count: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  has_more: boolean;
+}
+
+export interface UnifiedEvent {
+  id: string;
+  record_type: string; // "exchange_transaction" or "onchain_fee"
+  amount_sats: number;
+  memo: string | null;
+  timestamp: string;
+  created_at: string;
+
+  // Exchange-specific fields (null for onchain fees)
+  subtotal_cents: number | null;
+  fee_cents: number | null;
+  provider_id: string | null;
+  transaction_type: string | null; // "buy", "sell", or "fee"
+
+  // Onchain-specific fields (null for exchange transactions)
+  tx_hash: string | null;
+}
+
+export interface PaginatedUnifiedEvents {
+  events: UnifiedEvent[];
+  total_count: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  has_more: boolean;
+}
+
 export interface YearHeatmapData {
   year: number;
   weeks: WeekData[];
@@ -103,41 +181,50 @@ export interface DayData {
   level: number; // 0-4 for color intensity
 }
 
+export interface CsvPreview {
+  format: string;
+  bitcoin_transactions_found: number;
+  headers_found_at_line: number;
+  total_rows_in_file: number;
+}
+
 export class TauriService {
-  // Create a new balance change event
-  static async createBalanceChangeEvent(
-    request: CreateBalanceChangeEventRequest
-  ): Promise<BalanceChangeEvent> {
-    return await invoke("create_balance_change_event", { request });
+  // Create a new bitcoin transaction
+  static async createExchangeTransaction(
+    request: CreateExchangeTransactionRequest
+  ): Promise<ExchangeTransaction> {
+    return await invoke("create_exchange_transaction", { request });
   }
 
-  // Get paginated balance change events with simple parameters
-  static async getBalanceChangeEvents(
+  // Get paginated bitcoin transactions with simple parameters
+  static async getExchangeTransactions(
     page: number = 0,
     pageSize: number = 100
-  ): Promise<PaginatedBalanceChangeEvents> {
-    return await invoke("get_balance_change_events", {
+  ): Promise<PaginatedBitcoinTransactions> {
+    return await invoke("get_exchange_transactions", {
       page,
       pageSize,
     });
   }
 
-  // Update a balance change event
-  static async updateBalanceChangeEvent(
+  // Update a bitcoin transaction
+  static async updateExchangeTransaction(
     id: string,
-    request: UpdateBalanceChangeEventRequest
-  ): Promise<BalanceChangeEvent> {
-    return await invoke("update_balance_change_event", { id, request });
+    request: UpdateExchangeTransactionRequest
+  ): Promise<ExchangeTransaction> {
+    return await invoke("update_exchange_transaction", { id, request });
   }
 
-  // Delete a balance change event
-  static async deleteBalanceChangeEvent(id: string): Promise<void> {
-    return await invoke("delete_balance_change_event", { id });
+  // Delete a bitcoin transaction
+  static async deleteExchangeTransaction(id: string): Promise<void> {
+    return await invoke("delete_exchange_transaction", { id });
   }
 
-  // Get portfolio metrics
-  static async getPortfolioMetrics(): Promise<PortfolioMetrics> {
-    return await invoke("get_portfolio_metrics");
+  // Get overview metrics
+  static async getOverviewMetrics(): Promise<OverviewMetrics> {
+    const metrics = await invoke<OverviewMetrics>("get_overview_metrics");
+    console.log("Retrieved overview metrics:", metrics);
+    return metrics;
   }
 
   // Import Sat Tracker v1 data
@@ -145,11 +232,11 @@ export class TauriService {
     return await invoke("import_sat_tracker_v1_data");
   }
 
-  // Create undocumented lumpsum events
-  static async createUndocumentedLumpsumEvents(
+  // Create undocumented lumpsum transactions
+  static async createUndocumentedLumpsumTransactions(
     request: CreateUndocumentedLumpsumRequest
-  ): Promise<BalanceChangeEvent[]> {
-    return await invoke("create_undocumented_lumpsum_events", {
+  ): Promise<ExchangeTransaction[]> {
+    return await invoke("create_undocumented_lumpsum_transactions", {
       startDate: request.start_date,
       endDate: request.end_date,
       totalSats: request.total_sats,
@@ -204,15 +291,71 @@ export class TauriService {
     console.log("Fetching activity metrics");
     return await invoke("get_activity_metrics");
   }
+
+  // Import CSV data
+  static async importCsvData(filePath: string): Promise<ExchangeTransaction[]> {
+    return await invoke("import_csv_data", { filePath });
+  }
+
+  // Analyze CSV file
+  static async analyzeCsvFile(filePath: string): Promise<CsvPreview> {
+    return await invoke("analyze_csv_file", { filePath });
+  }
+
+  // Create a new onchain fee
+  static async createOnchainFee(
+    request: CreateOnchainFeeRequest
+  ): Promise<OnchainFee> {
+    return await invoke("create_onchain_fee", { request });
+  }
+
+  // Get paginated onchain fees
+  static async getOnchainFees(
+    page: number = 0,
+    pageSize: number = 100
+  ): Promise<PaginatedOnchainFees> {
+    return await invoke("get_onchain_fees", {
+      page,
+      pageSize,
+    });
+  }
+
+  // Update an onchain fee
+  static async updateOnchainFee(
+    id: string,
+    request: UpdateOnchainFeeRequest
+  ): Promise<OnchainFee> {
+    return await invoke("update_onchain_fee", { id, request });
+  }
+
+  // Delete an onchain fee
+  static async deleteOnchainFee(id: string): Promise<void> {
+    return await invoke("delete_onchain_fee", { id });
+  }
+
+  // Get unified events (both exchange transactions and onchain fees)
+  static async getUnifiedEvents(
+    page: number = 0,
+    pageSize: number = 100
+  ): Promise<PaginatedUnifiedEvents> {
+    return await invoke("get_unified_events", {
+      page,
+      pageSize,
+    });
+  }
 }
 
 // Export individual functions for convenience
 export const {
-  createBalanceChangeEvent,
-  getBalanceChangeEvents,
-  updateBalanceChangeEvent,
-  deleteBalanceChangeEvent,
-  getPortfolioMetrics,
+  createExchangeTransaction,
+  getExchangeTransactions,
+  updateExchangeTransaction,
+  deleteExchangeTransaction,
+  createOnchainFee,
+  getOnchainFees,
+  updateOnchainFee,
+  deleteOnchainFee,
+  getOverviewMetrics,
   importSatTrackerV1Data,
-  createUndocumentedLumpsumEvents,
+  createUndocumentedLumpsumTransactions,
 } = TauriService;

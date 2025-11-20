@@ -1,23 +1,16 @@
-import { useState, useEffect, useCallback } from "react";
-import {
-  TauriService,
-  DatabaseStatus,
-  BalanceChangeEvent,
-} from "./services/tauriService";
-import {
-  useEvents,
-  useCreateEvent,
-  useUpdateEvent,
-  useDeleteEvent,
-} from "./hooks/useEvents";
+import { useState, useEffect } from "react";
+import { TauriService, DatabaseStatus } from "./services/tauriService";
 import { useQueryClient } from "@tanstack/react-query";
 import AppHeader from "./components/AppHeader";
 import ToolContainer from "./components/ToolContainer";
 import LumpsumModal from "./components/LumpsumModal";
 import PasswordPromptModal from "./components/PasswordPromptModal";
 import EncryptionSettings from "./components/EncryptionSettings";
+import CsvImportModal from "./components/CsvImportModal";
+import Modal from "./components/Modal";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
+import { invalidateAfterUnifiedEventDataChange } from "./utils/queryInvalidation";
 
 function App() {
   // Database initialization state
@@ -34,23 +27,9 @@ function App() {
   const [showToolDropdown, setShowToolDropdown] = useState(false);
   const [showLumpsumModal, setShowLumpsumModal] = useState(false);
   const [showEncryptionSettings, setShowEncryptionSettings] = useState(false);
+  const [showCsvImportModal, setShowCsvImportModal] = useState(false);
 
-  // Replace event state with hooks
-  const {
-    events,
-    totalCount,
-    loading: eventsLoading,
-  } = useEvents(isDatabaseInitialized);
-  const createEventMutation = useCreateEvent();
-  const updateEventMutation = useUpdateEvent();
-  const deleteEventMutation = useDeleteEvent();
   const queryClient = useQueryClient();
-
-  // UI state for editing (keep these)
-  const [editingEventId, setEditingEventId] = useState<string | null>(null);
-  const [editData, setEditData] = useState<any>(null);
-  const [isCreatingNew, setIsCreatingNew] = useState(false);
-  const [newEventData, setNewEventData] = useState<any>(null);
 
   // Lumpsum modal state
   const [lumpsumData, setLumpsumData] = useState({
@@ -61,111 +40,6 @@ function App() {
     frequency: "weekly" as "daily" | "weekly" | "monthly",
     memo: "",
   });
-
-  // Memoized event handlers
-  const handleEditEvent = useCallback((event: BalanceChangeEvent) => {
-    setIsCreatingNew(false);
-    setNewEventData(null);
-    setEditingEventId(event.id);
-    setEditData({
-      event_type: event.event_type,
-      amount_sats: event.amount_sats,
-      value_cents: event.value_cents,
-      memo: event.memo,
-      timestamp: event.timestamp,
-    });
-  }, []);
-
-  const handleSaveEvent = useCallback(async () => {
-    if (!editingEventId || !editData) return;
-
-    try {
-      await updateEventMutation.mutateAsync({
-        id: editingEventId,
-        request: {
-          amount_sats: editData.amount_sats,
-          value_cents: editData.value_cents,
-          event_type: editData.event_type as "Buy" | "Sell" | "Fee",
-          memo: editData.memo,
-          timestamp: editData.timestamp,
-        },
-      });
-    } catch (error) {
-      console.error("Error updating event:", error);
-    } finally {
-      setEditingEventId(null);
-      setEditData(null);
-    }
-  }, [editingEventId, editData, updateEventMutation]);
-
-  const handleDeleteEvent = useCallback(async () => {
-    if (!editingEventId) return;
-
-    try {
-      await deleteEventMutation.mutateAsync(editingEventId);
-    } catch (error) {
-      console.error("Error deleting event:", error);
-    } finally {
-      setEditingEventId(null);
-      setEditData(null);
-    }
-  }, [editingEventId, deleteEventMutation]);
-
-  const handleCancelEdit = useCallback(() => {
-    setEditingEventId(null);
-    setEditData(null);
-  }, []);
-
-  const handleEditDataChange = useCallback((field: string, value: any) => {
-    setEditData((prev: any) => ({
-      ...prev,
-      [field]: value,
-    }));
-  }, []);
-
-  const handleAddNewEvent = useCallback(() => {
-    setIsCreatingNew(true);
-    setNewEventData({
-      event_type: "Buy",
-      amount_sats: 0,
-      value_cents: null,
-      memo: null,
-      timestamp: new Date().toISOString(),
-    });
-    setEditingEventId(null);
-    setEditData(null);
-  }, []);
-
-  const handleSaveNewEvent = useCallback(async () => {
-    if (!newEventData) return;
-
-    try {
-      await createEventMutation.mutateAsync({
-        amount_sats: newEventData.amount_sats,
-        value_cents: newEventData.value_cents,
-        event_type: newEventData.event_type as "Buy" | "Sell" | "Fee",
-        memo: newEventData.memo,
-        timestamp: newEventData.timestamp,
-      });
-    } catch (error) {
-      console.error("Error creating event:", error);
-    } finally {
-      setIsCreatingNew(false);
-      setNewEventData(null);
-    }
-  }, [newEventData, createEventMutation]);
-
-  const handleCancelNewEvent = useCallback(() => {
-    setIsCreatingNew(false);
-    setNewEventData(null);
-  }, []);
-
-  const handleNewEventDataChange = useCallback((field: string, value: any) => {
-    setNewEventData((prev: any) => ({
-      ...prev,
-      [field]: value,
-    }));
-  }, []);
 
   // Database initialization functions
 
@@ -261,23 +135,18 @@ function App() {
         return;
       }
 
-      const request = {
-        start_date: startDate.toISOString(),
-        end_date: endDate.toISOString(),
-        total_sats: parseInt(lumpsumData.total_sats),
-        total_usd_cents: Math.round(parseFloat(lumpsumData.total_usd) * 100),
-        frequency: lumpsumData.frequency,
-        memo: lumpsumData.memo.trim() || undefined,
-      };
+      const createdTransactions =
+        await TauriService.createUndocumentedLumpsumTransactions({
+          start_date: startDate.toISOString(),
+          end_date: endDate.toISOString(),
+          total_sats: parseInt(lumpsumData.total_sats),
+          total_usd_cents: Math.round(parseFloat(lumpsumData.total_usd) * 100),
+          frequency: lumpsumData.frequency,
+          memo: lumpsumData.memo.trim() || undefined,
+        });
 
-      const createdEvents = await TauriService.createUndocumentedLumpsumEvents(
-        request
-      );
-
-      // Invalidate all queries to refetch
-      queryClient.invalidateQueries({ queryKey: ["events"] });
-      queryClient.invalidateQueries({ queryKey: ["portfolioMetrics"] });
-      queryClient.invalidateQueries({ queryKey: ["activityMetrics"] });
+      // Invalidate all queries to refetch after import
+      invalidateAfterUnifiedEventDataChange(queryClient);
 
       setShowLumpsumModal(false);
       setLumpsumData({
@@ -289,7 +158,7 @@ function App() {
         memo: "",
       });
 
-      alert(`Successfully created ${createdEvents.length} events`);
+      alert(`Successfully created ${createdTransactions.length} transactions`);
     } catch (error) {
       console.error("Error creating lumpsum events:", error);
       alert(`Failed to create events: ${error}`);
@@ -300,24 +169,6 @@ function App() {
   useEffect(() => {
     checkDatabaseStatusAndInitialize();
   }, []);
-
-  // Keyboard event listener for shared state
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        if (editingEventId) {
-          handleCancelEdit();
-        } else if (isCreatingNew) {
-          handleCancelNewEvent();
-        }
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [editingEventId, isCreatingNew]);
 
   // Set up menu event listeners once database is initialized
   useEffect(() => {
@@ -331,9 +182,7 @@ function App() {
             console.log("Import result:", result);
 
             // Invalidate all queries to refetch after import
-            queryClient.invalidateQueries({ queryKey: ["events"] });
-            queryClient.invalidateQueries({ queryKey: ["portfolioMetrics"] });
-            queryClient.invalidateQueries({ queryKey: ["activityMetrics"] });
+            invalidateAfterUnifiedEventDataChange(queryClient);
 
             alert(`Import completed: ${result}`);
           } catch (error) {
@@ -348,6 +197,10 @@ function App() {
 
         await listen("menu-encryption-settings", () => {
           setShowEncryptionSettings(true);
+        });
+
+        await listen("menu-import-csv", () => {
+          setShowCsvImportModal(true);
         });
       };
 
@@ -390,25 +243,7 @@ function App() {
           setShowToolDropdown={setShowToolDropdown}
         />
 
-        <ToolContainer
-          selectedTool={selectedTool}
-          events={events}
-          eventsLoading={eventsLoading}
-          totalCount={totalCount}
-          editingEventId={editingEventId}
-          editData={editData}
-          isCreatingNew={isCreatingNew}
-          newEventData={newEventData}
-          onAddNewEvent={handleAddNewEvent}
-          onEditEvent={handleEditEvent}
-          onSaveEvent={handleSaveEvent}
-          onDeleteEvent={handleDeleteEvent}
-          onCancelEdit={handleCancelEdit}
-          onEditDataChange={handleEditDataChange}
-          onSaveNewEvent={handleSaveNewEvent}
-          onCancelNewEvent={handleCancelNewEvent}
-          onNewEventDataChange={handleNewEventDataChange}
-        />
+        <ToolContainer selectedTool={selectedTool} />
       </div>
 
       <LumpsumModal
@@ -419,31 +254,37 @@ function App() {
         onCreateEvents={handleCreateLumpsumEvents}
       />
 
+      <CsvImportModal
+        isOpen={showCsvImportModal}
+        onClose={() => setShowCsvImportModal(false)}
+        onImportComplete={(events) => {
+          // Invalidate all queries to refetch after import
+          queryClient.invalidateQueries({ queryKey: ["unifiedEvents"] });
+          queryClient.invalidateQueries({ queryKey: ["portfolioMetrics"] });
+          queryClient.invalidateQueries({ queryKey: ["activityMetrics"] });
+
+          alert(`Successfully imported ${events.length} events`);
+        }}
+      />
+
       {showEncryptionSettings && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-[#2A2633] border border-[rgba(247,243,227,0.3)] rounded-lg w-[500px] max-h-[80vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold text-[#F7F3E3]">
-                  Database Encryption
-                </h2>
-                <button
-                  onClick={() => setShowEncryptionSettings(false)}
-                  className="text-[rgba(247,243,227,0.6)] hover:text-[#F7F3E3] text-xl"
-                >
-                  ×
-                </button>
-              </div>
-              <EncryptionSettings
-                isEncrypted={databaseStatus?.is_encrypted || false}
-                onEncryptionChange={async () => {
-                  await checkDatabaseStatusAndInitialize();
-                }}
-                onClose={() => setShowEncryptionSettings(false)}
-              />
-            </div>
+        <Modal
+          isOpen={showEncryptionSettings}
+          onClose={() => setShowEncryptionSettings(false)}
+          title="Database Encryption"
+          maxWidth="500px"
+          maxHeight="80vh"
+        >
+          <div className="p-6">
+            <EncryptionSettings
+              isEncrypted={databaseStatus?.is_encrypted || false}
+              onEncryptionChange={async () => {
+                await checkDatabaseStatusAndInitialize();
+              }}
+              onClose={() => setShowEncryptionSettings(false)}
+            />
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

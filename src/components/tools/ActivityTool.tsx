@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { BalanceChangeEvent } from "../../services/tauriService";
+import { ExchangeTransaction } from "../../services/tauriService";
 import MainLayout from "../layouts/MainLayout";
 import { useBitcoinPrice } from "../../hooks/useBitcoinPrice";
 import { useActivityMetrics } from "../../hooks/useActivityMetrics";
@@ -8,43 +8,10 @@ import MetricsGrid, { MetricItem, BitcoinPriceMetric } from "../MetricsGrid";
 import AnalyticsSection from "../AnalyticsSection";
 
 interface ActivityToolProps {
-  events: BalanceChangeEvent[];
-  eventsLoading: boolean;
-  totalCount: number;
-  editingEventId: string | null;
-  editData: any;
-  isCreatingNew: boolean;
-  newEventData: any;
-  onAddNewEvent: () => void;
-  onEditEvent: (event: BalanceChangeEvent) => void;
-  onSaveEvent: () => Promise<void>;
-  onDeleteEvent: () => Promise<void>;
-  onCancelEdit: () => void;
-  onEditDataChange: (field: string, value: any) => void;
-  onSaveNewEvent: () => Promise<void>;
-  onCancelNewEvent: () => void;
-  onNewEventDataChange: (field: string, value: any) => void;
+  // All event-related props removed!
 }
 
-const ActivityTool: React.FC<ActivityToolProps> = ({
-  events,
-  // @ts-ignore
-  eventsLoading,
-  totalCount,
-  editingEventId,
-  editData,
-  isCreatingNew,
-  newEventData,
-  onAddNewEvent,
-  onEditEvent,
-  onSaveEvent,
-  onDeleteEvent,
-  onCancelEdit,
-  onEditDataChange,
-  onSaveNewEvent,
-  onCancelNewEvent,
-  onNewEventDataChange,
-}) => {
+const ActivityTool: React.FC<ActivityToolProps> = () => {
   // Load activity metrics
   const { activityMetrics, loading: activityLoading } =
     useActivityMetrics(true);
@@ -291,21 +258,6 @@ const ActivityTool: React.FC<ActivityToolProps> = ({
     <MainLayout
       leftContent={activityLeftContent}
       analyticsContent={activityAnalytics}
-      events={events}
-      totalCount={totalCount}
-      editingEventId={editingEventId}
-      editData={editData}
-      isCreatingNew={isCreatingNew}
-      newEventData={newEventData}
-      onAddNewEvent={onAddNewEvent}
-      onEditEvent={onEditEvent}
-      onSaveEvent={onSaveEvent}
-      onDeleteEvent={onDeleteEvent}
-      onCancelEdit={onCancelEdit}
-      onEditDataChange={onEditDataChange}
-      onSaveNewEvent={onSaveNewEvent}
-      onCancelNewEvent={onCancelNewEvent}
-      onNewEventDataChange={onNewEventDataChange}
     />
   );
 };

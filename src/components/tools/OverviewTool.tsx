@@ -1,49 +1,25 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { BalanceChangeEvent } from "../../services/tauriService";
+import { ExchangeTransaction } from "../../services/tauriService";
 import SatsHoldingsChartSection from "../SatsHoldingsChartSection";
 import AnalyticsSection from "../AnalyticsSection";
 import MainLayout from "../layouts/MainLayout";
 import { useBitcoinPrice } from "../../hooks/useBitcoinPrice";
 import { usePortfolioMetrics } from "../../hooks/usePortfolioMetrics";
+import { useUnifiedEvents } from "../../hooks/useUnifiedEvents";
 import MetricsGrid, { MetricItem, BitcoinPriceMetric } from "../MetricsGrid";
 
 interface OverviewToolProps {
-  events: BalanceChangeEvent[];
-  eventsLoading: boolean;
-  totalCount: number;
-  editingEventId: string | null;
-  editData: any;
-  isCreatingNew: boolean;
-  newEventData: any;
-  onAddNewEvent: () => void;
-  onEditEvent: (event: BalanceChangeEvent) => void;
-  onSaveEvent: () => Promise<void>;
-  onDeleteEvent: () => Promise<void>;
-  onCancelEdit: () => void;
-  onEditDataChange: (field: string, value: any) => void;
-  onSaveNewEvent: () => Promise<void>;
-  onCancelNewEvent: () => void;
-  onNewEventDataChange: (field: string, value: any) => void;
+  // All event-related props removed!
 }
 
-const OverviewTool: React.FC<OverviewToolProps> = ({
-  events,
-  eventsLoading,
-  totalCount,
-  editingEventId,
-  editData,
-  isCreatingNew,
-  newEventData,
-  onAddNewEvent,
-  onEditEvent,
-  onSaveEvent,
-  onDeleteEvent,
-  onCancelEdit,
-  onEditDataChange,
-  onSaveNewEvent,
-  onCancelNewEvent,
-  onNewEventDataChange,
-}) => {
+const OverviewTool: React.FC<OverviewToolProps> = () => {
+  // Get events data using the hook
+  const {
+    events,
+    totalCount,
+    loading: eventsLoading,
+  } = useUnifiedEvents(true);
+
   console.log(
     "[OverviewTool] Component rendering, events count:",
     events.length,
@@ -86,7 +62,7 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
     }
   }, [liveBitcoinPrice, customBitcoinPrice, bitcoinPriceLoading]);
 
-  // Log portfolio metrics changes
+  // Log overview metrics changes
   useEffect(() => {
     console.log("[OverviewTool] Portfolio metrics effect:", {
       portfolioMetrics,
@@ -172,6 +148,23 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
       bitcoinPrice,
     });
 
+    // Helper function to calculate unrealized gain
+    const calculateUnrealizedGain = () => {
+      if (
+        metricsLoading ||
+        !portfolioMetrics?.current_sats ||
+        !portfolioMetrics?.total_invested_cents
+      ) {
+        return null;
+      }
+      const currentValue =
+        ((portfolioMetrics.current_sats || 0) / 100_000_000) * bitcoinPrice;
+      const totalInvested = (portfolioMetrics.total_invested_cents || 0) / 100;
+      return currentValue - totalInvested;
+    };
+
+    const unrealizedGain = calculateUnrealizedGain();
+
     return [
       {
         label: "Portfolio Value",
@@ -185,6 +178,32 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
               maximumFractionDigits: 0,
             })}`,
         color: "orange",
+        hint: "Current portfolio value with 24-hour change based on Bitcoin price movement alone",
+        subValue: (() => {
+          if (
+            metricsLoading ||
+            !portfolioMetrics?.current_sats ||
+            percentChange24hr === null
+          ) {
+            return undefined;
+          }
+          const currentPortfolioValue =
+            ((portfolioMetrics.current_sats || 0) / 100_000_000) * bitcoinPrice;
+          const dailyDollarChange =
+            currentPortfolioValue * (percentChange24hr / 100);
+          const sign = dailyDollarChange >= 0 ? "+" : "";
+          return `${sign}$${Math.abs(dailyDollarChange).toLocaleString(
+            undefined,
+            {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0,
+            }
+          )} (24hr)`;
+        })(),
+        subValueColor:
+          percentChange24hr !== null && percentChange24hr >= 0
+            ? "green"
+            : "red",
       },
       {
         label: "Current Sats",
@@ -204,20 +223,10 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
       },
       {
         label: "Unrealized Gain",
-        value: (() => {
-          if (
-            metricsLoading ||
-            !portfolioMetrics?.current_sats ||
-            !portfolioMetrics?.total_invested_cents
-          ) {
-            return "...";
-          }
-          const currentValue =
-            ((portfolioMetrics.current_sats || 0) / 100_000_000) * bitcoinPrice;
-          const totalInvested =
-            (portfolioMetrics.total_invested_cents || 0) / 100;
-          const unrealizedGain = currentValue - totalInvested;
-          return unrealizedGain >= 0
+        value:
+          unrealizedGain === null
+            ? "..."
+            : unrealizedGain >= 0
             ? `+$${unrealizedGain.toLocaleString(undefined, {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0,
@@ -225,9 +234,19 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
             : `-$${Math.abs(unrealizedGain).toLocaleString(undefined, {
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0,
-              })}`;
-        })(),
-        color: "green",
+              })}`,
+        color:
+          unrealizedGain === null
+            ? "green"
+            : unrealizedGain >= 0
+            ? "green"
+            : "red",
+        hint:
+          unrealizedGain === null
+            ? "Unrealized gain/loss"
+            : unrealizedGain >= 0
+            ? undefined
+            : "HODL",
       },
     ];
   }, [metricsLoading, portfolioMetrics, bitcoinPrice]);
@@ -247,7 +266,7 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
       "[OverviewTool] Creating chart component with events:",
       events.length
     );
-    return <SatsHoldingsChartSection events={events} />;
+    return <SatsHoldingsChartSection />;
   }, [events]);
 
   const overviewLeftContent = (
@@ -344,21 +363,6 @@ const OverviewTool: React.FC<OverviewToolProps> = ({
     <MainLayout
       leftContent={overviewLeftContent}
       analyticsContent={overviewAnalytics}
-      events={events}
-      totalCount={totalCount}
-      editingEventId={editingEventId}
-      editData={editData}
-      isCreatingNew={isCreatingNew}
-      newEventData={newEventData}
-      onAddNewEvent={onAddNewEvent}
-      onEditEvent={onEditEvent}
-      onSaveEvent={onSaveEvent}
-      onDeleteEvent={onDeleteEvent}
-      onCancelEdit={onCancelEdit}
-      onEditDataChange={onEditDataChange}
-      onSaveNewEvent={onSaveNewEvent}
-      onCancelNewEvent={onCancelNewEvent}
-      onNewEventDataChange={onNewEventDataChange}
     />
   );
 };

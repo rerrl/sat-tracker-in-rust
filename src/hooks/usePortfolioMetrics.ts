@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { TauriService, PortfolioMetrics } from "../services/tauriService";
+import { TauriService, OverviewMetrics } from "../services/tauriService";
 
 export const usePortfolioMetrics = (isDatabaseInitialized: boolean) => {
   const {
@@ -9,9 +9,9 @@ export const usePortfolioMetrics = (isDatabaseInitialized: boolean) => {
     refetch,
   } = useQuery({
     queryKey: ['portfolioMetrics'],
-    queryFn: async (): Promise<PortfolioMetrics> => {
-      console.log("Fetching portfolio metrics");
-      return await TauriService.getPortfolioMetrics();
+    queryFn: async (): Promise<OverviewMetrics> => {
+      console.log("Fetching overview metrics");
+      return await TauriService.getOverviewMetrics();
     },
     enabled: isDatabaseInitialized,
     staleTime: Infinity,
