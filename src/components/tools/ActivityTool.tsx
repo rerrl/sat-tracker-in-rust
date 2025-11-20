@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { ExchangeTransaction } from "../../services/tauriService";
 import MainLayout from "../layouts/MainLayout";
 import { useBitcoinPrice } from "../../hooks/useBitcoinPrice";
 import { useActivityMetrics } from "../../hooks/useActivityMetrics";

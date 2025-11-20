@@ -1,7 +1,6 @@
 import React from "react";
 import OverviewTool from "./tools/OverviewTool";
 import ActivityTool from "./tools/ActivityTool";
-import { ExchangeTransaction } from "../services/tauriService";
 
 interface ToolContainerProps {
   selectedTool: string;

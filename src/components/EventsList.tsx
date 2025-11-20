@@ -25,7 +25,7 @@ const EventsList: React.FC<EventsListProps> = () => {
     useState<EditBitcoinTransactionData | null>(null);
 
   // Get events data and mutations
-  const { events, totalCount, loading: eventsLoading } = useUnifiedEvents(true);
+  const { events, totalCount } = useUnifiedEvents(true);
   const queryClient = useQueryClient();
 
   // Pagination state

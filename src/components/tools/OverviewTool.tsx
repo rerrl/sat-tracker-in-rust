@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { ExchangeTransaction } from "../../services/tauriService";
 import SatsHoldingsChartSection from "../SatsHoldingsChartSection";
 import AnalyticsSection from "../AnalyticsSection";
 import MainLayout from "../layouts/MainLayout";
@@ -14,11 +13,7 @@ interface OverviewToolProps {
 
 const OverviewTool: React.FC<OverviewToolProps> = () => {
   // Get events data using the hook
-  const {
-    events,
-    totalCount,
-    loading: eventsLoading,
-  } = useUnifiedEvents(true);
+  const { events, loading: eventsLoading } = useUnifiedEvents(true);
 
   console.log(
     "[OverviewTool] Component rendering, events count:",
