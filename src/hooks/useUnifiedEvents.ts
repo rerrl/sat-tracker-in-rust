@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { TauriService, UnifiedEvent } from "../services/tauriService";
 
-export const useCombinedEvents = (isDatabaseInitialized: boolean) => {
+export const useUnifiedEvents = (isDatabaseInitialized: boolean) => {
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["combinedEvents"],
+    queryKey: ["unifiedEvents"],
     queryFn: async () => {
       console.log("Fetching all unified events");
       let allEvents: UnifiedEvent[] = [];
@@ -12,10 +12,7 @@ export const useCombinedEvents = (isDatabaseInitialized: boolean) => {
       let totalCount = 0;
 
       while (hasMore) {
-        const result = await TauriService.getUnifiedEvents(
-          currentPage,
-          1000
-        );
+        const result = await TauriService.getUnifiedEvents(currentPage, 1000);
         allEvents = [...allEvents, ...result.events];
         hasMore = result.has_more;
         totalCount = result.total_count;
@@ -44,6 +41,3 @@ export const useCombinedEvents = (isDatabaseInitialized: boolean) => {
     refetch,
   };
 };
-
-// Keep the existing transaction mutations for backward compatibility
-export { useCreateExchangeTransaction, useUpdateExchangeTransaction, useDeleteExchangeTransaction } from './useExchangeTransactions';

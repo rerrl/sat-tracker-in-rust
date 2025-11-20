@@ -11,7 +11,7 @@ import {
   Filler,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
-import { useCombinedEvents } from "../hooks/useCombinedEvents";
+import { useUnifiedEvents } from "../hooks/useUnifiedEvents";
 import { UnifiedEvent } from "../services/tauriService";
 
 ChartJS.register(
@@ -30,7 +30,7 @@ export default function SatsHoldingsChart() {
   const chartRef = useRef<any>(null);
   
   // Get events data using the hook
-  const { events } = useCombinedEvents(true);
+  const { events } = useUnifiedEvents(true);
 
   // Force chart resize when container changes
   useEffect(() => {

@@ -5,7 +5,7 @@ import AnalyticsSection from "../AnalyticsSection";
 import MainLayout from "../layouts/MainLayout";
 import { useBitcoinPrice } from "../../hooks/useBitcoinPrice";
 import { usePortfolioMetrics } from "../../hooks/usePortfolioMetrics";
-import { useCombinedEvents } from "../../hooks/useCombinedEvents";
+import { useUnifiedEvents } from "../../hooks/useUnifiedEvents";
 import MetricsGrid, { MetricItem, BitcoinPriceMetric } from "../MetricsGrid";
 
 interface OverviewToolProps {
@@ -18,7 +18,7 @@ const OverviewTool: React.FC<OverviewToolProps> = () => {
     events,
     totalCount,
     loading: eventsLoading,
-  } = useCombinedEvents(true);
+  } = useUnifiedEvents(true);
 
   console.log(
     "[OverviewTool] Component rendering, events count:",

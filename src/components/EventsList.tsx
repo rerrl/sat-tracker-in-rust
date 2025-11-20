@@ -4,12 +4,7 @@ import {
   UnifiedEvent,
 } from "../services/tauriService";
 import DateTimeInput from "./DateTimeInput";
-import {
-  useCombinedEvents,
-  useCreateExchangeTransaction,
-  useUpdateExchangeTransaction,
-  useDeleteExchangeTransaction,
-} from "../hooks/useCombinedEvents";
+import { useUnifiedEvents } from "../hooks/useUnifiedEvents";
 
 const EventItem = React.memo(
   ({
@@ -506,10 +501,22 @@ const EventItem = React.memo(
             </div>
             <div className="text-[rgba(247,243,227,0.5)] text-xs">
               {event.subtotal_cents ? (
-                <span title={`Total: $${((event.subtotal_cents + (event.fee_cents || 0)) / 100).toFixed(2)} (Subtotal: $${(event.subtotal_cents / 100).toFixed(2)}${event.fee_cents ? ` + Fee: $${(event.fee_cents / 100).toFixed(2)}` : ''})`}>
+                <span
+                  title={`Total: $${(
+                    (event.subtotal_cents + (event.fee_cents || 0)) /
+                    100
+                  ).toFixed(2)} (Subtotal: $${(
+                    event.subtotal_cents / 100
+                  ).toFixed(2)}${
+                    event.fee_cents
+                      ? ` + Fee: $${(event.fee_cents / 100).toFixed(2)}`
+                      : ""
+                  })`}
+                >
                   $
                   {(() => {
-                    const totalCents = event.subtotal_cents + (event.fee_cents || 0);
+                    const totalCents =
+                      event.subtotal_cents + (event.fee_cents || 0);
                     return totalCents >= 99900
                       ? Math.round(totalCents / 100).toLocaleString()
                       : (totalCents / 100).toFixed(2);
@@ -522,7 +529,9 @@ const EventItem = React.memo(
             <div className="text-[rgba(247,243,227,0.5)] text-xs">
               {event.subtotal_cents && event.amount_sats
                 ? `$${Math.round(
-                    (event.subtotal_cents + (event.fee_cents || 0)) / 100 / (event.amount_sats / 100000000)
+                    (event.subtotal_cents + (event.fee_cents || 0)) /
+                      100 /
+                      (event.amount_sats / 100000000)
                   ).toLocaleString()}`
                 : event.record_type === "onchain_fee"
                 ? "-"
@@ -569,7 +578,12 @@ const EventItem = React.memo(
                     {/* Exchange Rate with Effective Rate inline */}
                     <div>
                       <span className="font-medium text-[rgba(247,243,227,0.8)]">
-                        Exchange Rate{event.fee_cents !== null && event.fee_cents !== undefined ? " (Effective)" : ""}:
+                        Exchange Rate
+                        {event.fee_cents !== null &&
+                        event.fee_cents !== undefined
+                          ? " (Effective)"
+                          : ""}
+                        :
                       </span>{" "}
                       <span className="text-blue-300">
                         $
@@ -582,20 +596,23 @@ const EventItem = React.memo(
                           maximumFractionDigits: 0,
                         })}
                       </span>
-                      {event.fee_cents !== null && event.fee_cents !== undefined && (
-                        <span className="text-orange-300">
-                          {" "}($
-                          {(
-                            (Math.abs(event.subtotal_cents) +
-                              Math.abs(event.fee_cents)) /
-                            100 /
-                            (Math.abs(event.amount_sats) / 100_000_000)
-                          ).toLocaleString(undefined, {
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          })})
-                        </span>
-                      )}
+                      {event.fee_cents !== null &&
+                        event.fee_cents !== undefined && (
+                          <span className="text-orange-300">
+                            {" "}
+                            ($
+                            {(
+                              (Math.abs(event.subtotal_cents) +
+                                Math.abs(event.fee_cents)) /
+                              100 /
+                              (Math.abs(event.amount_sats) / 100_000_000)
+                            ).toLocaleString(undefined, {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            })}
+                            )
+                          </span>
+                        )}
                     </div>
 
                     {/* Subtotal */}
@@ -627,7 +644,9 @@ const EventItem = React.memo(
                             <span className="text-yellow-300">
                               $
                               {(
-                                (Math.abs(event.subtotal_cents) + Math.abs(event.fee_cents)) / 100
+                                (Math.abs(event.subtotal_cents) +
+                                  Math.abs(event.fee_cents)) /
+                                100
                               ).toFixed(2)}
                             </span>
                           </div>
@@ -673,15 +692,7 @@ const EventsList: React.FC<EventsListProps> = () => {
     useState<EditBitcoinTransactionData | null>(null);
 
   // Get events data and mutations
-  const {
-    events,
-    totalCount,
-    loading: eventsLoading,
-  } = useCombinedEvents(true);
-
-  const createExchangeTransactionMutation = useCreateExchangeTransaction();
-  const updateExchangeTransactionMutation = useUpdateExchangeTransaction();
-  const deleteExchangeTransactionMutation = useDeleteExchangeTransaction();
+  const { events, totalCount, loading: eventsLoading } = useUnifiedEvents(true);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0);
@@ -738,38 +749,25 @@ const EventsList: React.FC<EventsListProps> = () => {
     if (!editingEventId || !editData) return;
 
     try {
-      await updateExchangeTransactionMutation.mutateAsync({
-        id: editingEventId,
-        request: {
-          type: editData.type as "Buy" | "Sell",
-          amount_sats: editData.amount_sats,
-          subtotal_cents: editData.subtotal_cents,
-          fee_cents: editData.fee_cents,
-          memo: editData.memo,
-          timestamp: editData.timestamp,
-          provider_id: editData.provider_id,
-        },
-      });
     } catch (error) {
       console.error("Error updating event:", error);
     } finally {
       setEditingEventId(null);
       setEditData(null);
     }
-  }, [editingEventId, editData, updateExchangeTransactionMutation]);
+  }, [editingEventId, editData]);
 
   const handleDeleteEvent = useCallback(async () => {
     if (!editingEventId) return;
 
     try {
-      await deleteExchangeTransactionMutation.mutateAsync(editingEventId);
     } catch (error) {
       console.error("Error deleting event:", error);
     } finally {
       setEditingEventId(null);
       setEditData(null);
     }
-  }, [editingEventId, deleteExchangeTransactionMutation]);
+  }, [editingEventId]);
 
   const handleCancelEdit = useCallback(() => {
     setEditingEventId(null);
@@ -794,22 +792,13 @@ const EventsList: React.FC<EventsListProps> = () => {
     if (!newEventData) return;
 
     try {
-      await createExchangeTransactionMutation.mutateAsync({
-        type: newEventData.type as "Buy" | "Sell",
-        amount_sats: newEventData.amount_sats,
-        subtotal_cents: newEventData.subtotal_cents,
-        fee_cents: newEventData.fee_cents,
-        memo: newEventData.memo,
-        timestamp: newEventData.timestamp,
-        provider_id: null,
-      });
     } catch (error) {
       console.error("Error creating event:", error);
     } finally {
       setIsCreatingNew(false);
       setNewEventData(null);
     }
-  }, [newEventData, createExchangeTransactionMutation]);
+  }, [newEventData]);
 
   const handleCancelNewEvent = useCallback(() => {
     setIsCreatingNew(false);

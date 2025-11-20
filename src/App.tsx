@@ -10,6 +10,7 @@ import CsvImportModal from "./components/CsvImportModal";
 import Modal from "./components/Modal";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
+import { invalidateAfterUnifiedEventDataChange } from "./utils/queryInvalidation";
 
 function App() {
   // Database initialization state
@@ -144,10 +145,8 @@ function App() {
           memo: lumpsumData.memo.trim() || undefined,
         });
 
-      // Invalidate all queries to refetch
-      queryClient.invalidateQueries({ queryKey: ["combinedEvents"] });
-      queryClient.invalidateQueries({ queryKey: ["portfolioMetrics"] });
-      queryClient.invalidateQueries({ queryKey: ["activityMetrics"] });
+      // Invalidate all queries to refetch after import
+      invalidateAfterUnifiedEventDataChange(queryClient);
 
       setShowLumpsumModal(false);
       setLumpsumData({
@@ -183,9 +182,7 @@ function App() {
             console.log("Import result:", result);
 
             // Invalidate all queries to refetch after import
-            queryClient.invalidateQueries({ queryKey: ["combinedEvents"] });
-            queryClient.invalidateQueries({ queryKey: ["portfolioMetrics"] });
-            queryClient.invalidateQueries({ queryKey: ["activityMetrics"] });
+            invalidateAfterUnifiedEventDataChange(queryClient);
 
             alert(`Import completed: ${result}`);
           } catch (error) {
@@ -262,7 +259,7 @@ function App() {
         onClose={() => setShowCsvImportModal(false)}
         onImportComplete={(events) => {
           // Invalidate all queries to refetch after import
-          queryClient.invalidateQueries({ queryKey: ["combinedEvents"] });
+          queryClient.invalidateQueries({ queryKey: ["unifiedEvents"] });
           queryClient.invalidateQueries({ queryKey: ["portfolioMetrics"] });
           queryClient.invalidateQueries({ queryKey: ["activityMetrics"] });
 
