@@ -131,476 +131,380 @@ const EventItem = React.memo<EventItemProps>(({
         {/* Edit form */}
         <div className="bg-[rgba(247,243,227,0.05)] px-4 py-3 border-l-4 border-blue-500 border-b">
           <div className="space-y-3">
-            {/* Determine if this is a fee event */}
+            {/* First row: Event Type and Date & Time (consistent for all types) */}
+            <div className="grid gap-3 grid-cols-[1fr_2fr]">
+              <div>
+                <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
+                  Event Type
+                </label>
+                <select
+                  value={editData.type}
+                  onChange={(e) => {
+                    onEditDataChange("type", e.target.value);
+                  }}
+                  className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
+                  style={{
+                    colorScheme: "dark",
+                  }}
+                >
+                  <option
+                    value="Buy"
+                    style={{
+                      backgroundColor: "#1a1a1a",
+                      color: "#F7F3E3",
+                    }}
+                  >
+                    Buy
+                  </option>
+                  <option
+                    value="Sell"
+                    style={{
+                      backgroundColor: "#1a1a1a",
+                      color: "#F7F3E3",
+                    }}
+                  >
+                    Sell
+                  </option>
+                  <option
+                    value="Fee"
+                    style={{
+                      backgroundColor: "#1a1a1a",
+                      color: "#F7F3E3",
+                    }}
+                  >
+                    Onchain Fee
+                  </option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
+                  Date & Time
+                </label>
+                <DateTimeInput
+                  value={editData.timestamp || new Date().toISOString()}
+                  onChange={(isoTimestamp) => {
+                    onEditDataChange("timestamp", isoTimestamp);
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Second row: Fields based on event type */}
             {(() => {
-              const isFeeEvent =
-                event?.record_type === "onchain_fee" ||
-                (isCreating && editData.type === "Fee");
+              const isFeeEvent = editData.type === "Fee";
 
               if (isFeeEvent) {
-                // Fee Event Form
+                // Fee Event Fields
                 return (
-                  <>
-                    {/* First row: Event Type (for new events) and Date & Time */}
-                    <div className="grid gap-3 grid-cols-[1fr_2fr]">
-                      {isCreating && (
-                        <div>
-                          <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
-                            Event Type
-                          </label>
-                          <select
-                            value={editData.type}
-                            onChange={(e) => {
-                              onEditDataChange("type", e.target.value);
-                            }}
-                            className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
-                            style={{
-                              colorScheme: "dark",
-                            }}
-                          >
-                            <option
-                              value="Buy"
-                              style={{
-                                backgroundColor: "#1a1a1a",
-                                color: "#F7F3E3",
-                              }}
-                            >
-                              Buy
-                            </option>
-                            <option
-                              value="Sell"
-                              style={{
-                                backgroundColor: "#1a1a1a",
-                                color: "#F7F3E3",
-                              }}
-                            >
-                              Sell
-                            </option>
-                            <option
-                              value="Fee"
-                              style={{
-                                backgroundColor: "#1a1a1a",
-                                color: "#F7F3E3",
-                              }}
-                            >
-                              Onchain Fee
-                            </option>
-                          </select>
-                        </div>
-                      )}
-                      <div>
-                        <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
-                          Date & Time
-                        </label>
-                        <DateTimeInput
-                          value={
-                            editData.timestamp || new Date().toISOString()
-                          }
-                          onChange={(isoTimestamp) => {
-                            onEditDataChange("timestamp", isoTimestamp);
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Second row: Amount, TX Hash, Memo */}
-                    <div className="grid gap-3 grid-cols-[1.5fr_1.5fr_2fr]">
-                      {/* Amount in Sats */}
-                      <div>
-                        <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
-                          Fee Amount (Sats)
-                        </label>
-                        <input
-                          type="text"
-                          value={
-                            editData.amount_sats === ""
-                              ? ""
-                              : editData.amount_sats?.toString() || ""
-                          }
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (value === "" || /^[1-9]\d*$/.test(value)) {
-                              onEditDataChange(
-                                "amount_sats",
-                                value === "" ? "" : parseInt(value)
-                              );
-                            }
-                          }}
-                          className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
-                          placeholder="5000"
-                        />
-                      </div>
-
-                      {/* TX Hash */}
-                      <div>
-                        <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
-                          TX Hash
-                        </label>
-                        <input
-                          type="text"
-                          value={editData.tx_hash || ""}
-                          onChange={(e) =>
+                  <div className="grid gap-3 grid-cols-[1.5fr_1.5fr_2fr]">
+                    {/* Amount in Sats */}
+                    <div>
+                      <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
+                        Fee Amount (Sats)
+                      </label>
+                      <input
+                        type="text"
+                        value={
+                          editData.amount_sats === ""
+                            ? ""
+                            : editData.amount_sats?.toString() || ""
+                        }
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === "" || /^[1-9]\d*$/.test(value)) {
                             onEditDataChange(
-                              "tx_hash",
-                              e.target.value || null
-                            )
+                              "amount_sats",
+                              value === "" ? "" : parseInt(value)
+                            );
                           }
-                          className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
-                          placeholder="Optional transaction hash"
-                        />
-                      </div>
-
-                      {/* Memo */}
-                      <div>
-                        <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
-                          Memo
-                        </label>
-                        <input
-                          type="text"
-                          value={editData.memo || ""}
-                          onChange={(e) =>
-                            onEditDataChange("memo", e.target.value || null)
-                          }
-                          className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
-                          placeholder="Optional memo"
-                        />
-                      </div>
+                        }}
+                        className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
+                        placeholder="5000"
+                      />
                     </div>
 
-                    {/* Fee amount display */}
-                    {editData.amount_sats && (
-                      <div className="text-xs text-[rgba(247,243,227,0.7)] space-y-1">
-                        <div>
-                          <span className="font-medium">Fee Amount:</span>{" "}
-                          <span className="text-red-300">
-                            {typeof editData.amount_sats === "string"
-                              ? parseInt(
-                                  editData.amount_sats
-                                ).toLocaleString()
-                              : editData.amount_sats.toLocaleString()}{" "}
-                            sats
-                          </span>
-                          {" • "}
-                          <span className="text-red-300">
-                            {typeof editData.amount_sats === "string"
-                              ? (
-                                  parseInt(editData.amount_sats) / 100_000_000
-                                ).toFixed(8)
-                              : (editData.amount_sats / 100_000_000).toFixed(
-                                  8
-                                )}{" "}
-                            BTC
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </>
+                    {/* TX Hash */}
+                    <div>
+                      <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
+                        TX Hash
+                      </label>
+                      <input
+                        type="text"
+                        value={editData.tx_hash || ""}
+                        onChange={(e) =>
+                          onEditDataChange("tx_hash", e.target.value || null)
+                        }
+                        className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
+                        placeholder="Optional transaction hash"
+                      />
+                    </div>
+
+                    {/* Memo */}
+                    <div>
+                      <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
+                        Memo
+                      </label>
+                      <input
+                        type="text"
+                        value={editData.memo || ""}
+                        onChange={(e) =>
+                          onEditDataChange("memo", e.target.value || null)
+                        }
+                        className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
+                        placeholder="Optional memo"
+                      />
+                    </div>
+                  </div>
                 );
               } else {
-                // Buy/Sell Event Form
+                // Buy/Sell Event Fields
                 return (
-                  <>
-                    {/* First row: Date & Time and Type */}
-                    <div className="grid gap-3 grid-cols-[1fr_2fr]">
-                      {/* Event Type */}
-                      <div>
-                        <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
-                          Type
-                        </label>
-                        <select
-                          value={editData.type}
-                          onChange={(e) => {
-                            onEditDataChange("type", e.target.value);
-                          }}
-                          className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
-                          style={{
-                            colorScheme: "dark",
-                          }}
-                        >
-                          <option
-                            value="Buy"
-                            style={{
-                              backgroundColor: "#1a1a1a",
-                              color: "#F7F3E3",
-                            }}
-                          >
-                            Buy
-                          </option>
-                          <option
-                            value="Sell"
-                            style={{
-                              backgroundColor: "#1a1a1a",
-                              color: "#F7F3E3",
-                            }}
-                          >
-                            Sell
-                          </option>
-                          <option
-                            value="Fee"
-                            style={{
-                              backgroundColor: "#1a1a1a",
-                              color: "#F7F3E3",
-                            }}
-                          >
-                            Onchain Fee
-                          </option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
-                          Date & Time
-                        </label>
-                        <DateTimeInput
-                          value={
-                            editData.timestamp || new Date().toISOString()
+                  <div className="grid gap-3 grid-cols-[1.5fr_1.3fr_1.3fr_1.5fr]">
+                    {/* Amount in Sats */}
+                    <div>
+                      <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
+                        Amount (Sats)
+                      </label>
+                      <input
+                        type="text"
+                        value={
+                          editData.amount_sats === ""
+                            ? ""
+                            : editData.amount_sats?.toString() || ""
+                        }
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (value === "" || /^[1-9]\d*$/.test(value)) {
+                            onEditDataChange(
+                              "amount_sats",
+                              value === "" ? "" : parseInt(value)
+                            );
                           }
-                          onChange={(isoTimestamp) => {
-                            onEditDataChange("timestamp", isoTimestamp);
-                          }}
-                        />
-                      </div>
+                        }}
+                        className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
+                        placeholder="1000000"
+                      />
                     </div>
 
-                    {/* Second row: Amount, USD Value, Fee, Memo */}
-                    <div className="grid gap-3 grid-cols-[1.5fr_1.3fr_1.3fr_1.5fr]">
-                      {/* Amount in Sats */}
-                      <div>
-                        <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
-                          Amount (Sats)
-                        </label>
-                        <input
-                          type="text"
-                          value={
-                            editData.amount_sats === ""
-                              ? ""
-                              : editData.amount_sats?.toString() || ""
+                    {/* USD Value */}
+                    <div>
+                      <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
+                        USD Value
+                      </label>
+                      <input
+                        type="text"
+                        value={
+                          editData.subtotal_cents === null ||
+                          editData.subtotal_cents === undefined
+                            ? ""
+                            : editData.subtotal_cents === ""
+                            ? ""
+                            : typeof editData.subtotal_cents === "string"
+                            ? editData.subtotal_cents
+                            : (editData.subtotal_cents / 100).toString()
+                        }
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (
+                            value === "" ||
+                            /^[0-9]+(\.[0-9]{0,2})?$/.test(value)
+                          ) {
+                            if (value === "") {
+                              onEditDataChange("subtotal_cents", "");
+                            } else {
+                              onEditDataChange("subtotal_cents", value);
+                            }
                           }
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (value === "" || /^[1-9]\d*$/.test(value)) {
+                        }}
+                        onBlur={() => {
+                          if (
+                            editData.subtotal_cents &&
+                            typeof editData.subtotal_cents === "string"
+                          ) {
+                            const numValue = parseFloat(editData.subtotal_cents);
+                            if (!isNaN(numValue)) {
                               onEditDataChange(
-                                "amount_sats",
-                                value === "" ? "" : parseInt(value)
+                                "subtotal_cents",
+                                Math.round(numValue * 100)
                               );
                             }
-                          }}
-                          className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
-                          placeholder="1000000"
-                        />
-                      </div>
-
-                      {/* USD Value */}
-                      <div>
-                        <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
-                          USD Value
-                        </label>
-                        <input
-                          type="text"
-                          value={
-                            editData.subtotal_cents === null ||
-                            editData.subtotal_cents === undefined
-                              ? ""
-                              : editData.subtotal_cents === ""
-                              ? ""
-                              : typeof editData.subtotal_cents === "string"
-                              ? editData.subtotal_cents
-                              : (editData.subtotal_cents / 100).toString()
                           }
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (
-                              value === "" ||
-                              /^[0-9]+(\.[0-9]{0,2})?$/.test(value)
-                            ) {
-                              if (value === "") {
-                                onEditDataChange("subtotal_cents", "");
-                              } else {
-                                onEditDataChange("subtotal_cents", value);
-                              }
-                            }
-                          }}
-                          onBlur={() => {
-                            if (
-                              editData.subtotal_cents &&
-                              typeof editData.subtotal_cents === "string"
-                            ) {
-                              const numValue = parseFloat(
-                                editData.subtotal_cents
-                              );
-                              if (!isNaN(numValue)) {
-                                onEditDataChange(
-                                  "subtotal_cents",
-                                  Math.round(numValue * 100)
-                                );
-                              }
-                            }
-                          }}
-                          className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
-                          placeholder="500.00"
-                        />
-                      </div>
-
-                      {/* Fee (USD) */}
-                      <div>
-                        <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
-                          Fee (USD)
-                        </label>
-                        <input
-                          type="text"
-                          value={
-                            editData.fee_cents === null ||
-                            editData.fee_cents === undefined
-                              ? ""
-                              : editData.fee_cents === ""
-                              ? ""
-                              : typeof editData.fee_cents === "string"
-                              ? editData.fee_cents
-                              : (editData.fee_cents / 100).toString()
-                          }
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (
-                              value === "" ||
-                              /^[0-9]+(\.[0-9]{0,2})?$/.test(value)
-                            ) {
-                              if (value === "") {
-                                onEditDataChange("fee_cents", "");
-                              } else {
-                                onEditDataChange("fee_cents", value);
-                              }
-                            }
-                          }}
-                          onBlur={() => {
-                            if (
-                              editData.fee_cents &&
-                              typeof editData.fee_cents === "string"
-                            ) {
-                              const numValue = parseFloat(editData.fee_cents);
-                              if (!isNaN(numValue)) {
-                                onEditDataChange(
-                                  "fee_cents",
-                                  Math.round(numValue * 100)
-                                );
-                              } else {
-                                onEditDataChange("fee_cents", null);
-                              }
-                            }
-                          }}
-                          className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
-                          placeholder="Optional"
-                        />
-                      </div>
-
-                      {/* Memo */}
-                      <div>
-                        <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
-                          Memo
-                        </label>
-                        <input
-                          type="text"
-                          value={editData.memo || ""}
-                          onChange={(e) =>
-                            onEditDataChange("memo", e.target.value || null)
-                          }
-                          className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
-                          placeholder="Optional memo"
-                        />
-                      </div>
+                        }}
+                        className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
+                        placeholder="500.00"
+                      />
                     </div>
 
-                    {/* Rate display */}
-                    {editData.amount_sats &&
-                      editData.subtotal_cents &&
-                      editData.subtotal_cents !== "" && (
-                        <div className="text-xs text-[rgba(247,243,227,0.7)] space-y-1">
-                          {/* Exchange Rate (without fees) */}
-                          <div>
-                            <span className="font-medium">
-                              Exchange Rate:
-                            </span>{" "}
-                            $
-                            {(() => {
-                              const fiatCents =
-                                typeof editData.subtotal_cents === "string"
-                                  ? parseFloat(editData.subtotal_cents) * 100
-                                  : editData.subtotal_cents;
-                              const sats =
-                                typeof editData.amount_sats === "string"
-                                  ? parseInt(editData.amount_sats)
-                                  : editData.amount_sats;
-                              return (
-                                Math.abs(fiatCents) /
-                                100 /
-                                (Math.abs(sats) / 100_000_000)
-                              ).toLocaleString(undefined, {
-                                minimumFractionDigits: 0,
-                                maximumFractionDigits: 0,
-                              });
-                            })()}
-                          </div>
+                    {/* Fee (USD) */}
+                    <div>
+                      <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
+                        Fee (USD)
+                      </label>
+                      <input
+                        type="text"
+                        value={
+                          editData.fee_cents === null ||
+                          editData.fee_cents === undefined
+                            ? ""
+                            : editData.fee_cents === ""
+                            ? ""
+                            : typeof editData.fee_cents === "string"
+                            ? editData.fee_cents
+                            : (editData.fee_cents / 100).toString()
+                        }
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (
+                            value === "" ||
+                            /^[0-9]+(\.[0-9]{0,2})?$/.test(value)
+                          ) {
+                            if (value === "") {
+                              onEditDataChange("fee_cents", "");
+                            } else {
+                              onEditDataChange("fee_cents", value);
+                            }
+                          }
+                        }}
+                        onBlur={() => {
+                          if (
+                            editData.fee_cents &&
+                            typeof editData.fee_cents === "string"
+                          ) {
+                            const numValue = parseFloat(editData.fee_cents);
+                            if (!isNaN(numValue)) {
+                              onEditDataChange(
+                                "fee_cents",
+                                Math.round(numValue * 100)
+                              );
+                            } else {
+                              onEditDataChange("fee_cents", null);
+                            }
+                          }
+                        }}
+                        className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
+                        placeholder="Optional"
+                      />
+                    </div>
 
-                          {/* Always show Total Cost and Effective Rate when we have fee data (including zero) */}
-                          {editData.fee_cents !== null &&
-                            editData.fee_cents !== undefined && (
-                              <>
-                                <div>
-                                  <span className="font-medium">
-                                    Total Cost:
-                                  </span>{" "}
-                                  $
-                                  {(() => {
-                                    const fiatCents =
-                                      typeof editData.subtotal_cents ===
-                                      "string"
-                                        ? parseFloat(
-                                            editData.subtotal_cents
-                                          ) * 100
-                                        : editData.subtotal_cents;
-                                    return (
-                                      Math.abs(fiatCents) / 100
-                                    ).toFixed(2);
-                                  })()}
-                                </div>
-                                <div>
-                                  <span className="font-medium">
-                                    Effective Rate (fee included):
-                                  </span>{" "}
-                                  $
-                                  {(() => {
-                                    const fiatCents =
-                                      typeof editData.subtotal_cents ===
-                                      "string"
-                                        ? parseFloat(
-                                            editData.subtotal_cents
-                                          ) * 100
-                                        : editData.subtotal_cents;
-                                    const feeCents =
-                                      typeof editData.fee_cents === "string"
-                                        ? parseFloat(editData.fee_cents) * 100
-                                        : editData.fee_cents;
-                                    const sats =
-                                      typeof editData.amount_sats === "string"
-                                        ? parseInt(editData.amount_sats)
-                                        : editData.amount_sats;
-                                    return (
-                                      (Math.abs(fiatCents) +
-                                        Math.abs(feeCents)) /
-                                      100 /
-                                      (Math.abs(sats) / 100_000_000)
-                                    ).toLocaleString(undefined, {
-                                      minimumFractionDigits: 0,
-                                      maximumFractionDigits: 0,
-                                    });
-                                  })()}
-                                </div>
-                              </>
-                            )}
-                        </div>
-                      )}
-                  </>
+                    {/* Memo */}
+                    <div>
+                      <label className="block text-[rgba(247,243,227,0.7)] text-xs mb-1 font-medium">
+                        Memo
+                      </label>
+                      <input
+                        type="text"
+                        value={editData.memo || ""}
+                        onChange={(e) =>
+                          onEditDataChange("memo", e.target.value || null)
+                        }
+                        className="w-full bg-[#1a1a1a] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-2 py-1 text-xs rounded focus:border-blue-400 focus:outline-none"
+                        placeholder="Optional memo"
+                      />
+                    </div>
+                  </div>
                 );
               }
             })()}
+
+            {/* Rate/Amount display based on type */}
+            {editData.type === "Fee" ? (
+              // Fee amount display
+              editData.amount_sats && (
+                <div className="text-xs text-[rgba(247,243,227,0.7)] space-y-1">
+                  <div>
+                    <span className="font-medium">Fee Amount:</span>{" "}
+                    <span className="text-red-300">
+                      {typeof editData.amount_sats === "string"
+                        ? parseInt(editData.amount_sats).toLocaleString()
+                        : editData.amount_sats.toLocaleString()}{" "}
+                      sats
+                    </span>
+                    {" • "}
+                    <span className="text-red-300">
+                      {typeof editData.amount_sats === "string"
+                        ? (parseInt(editData.amount_sats) / 100_000_000).toFixed(8)
+                        : (editData.amount_sats / 100_000_000).toFixed(8)}{" "}
+                      BTC
+                    </span>
+                  </div>
+                </div>
+              )
+            ) : (
+              // Buy/Sell rate display
+              editData.amount_sats &&
+              editData.subtotal_cents &&
+              editData.subtotal_cents !== "" && (
+                <div className="text-xs text-[rgba(247,243,227,0.7)] space-y-1">
+                  {/* Exchange Rate (without fees) */}
+                  <div>
+                    <span className="font-medium">Exchange Rate:</span> $
+                    {(() => {
+                      const fiatCents =
+                        typeof editData.subtotal_cents === "string"
+                          ? parseFloat(editData.subtotal_cents) * 100
+                          : editData.subtotal_cents;
+                      const sats =
+                        typeof editData.amount_sats === "string"
+                          ? parseInt(editData.amount_sats)
+                          : editData.amount_sats;
+                      return (
+                        Math.abs(fiatCents) /
+                        100 /
+                        (Math.abs(sats) / 100_000_000)
+                      ).toLocaleString(undefined, {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      });
+                    })()}
+                  </div>
+
+                  {/* Always show Total Cost and Effective Rate when we have fee data (including zero) */}
+                  {editData.fee_cents !== null &&
+                    editData.fee_cents !== undefined && (
+                      <>
+                        <div>
+                          <span className="font-medium">Total Cost:</span> $
+                          {(() => {
+                            const fiatCents =
+                              typeof editData.subtotal_cents === "string"
+                                ? parseFloat(editData.subtotal_cents) * 100
+                                : editData.subtotal_cents;
+                            return (Math.abs(fiatCents) / 100).toFixed(2);
+                          })()}
+                        </div>
+                        <div>
+                          <span className="font-medium">
+                            Effective Rate (fee included):
+                          </span>{" "}
+                          $
+                          {(() => {
+                            const fiatCents =
+                              typeof editData.subtotal_cents === "string"
+                                ? parseFloat(editData.subtotal_cents) * 100
+                                : editData.subtotal_cents;
+                            const feeCents =
+                              typeof editData.fee_cents === "string"
+                                ? parseFloat(editData.fee_cents) * 100
+                                : editData.fee_cents;
+                            const sats =
+                              typeof editData.amount_sats === "string"
+                                ? parseInt(editData.amount_sats)
+                                : editData.amount_sats;
+                            return (
+                              (Math.abs(fiatCents) + Math.abs(feeCents)) /
+                              100 /
+                              (Math.abs(sats) / 100_000_000)
+                            ).toLocaleString(undefined, {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                            });
+                          })()}
+                        </div>
+                      </>
+                    )}
+                </div>
+              )
+            )}
 
             {/* Action Buttons */}
             <div className="flex justify-between items-center">
