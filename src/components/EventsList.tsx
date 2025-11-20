@@ -2,9 +2,12 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   EditBitcoinTransactionData,
   UnifiedEvent,
+  TauriService,
 } from "../services/tauriService";
 import DateTimeInput from "./DateTimeInput";
 import { useUnifiedEvents } from "../hooks/useUnifiedEvents";
+import { invalidateAfterUnifiedEventDataChange } from "../utils/queryInvalidation";
+import { useQueryClient } from "@tanstack/react-query";
 
 const EventItem = React.memo(
   ({
@@ -693,6 +696,7 @@ const EventsList: React.FC<EventsListProps> = () => {
 
   // Get events data and mutations
   const { events, totalCount, loading: eventsLoading } = useUnifiedEvents(true);
+  const queryClient = useQueryClient();
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(0);
@@ -760,14 +764,35 @@ const EventsList: React.FC<EventsListProps> = () => {
   const handleDeleteEvent = useCallback(async () => {
     if (!editingEventId) return;
 
+    // Find the event being deleted
+    const eventToDelete = events.find(event => event.id === editingEventId);
+    if (!eventToDelete) {
+      console.error("Event not found for deletion");
+      return;
+    }
+
     try {
+      // Check the event type and use appropriate delete function
+      if (eventToDelete.record_type === "exchange_transaction") {
+        // For buy/sell transactions, use exchange transaction delete
+        await TauriService.deleteExchangeTransaction(editingEventId);
+      } else if (eventToDelete.record_type === "onchain_fee") {
+        // For fee transactions, use onchain fee delete
+        await TauriService.deleteOnchainFee(editingEventId);
+      } else {
+        console.error("Unknown event type:", eventToDelete.record_type);
+        return;
+      }
+      
+      console.log(`Successfully deleted ${eventToDelete.record_type} with ID: ${editingEventId}`);
+      invalidateAfterUnifiedEventDataChange(queryClient);
     } catch (error) {
       console.error("Error deleting event:", error);
     } finally {
       setEditingEventId(null);
       setEditData(null);
     }
-  }, [editingEventId]);
+  }, [editingEventId, events]);
 
   const handleCancelEdit = useCallback(() => {
     setEditingEventId(null);

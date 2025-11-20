@@ -105,6 +105,38 @@ export interface ActivityMetrics {
   heatmap_data: YearHeatmapData[];
 }
 
+export interface OnchainFee {
+  id: string;
+  amount_sats: number;
+  memo: string | null;
+  timestamp: string; // ISO date string from Rust
+  created_at: string; // ISO date string from Rust
+  tx_hash: string | null;
+}
+
+export interface CreateOnchainFeeRequest {
+  amount_sats: number;
+  memo: string | null;
+  timestamp: string; // ISO date string
+  tx_hash: string | null;
+}
+
+export interface UpdateOnchainFeeRequest {
+  amount_sats: number;
+  memo: string | null;
+  timestamp: string; // ISO date string
+  tx_hash: string | null;
+}
+
+export interface PaginatedOnchainFees {
+  fees: OnchainFee[];
+  total_count: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  has_more: boolean;
+}
+
 export interface UnifiedEvent {
   id: string;
   record_type: string; // "exchange_transaction" or "onchain_fee"
@@ -269,6 +301,37 @@ export class TauriService {
     return await invoke("analyze_csv_file", { filePath });
   }
 
+  // Create a new onchain fee
+  static async createOnchainFee(
+    request: CreateOnchainFeeRequest
+  ): Promise<OnchainFee> {
+    return await invoke("create_onchain_fee", { request });
+  }
+
+  // Get paginated onchain fees
+  static async getOnchainFees(
+    page: number = 0,
+    pageSize: number = 100
+  ): Promise<PaginatedOnchainFees> {
+    return await invoke("get_onchain_fees", {
+      page,
+      pageSize,
+    });
+  }
+
+  // Update an onchain fee
+  static async updateOnchainFee(
+    id: string,
+    request: UpdateOnchainFeeRequest
+  ): Promise<OnchainFee> {
+    return await invoke("update_onchain_fee", { id, request });
+  }
+
+  // Delete an onchain fee
+  static async deleteOnchainFee(id: string): Promise<void> {
+    return await invoke("delete_onchain_fee", { id });
+  }
+
   // Get unified events (both exchange transactions and onchain fees)
   static async getUnifiedEvents(
     page: number = 0,
@@ -287,6 +350,10 @@ export const {
   getExchangeTransactions,
   updateExchangeTransaction,
   deleteExchangeTransaction,
+  createOnchainFee,
+  getOnchainFees,
+  updateOnchainFee,
+  deleteOnchainFee,
   getOverviewMetrics,
   importSatTrackerV1Data,
   createUndocumentedLumpsumTransactions,
