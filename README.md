@@ -14,12 +14,8 @@ yarn start:dev
 
 **Common Issue:** The Tauri window may open blank initially while Vite finishes compiling. Simply right-click in the window and select "Reload" to refresh the page and the app will load properly. This is normal Tauri development behavior.
 
-- TODO: better selected events
-- TODO: better edit events/add events
-
 - TODO: remove import v1 data button before release
 - TODO: obscure balances/lock screen
-
 
 ## Installation on Linux
 

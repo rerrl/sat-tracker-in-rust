@@ -25,11 +25,11 @@ const EventSummary: React.FC<EventSummaryProps> = ({
       <div className="text-xs text-[rgba(247,243,227,0.7)] space-y-1">
         <div>
           <span className="font-medium">Fee Amount:</span>{" "}
-          <span className="text-red-300">
+          <span className="text-[rgba(247,243,227,0.9)]">
             {amount_sats.toLocaleString()} sats
           </span>
           {" • "}
-          <span className="text-red-300">
+          <span className="text-[rgba(247,243,227,0.9)]">
             {(amount_sats / 100_000_000).toFixed(8)} BTC
           </span>
         </div>
@@ -37,7 +37,7 @@ const EventSummary: React.FC<EventSummaryProps> = ({
     );
   }
 
-  if (!subtotal_cents || !amount_sats) {
+  if (!subtotal_cents || !amount_sats || subtotal_cents === 0) {
     return null;
   }
 
@@ -48,12 +48,12 @@ const EventSummary: React.FC<EventSummaryProps> = ({
         <div>
           <span className="font-medium text-[rgba(247,243,227,0.8)]">
             Exchange Rate
-            {fee_cents !== null && fee_cents !== undefined
+            {fee_cents !== null && fee_cents !== undefined && fee_cents > 0
               ? " (Effective)"
               : ""}
             :
           </span>{" "}
-          <span className="text-blue-300">
+          <span className="text-[rgba(247,243,227,0.9)]">
             $
             {(
               Math.abs(subtotal_cents) /
@@ -64,8 +64,8 @@ const EventSummary: React.FC<EventSummaryProps> = ({
               maximumFractionDigits: 0,
             })}
           </span>
-          {fee_cents !== null && fee_cents !== undefined && (
-            <span className="text-orange-300">
+          {fee_cents !== null && fee_cents !== undefined && fee_cents > 0 && (
+            <span className="text-[rgba(247,243,227,0.6)]">
               {" "}
               ($
               {(
@@ -86,19 +86,19 @@ const EventSummary: React.FC<EventSummaryProps> = ({
           <span className="font-medium text-[rgba(247,243,227,0.8)]">
             Subtotal:
           </span>{" "}
-          <span className="text-green-300">
+          <span className="text-[rgba(247,243,227,0.9)]">
             ${(Math.abs(subtotal_cents) / 100).toFixed(2)}
           </span>
         </div>
 
         {/* Fee and Total Cost (when fee exists) */}
-        {fee_cents !== null && fee_cents !== undefined && (
+        {fee_cents !== null && fee_cents !== undefined && fee_cents > 0 && (
           <>
             <div>
               <span className="font-medium text-[rgba(247,243,227,0.8)]">
                 Fee:
               </span>{" "}
-              <span className="text-red-300">
+              <span className="text-[rgba(247,243,227,0.9)]">
                 ${(Math.abs(fee_cents) / 100).toFixed(2)}
               </span>
             </div>
@@ -106,7 +106,7 @@ const EventSummary: React.FC<EventSummaryProps> = ({
               <span className="font-medium text-[rgba(247,243,227,0.8)]">
                 Total Cost:
               </span>{" "}
-              <span className="text-yellow-300">
+              <span className="text-[rgba(247,243,227,0.9)]">
                 $
                 {(
                   (Math.abs(subtotal_cents) + Math.abs(fee_cents)) /
@@ -526,24 +526,24 @@ const EventItem = React.memo<EventItemProps>(
               })()}
 
               {/* Rate/Amount display based on type */}
-              {editData.amount_sats && (
+              {editData.amount_sats && editData.amount_sats !== "" && (
                 <EventSummary
                   amount_sats={
                     typeof editData.amount_sats === "string"
-                      ? parseInt(editData.amount_sats)
+                      ? parseInt(editData.amount_sats) || 0
                       : editData.amount_sats
                   }
                   subtotal_cents={
                     typeof editData.subtotal_cents === "string"
-                      ? parseFloat(editData.subtotal_cents) * 100
+                      ? parseFloat(editData.subtotal_cents) * 100 || null
                       : editData.subtotal_cents
                   }
                   fee_cents={
                     typeof editData.fee_cents === "string"
-                      ? parseFloat(editData.fee_cents) * 100
+                      ? parseFloat(editData.fee_cents) * 100 || null
                       : editData.fee_cents
                   }
-                  transaction_type={editData.type?.toLowerCase()}
+                  transaction_type={editData.type?.toLowerCase() || ""}
                 />
               )}
 
