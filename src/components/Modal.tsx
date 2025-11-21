@@ -49,7 +49,12 @@ export default function Modal({
 
   return (
     <div
-      className="fixed inset-0 backdrop-blur-xs flex items-center justify-center z-50"
+      className="fixed inset-0 flex items-center justify-center z-50"
+      style={{
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Fallback for browsers without backdrop-filter
+        backdropFilter: 'blur(4px)', // Modern browsers
+        WebkitBackdropFilter: 'blur(4px)', // Safari/WebKit support
+      }}
       onClick={handleBackdropClick}
     >
       <div

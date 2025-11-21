@@ -93,7 +93,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // First, create 5 initial buy events
     println!("🚀 Creating 5 initial buy events...");
-    for i in 0..5 {
+    for _i in 0..5 {
         // Increase Bitcoin price by $500-$2000 for each event
         let price_increase = rng.gen_range(50000..=200000); // $500-$2000 in cents
         current_btc_price_cents += price_increase;
