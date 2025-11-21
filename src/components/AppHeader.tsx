@@ -37,8 +37,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({
 
   return (
     <div className="bg-[#2A2633] border-b border-[rgba(247,243,227,0.2)] shrink-0 flex">
-      {/* Left side - Title and Announcements (65%) */}
-      <div className="w-[65%] px-6 py-3 flex items-center gap-6">
+      {/* Left side - Title and Announcements */}
+      <div className="px-6 py-3 flex items-center gap-6 flex-1 min-w-0">
         <div className="whitespace-nowrap">
           <h1 className="text-xl font-bold text-[#F7F3E3]">
             Sat Tracker{" "}
@@ -52,13 +52,13 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           </div>
         </div>
 
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 max-w-none">
           <Announcements />
         </div>
       </div>
 
-      {/* Right side - Tool Selector (35%) */}
-      <div className={`w-[35%] px-6 py-3 flex items-center ${isUpdateAvailable ? 'justify-between' : 'justify-end'}`}>
+      {/* Right side - Update Button and Tool Selector */}
+      <div className="px-6 py-3 flex items-center gap-3 shrink-0">
         {/* Update Available Button - Only show if update is available */}
         {isUpdateAvailable && (
           <button

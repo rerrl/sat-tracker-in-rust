@@ -4,8 +4,9 @@ import packageJson from "../../package.json";
 
 export const useAnnouncements = () => {
   const staticAnnouncements = [
+    "🎉 Welcome to Sat Tracker - A free, open source, local-first Bitcoin portfolio tracker",
     "🔒 Your data stays local - no cloud sync, no tracking, complete privacy",
-    "📡 Only fetches Bitcoin price & app updates",
+    "📡 Only fetches Bitcoin price & app announcements",
   ];
 
   const query = useQuery<AnnouncementsResponse>({
@@ -38,15 +39,6 @@ export const useAnnouncements = () => {
 
     const allAnnouncements = [];
 
-    // Create welcome message with version info
-    let welcomeMessage = `🎉 Welcome to Sat Tracker (v${packageJson.version}) - A free, open source, local-first Bitcoin portfolio tracker!`;
-
-    // Check for version update and modify welcome message
-    if (isUpdateAvailable) {
-      welcomeMessage = `🎉 Welcome to Sat Tracker (v${packageJson.version}) - [**New version v${query.data.latest_version} available!**](https://dprogram.me/tools/sat-tracker) - A free, open source, local-first Bitcoin portfolio tracker!`;
-    }
-
-    allAnnouncements.push(welcomeMessage);
     allAnnouncements.push(...staticAnnouncements);
 
     // Add remote announcements
