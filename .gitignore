@@ -26,3 +26,9 @@ dist-ssr
 # Database files
 db/
 target/
+
+# Docker build output
+build-output/
+
+# User scripts
+user-scripts/
