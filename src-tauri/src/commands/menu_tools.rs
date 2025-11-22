@@ -479,6 +479,75 @@ pub async fn import_sat_tracker_v1_data(pool: State<'_, SqlitePool>) -> Result<S
         }
     }
 
+    println!("📥 Importing DeductionEvents as sell transactions...");
+    let deductions_query = "SELECT id, date, amountSats, memo, createdAt FROM DeductionEvents ORDER BY createdAt";
+
+    match sqlx::query(deductions_query).fetch_all(&v1_pool).await {
+        Ok(deduction_rows) => {
+            println!("Found {} DeductionEvent records", deduction_rows.len());
+
+            for row in deduction_rows {
+                let amount_sats: i64 = row.get("amountSats");
+                let memo: Option<String> = row.get("memo");
+                let date_str: String = row.get("date");
+
+                let timestamp = match DateTime::parse_from_rfc3339(&date_str) {
+                    Ok(dt) => dt.with_timezone(&Utc),
+                    Err(_) => {
+                        match DateTime::parse_from_str(&date_str, "%Y-%m-%d %H:%M:%S%.3f %z") {
+                            Ok(dt) => dt.with_timezone(&Utc),
+                            Err(_) => {
+                                match chrono::NaiveDateTime::parse_from_str(
+                                    &date_str,
+                                    "%Y-%m-%d %H:%M:%S",
+                                ) {
+                                    Ok(naive_dt) => {
+                                        DateTime::from_naive_utc_and_offset(naive_dt, Utc)
+                                    }
+                                    Err(e) => {
+                                        errors.push(format!(
+                                            "Failed to parse deduction timestamp '{}': {}",
+                                            date_str, e
+                                        ));
+                                        continue;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                };
+
+                let provider_id = format!("stv1-deduction-{}_{}", timestamp.timestamp(), amount_sats);
+
+                if transaction_exists_by_provider_id(pool.inner(), &provider_id).await? {
+                    println!(
+                        "Skipping duplicate deduction transaction with provider_id: {}",
+                        provider_id
+                    );
+                    continue;
+                }
+
+                let request = CreateExchangeTransactionRequest {
+                    r#type: TransactionType::Sell,
+                    amount_sats,
+                    subtotal_cents: Some(0),
+                    fee_cents: Some(0),
+                    memo,
+                    timestamp,
+                    provider_id: Some(provider_id),
+                };
+
+                match create_exchange_transaction(pool.clone(), request).await {
+                    Ok(_) => imported_count += 1,
+                    Err(e) => errors.push(format!("Failed to import deduction record: {}", e)),
+                }
+            }
+        }
+        Err(e) => {
+            println!("⚠️  No DeductionEvents table found or error querying: {}", e);
+        }
+    }
+
     v1_pool.close().await;
 
     let mut summary = format!(
