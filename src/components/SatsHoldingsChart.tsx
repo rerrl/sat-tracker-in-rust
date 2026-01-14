@@ -25,10 +25,9 @@ ChartJS.register(
   Filler
 );
 
-
 export default function SatsHoldingsChart() {
   const chartRef = useRef<any>(null);
-  
+
   // Get events data using the hook
   const { events } = useUnifiedEvents(true);
 
@@ -75,7 +74,10 @@ export default function SatsHoldingsChart() {
       let balanceChange = 0;
       if (event.transaction_type === "buy") {
         balanceChange = event.amount_sats; // Positive - adds to balance
-      } else if (event.transaction_type === "sell" || event.transaction_type === "fee") {
+      } else if (
+        event.transaction_type === "sell" ||
+        event.transaction_type === "fee"
+      ) {
         balanceChange = -event.amount_sats; // Negative - subtracts from balance
       }
 
@@ -205,9 +207,13 @@ export default function SatsHoldingsChart() {
 
   if (!events || events.length === 0) {
     return (
-      <div className="w-full h-full flex items-center justify-center">
+      <div className="w-full h-full flex items-center justify-center text-center">
         <p className="text-[rgba(247,243,227,0.6)] text-sm">
-          No transaction data to display
+          No transaction data to display.
+          <br />
+          <br />
+          Add events to the right, or use File &gt; Import CSV Data to get
+          started.
         </p>
       </div>
     );
@@ -215,11 +221,11 @@ export default function SatsHoldingsChart() {
 
   return (
     <div className="w-full h-full">
-      <Line 
+      <Line
         ref={chartRef}
-        key={events.length + events.map(e => e.id).join(',')} 
-        data={chartData} 
-        options={chartOptions} 
+        key={events.length + events.map((e) => e.id).join(",")}
+        data={chartData}
+        options={chartOptions}
       />
     </div>
   );

@@ -139,9 +139,13 @@ const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ heatmapData }) => {
   
   if (!heatmapData || heatmapData.length === 0) {
     return (
-      <div className="w-full h-full flex items-center justify-center">
+      <div className="w-full h-full flex items-center justify-center text-center">
         <p className="text-[rgba(247,243,227,0.6)] text-sm">
-          No activity data available
+          No activity data available.
+          <br />
+          <br />
+          Add events to the right, or use File &gt; Import CSV Data to get
+          started.
         </p>
       </div>
     );
