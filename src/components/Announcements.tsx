@@ -4,8 +4,12 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { useAnnouncements } from "../hooks/useAnnouncements";
 
 const Announcements: React.FC = () => {
-  const [speed, setSpeed] = useState(50);
+  const [isHidden, setIsHidden] = useState(false);
   const { announcements, isLoading } = useAnnouncements();
+
+  if (isHidden) {
+    return null;
+  }
 
   // Function to parse simple markdown links and bold text
   const parseMarkdown = (text: string) => {
@@ -140,33 +144,45 @@ const Announcements: React.FC = () => {
     return parts.length > 0 ? parts : [text];
   };
 
-
   return (
     <div className="bg-linear-to-r from-[#E16036] to-[#f7931a] text-white py-1 px-2 rounded overflow-hidden relative max-w-full">
-      {isLoading ? (
-        <div className="text-xs font-medium text-center py-1">
-          Loading announcements...
-        </div>
-      ) : (
-        <Marquee
-          speed={speed}
-          gradient={false}
-          delay={2}
-          pauseOnHover={true}
-          onCycleComplete={() => {
-            setSpeed(0);
-            setTimeout(() => {
-              setSpeed(50);
-            }, 1000);
-          }}
+      <button
+        onClick={() => setIsHidden(true)}
+        className="absolute right-2 top-1/2 transform -translate-y-1/2 z-10 hover:bg-black/20 rounded p-1 transition-colors"
+        aria-label="Close announcements"
+      >
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="text-white"
         >
-          {announcements.map((announcement, index) => (
-            <span key={index} className="mx-8 text-xs font-medium">
-              {parseMarkdown(announcement)}
-            </span>
-          ))}
-        </Marquee>
-      )}
+          <path
+            d="M9 3L3 9M3 3L9 9"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      <div className="pr-8">
+        {isLoading ? (
+          <div className="text-xs font-medium text-center py-1">
+            Loading announcements...
+          </div>
+        ) : (
+          <Marquee speed={50} gradient={false} delay={2}>
+            {announcements.map((announcement, index) => (
+              <span key={index} className="mx-8 text-xs font-medium">
+                {parseMarkdown(announcement)}
+              </span>
+            ))}
+          </Marquee>
+        )}
+      </div>
     </div>
   );
 };

@@ -240,7 +240,7 @@ const OverviewTool: React.FC<OverviewToolProps> = () => {
           unrealizedGain === null
             ? "Unrealized gain/loss"
             : unrealizedGain >= 0
-            ? undefined
+            ? "Stay humble stack sats"
             : "HODL",
       },
     ];

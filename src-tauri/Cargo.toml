@@ -8,6 +8,10 @@ default-run = "sat-tracker-in-rust"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[bin]]
+name = "seed"
+path = "scripts/seed.rs"
+
 [lib]
 # The `_lib` suffix may seem redundant but it is necessary
 # to make the lib name unique and wouldn't conflict with the bin name.
