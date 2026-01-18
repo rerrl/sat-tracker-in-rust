@@ -67,9 +67,9 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
       <div className="mt-6 pt-4 border-t border-[rgba(247,243,227,0.1)]">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-medium text-[#F7F3E3]">
-            Premium Analytics
+            Premium Analytics (coming soon)
           </h3>
-          <span className="text-xs bg-gradient-to-r from-[#f7931a] to-[#61dafb] text-black px-2 py-1 rounded font-medium">
+          <span className="text-xs bg-linear-to-r from-[#f7931a] to-[#61dafb] text-black px-2 py-1 rounded font-medium">
             PREMIUM
           </span>
         </div>
@@ -109,7 +109,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
           </div>
           <div className="text-xs text-[rgba(247,243,227,0.7)]">
             Let me know what analytics you'd like to see. I'm building these
-            features based on user feedback.
+            features based on user feedback. Email me at: andrew@dprogram.me
           </div>
         </div>
       </div>

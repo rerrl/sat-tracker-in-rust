@@ -56,4 +56,4 @@ echo "  ✓ package.json"
 echo "  ✓ src-tauri/Cargo.toml"
 echo "  ✓ src-tauri/tauri.conf.json"
 echo
-echo -e "${YELLOW}💡 Don't forget to commit these changes!${NC}"
+echo -e "${YELLOW}💡 Don't forget to update the version in the dprogram.me API${NC}"
