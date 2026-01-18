@@ -67,4 +67,4 @@ ENV DISABLE_COPYRIGHT_FILES_DEPLOYMENT=1
 RUN yarn build:release
 
 # Default command to copy AppImage to mounted volume
-CMD ["sh", "-c", "mkdir -p /output && find /app/src-tauri/target/release/bundle -name '*.AppImage' -exec cp {} /output/ \\; && if [ -n \"$HOST_UID\" ] && [ -n \"$HOST_GID\" ]; then chown -R $HOST_UID:$HOST_GID /output/*; else chown -R 1000:1000 /output/*; fi && echo 'AppImage copied to /output with correct ownership'"]
+CMD ["sh", "-c", "mkdir -p /output && find /app/src-tauri/target/release/bundle -name '*.AppImage' -exec cp {} /output/ \\; && cp -r /app/src-tauri/target/release/bundle/appimage/* /output/ && chown -R ${HOST_UID:-1000}:${HOST_GID:-1000} /output && echo 'AppImage copied to /output with correct ownership'"]

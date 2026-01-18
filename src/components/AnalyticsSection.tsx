@@ -88,7 +88,7 @@ const AnalyticsSection: React.FC<AnalyticsSectionProps> = ({
                   {card.value}
                 </div>
                 <div className="absolute inset-0 flex items-center">
-                  <span className="text-xs bg-gradient-to-r from-[#f7931a] to-[#61dafb] text-black px-2 py-0.5 rounded font-medium">
+                  <span className="text-xs bg-linear-to-r from-[#f7931a] to-[#61dafb] text-black px-2 py-0.5 rounded font-medium">
                     PREMIUM
                   </span>
                 </div>

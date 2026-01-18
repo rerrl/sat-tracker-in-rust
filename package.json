@@ -8,7 +8,7 @@
     "build": "tsc && vite build",
     "build:release": "tauri build",
     "build:mac": "tauri build --target universal-apple-darwin",
-    "build:docker": "docker build -t tauri-release-builder . && docker run --rm -v \"$(pwd)/build-output:/output\" tauri-release-builder sh -c 'mkdir -p /output && cp -r /app/src-tauri/target/release/bundle/appimage/* /output/'",
+    "build:docker": "docker build -t tauri-release-builder . && docker run --rm -v \"$(pwd)/build-output:/output\" -e HOST_UID=$(id -u) -e HOST_GID=$(id -g) tauri-release-builder",
     "preview": "vite preview",
     "clean": "rm -rf dist target src-tauri/target build-output",
     "start:dev": "tauri dev",
