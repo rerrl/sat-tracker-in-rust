@@ -19,7 +19,7 @@ use commands::menu_tools::{
     create_undocumented_lumpsum_transactions
 };
 use commands::overview_tool::get_overview_metrics;
-use tauri::{Emitter, menu::{Menu, MenuItem, Submenu, PredefinedMenuItem}, AppHandle};
+use tauri::{Emitter, menu::{Menu, MenuItem, Submenu, PredefinedMenuItem}, AppHandle, Manager};
 
 // Add these helper functions before the main run() function
 fn create_full_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, Box<dyn std::error::Error>> {
@@ -66,6 +66,14 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            // When a second instance is launched, focus the existing window
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+                let _ = window.unminimize();
+            }
+        }))
         .setup(|app| {
             // Set initial minimal menu
             let menu = create_minimal_menu(app.handle()).expect("Failed to create minimal menu");

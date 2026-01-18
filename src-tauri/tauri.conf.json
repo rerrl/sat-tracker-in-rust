@@ -29,6 +29,9 @@
     },
     "opener": {
       "requireLiteralLeadingDot": false
+    },
+    "singleInstance": {
+      "all": true
     }
   },
   "bundle": {
