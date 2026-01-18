@@ -23,7 +23,7 @@ use tauri::{Emitter, menu::{Menu, MenuItem, Submenu, PredefinedMenuItem}, AppHan
 
 // Add these helper functions before the main run() function
 fn create_full_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, Box<dyn std::error::Error>> {
-    let import_item = MenuItem::with_id(app, "import_sat_tracker_v1", "Import Sat Tracker v1 Data", true, None::<&str>)?;
+    // let import_item = MenuItem::with_id(app, "import_sat_tracker_v1", "Import Sat Tracker v1 Data", true, None::<&str>)?;
     let csv_import_item = MenuItem::with_id(app, "import_csv", "Import CSV Data", true, None::<&str>)?;
     let lumpsum_item = MenuItem::with_id(app, "add_undocumented_lumpsum", "Add Undocumented Lumpsum", true, None::<&str>)?;
     let encryption_item = MenuItem::with_id(app, "encryption_settings", "Database Encryption...", true, None::<&str>)?;
@@ -31,7 +31,7 @@ fn create_full_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, Box<dyn std::er
     let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
 
     let file_menu = Submenu::with_items(app, "File", true, &[
-        &import_item,
+        // &import_item,
         &csv_import_item,
         &lumpsum_item,
         &separator,

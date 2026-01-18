@@ -480,7 +480,8 @@ pub async fn import_sat_tracker_v1_data(pool: State<'_, SqlitePool>) -> Result<S
     }
 
     println!("📥 Importing DeductionEvents as sell transactions...");
-    let deductions_query = "SELECT id, date, amountSats, memo, createdAt FROM DeductionEvents ORDER BY createdAt";
+    let deductions_query =
+        "SELECT id, date, amountSats, memo, createdAt FROM DeductionEvents ORDER BY createdAt";
 
     match sqlx::query(deductions_query).fetch_all(&v1_pool).await {
         Ok(deduction_rows) => {
@@ -517,7 +518,8 @@ pub async fn import_sat_tracker_v1_data(pool: State<'_, SqlitePool>) -> Result<S
                     }
                 };
 
-                let provider_id = format!("stv1-deduction-{}_{}", timestamp.timestamp(), amount_sats);
+                let provider_id =
+                    format!("stv1-deduction-{}_{}", timestamp.timestamp(), amount_sats);
 
                 if transaction_exists_by_provider_id(pool.inner(), &provider_id).await? {
                     println!(
@@ -544,7 +546,10 @@ pub async fn import_sat_tracker_v1_data(pool: State<'_, SqlitePool>) -> Result<S
             }
         }
         Err(e) => {
-            println!("⚠️  No DeductionEvents table found or error querying: {}", e);
+            println!(
+                "⚠️  No DeductionEvents table found or error querying: {}",
+                e
+            );
         }
     }
 
