@@ -1,8 +1,6 @@
-# Tauri + React + Typescript
+# Sat Tracker in Rust
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
-
-## Setup
+## Local Development
 
 ### install dependencies and start desktop development
 
@@ -12,18 +10,9 @@ yarn seed
 yarn start:dev
 ```
 
-**Common Issue:** The Tauri window may open blank initially while Vite finishes compiling. Simply right-click in the window and select "Reload" to refresh the page and the app will load properly. This is normal Tauri development behavior.
+TODO: on windows, even though we never use it, a folder is being created at: `C:\Users\<username>\.sat-tracker-in-rust`
 
-- TODO: obscure balances/lock screen
-
-## Installation on Linux
-
-- Download the latest release as a .AppImage file
-- make it executable: `chmod +x sat-tracker-in-rust-x86_64_0.1.0_amd64.AppImage`
-- add it to our users binaires and path: ~/.local/bin
-- make it availbale in applications: create a .desktop file in ~/.local/share/applications
-
-## Building
+## Building The App
 
 ### Linux AppImage
 
@@ -50,3 +39,23 @@ yarn build:release
 ```
 
 This will build the AppImage and copy it to the default output directory (`src-tauri/target/release/bundle/appimage`).
+
+In any case, all data is stored in:
+`~/.sat-tracker-in-rust/sat_tracker.db`
+
+### MacOS:
+Build for MacOS: 
+`yarn build:mac`
+
+the built installer is now located at:
+
+
+### Windows:
+Build for windows: 
+`yarn build:win`
+
+the built installer is now located at:
+`src-tauri/target/x86_64-pc-windows-gnu/release/bundle/nsis/sat-tracker-in-rust_x.y.z_x64-setup.exe`
+
+When installed on a windows machine, the db that stores all the data is located at:
+`C:\Users\<username>\AppData\Local\sat-tracker-in-rust\sat_tracker.db`
