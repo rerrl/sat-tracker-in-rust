@@ -1,4 +1,5 @@
 use crate::commands::exchange_transaction::create_exchange_transaction;
+use crate::database::get_database_path;
 use crate::models::exchange_transaction::{
     CreateExchangeTransactionRequest, ExchangeTransaction, TransactionType,
 };
@@ -27,25 +28,6 @@ pub struct PasswordValidationResult {
     pub error_message: Option<String>,
 }
 
-fn get_database_path() -> PathBuf {
-    #[cfg(debug_assertions)]
-    {
-        let mut path = std::env::current_dir().unwrap();
-        path.push("db");
-        std::fs::create_dir_all(&path).ok();
-        path.push("sat_tracker.db");
-        path
-    }
-
-    #[cfg(not(debug_assertions))]
-    {
-        let mut path = dirs::home_dir().unwrap_or_else(|| std::env::current_dir().unwrap());
-        path.push(".sat-tracker-in-rust");
-        std::fs::create_dir_all(&path).ok();
-        path.push("sat_tracker.db");
-        path
-    }
-}
 
 #[command]
 pub async fn check_database_status() -> Result<DatabaseStatus, String> {

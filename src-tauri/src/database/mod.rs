@@ -84,7 +84,7 @@ pub async fn init_database_with_password(password: Option<String>) -> Result<Sql
     }
 }
 
-fn get_database_path() -> PathBuf {
+pub fn get_database_path() -> PathBuf {
     #[cfg(debug_assertions)]
     {
         // Development: use project's db folder
