@@ -48,7 +48,10 @@ Build for MacOS:
 `yarn build:mac`
 
 the built installer is now located at:
+`src-tauri/target/universal-apple-darwin/release/bundle/dmg/sat-tracker-in-rust_x.y.z_universal.dmg`
 
+all app data is stored in:
+`~/.sat-tracker-in-rust/sat_tracker.db`
 
 ### Windows:
 Build for windows: 
