@@ -10,8 +10,6 @@ yarn seed
 yarn start:dev
 ```
 
-TODO: on windows, even though we never use it, a folder is being created at: `C:\Users\<username>\.sat-tracker-in-rust`
-
 ## Building The App
 
 ### Linux AppImage
@@ -44,7 +42,8 @@ In any case, all data is stored in:
 `~/.sat-tracker-in-rust/sat_tracker.db`
 
 ### MacOS:
-Build for MacOS: 
+
+Build for MacOS:
 `yarn build:mac`
 
 the built installer is now located at:
@@ -54,7 +53,8 @@ all app data is stored in:
 `~/.sat-tracker-in-rust/sat_tracker.db`
 
 ### Windows:
-Build for windows: 
+
+Build for windows:
 `yarn build:win`
 
 the built installer is now located at:

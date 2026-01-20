@@ -16,7 +16,8 @@ use commands::menu_tools::{
     encrypt_database, 
     change_database_password, 
     initialize_database_with_password,
-    create_undocumented_lumpsum_transactions
+    create_undocumented_lumpsum_transactions,
+    quit_app
 };
 use commands::overview_tool::get_overview_metrics;
 use tauri::{Emitter, menu::{Menu, MenuItem, Submenu, PredefinedMenuItem}, AppHandle, Manager};
@@ -130,7 +131,8 @@ pub fn run() {
             get_onchain_fees,
             update_onchain_fee,
             delete_onchain_fee,
-            get_unified_events
+            get_unified_events,
+            quit_app
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

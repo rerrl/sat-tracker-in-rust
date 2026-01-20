@@ -157,7 +157,7 @@ pub async fn validate_database_password(
 }
 
 #[command]
-pub async fn encrypt_database(password: String) -> Result<String, String> {
+pub async fn encrypt_database(app_handle: AppHandle, password: String) -> Result<String, String> {
     let db_path = get_database_path();
 
     if !db_path.exists() {
@@ -167,6 +167,13 @@ pub async fn encrypt_database(password: String) -> Result<String, String> {
     let status = check_database_status().await?;
     if status.is_encrypted {
         return Err("Database is already encrypted".to_string());
+    }
+
+    // Close existing connection pool if it exists
+    if let Some(pool) = app_handle.try_state::<SqlitePool>() {
+        println!("🔌 Closing existing database connection pool...");
+        pool.close().await;
+        println!("✅ Connection pool closed");
     }
 
     let backup_path = db_path.with_extension("db.backup");
@@ -193,9 +200,13 @@ pub async fn encrypt_database(password: String) -> Result<String, String> {
     std::fs::rename(&encrypted_path, &db_path)
         .map_err(|e| format!("Failed to replace database: {}", e))?;
 
-    let _pool = crate::database::init_database_with_password(Some(password.clone()))
+    let pool = crate::database::init_database_with_password(Some(password.clone()))
         .await
         .map_err(|e| format!("Failed to initialize encrypted database: {}", e))?;
+
+    // Update the app state with the new encrypted pool
+    app_handle.manage(pool);
+    println!("✅ Updated app state with encrypted database pool");
 
     println!("📋 Starting data copy from backup to encrypted database...");
 
@@ -324,6 +335,7 @@ pub async fn encrypt_database(password: String) -> Result<String, String> {
 
 #[command]
 pub async fn change_database_password(
+    app_handle: AppHandle,
     old_password: String,
     new_password: String,
 ) -> Result<String, String> {
@@ -338,6 +350,13 @@ pub async fn change_database_password(
         return Err("Invalid current password".to_string());
     }
 
+    // Close existing connection pool if it exists
+    if let Some(pool) = app_handle.try_state::<SqlitePool>() {
+        println!("🔌 Closing existing database connection pool...");
+        pool.close().await;
+        println!("✅ Connection pool closed");
+    }
+
     let conn = Connection::open(&db_path).map_err(|e| format!("Failed to open database: {}", e))?;
 
     conn.pragma_update(None, "key", &old_password)
@@ -345,6 +364,17 @@ pub async fn change_database_password(
 
     conn.pragma_update(None, "rekey", &new_password)
         .map_err(|e| format!("Failed to change password: {}", e))?;
+
+    drop(conn);
+
+    // Reinitialize the database with the new password
+    let pool = crate::database::init_database_with_password(Some(new_password))
+        .await
+        .map_err(|e| format!("Failed to reinitialize database with new password: {}", e))?;
+
+    // Update the app state with the new pool
+    app_handle.manage(pool);
+    println!("✅ Updated app state with new password database pool");
 
     Ok("Password changed successfully".to_string())
 }
@@ -363,6 +393,12 @@ pub async fn initialize_database_with_password(
     app_handle.manage(pool);
 
     Ok("Database initialized successfully".to_string())
+}
+
+#[command]
+pub async fn quit_app(app_handle: AppHandle) -> Result<(), String> {
+    app_handle.exit(0);
+    Ok(())
 }
 
 // ============================================================================
