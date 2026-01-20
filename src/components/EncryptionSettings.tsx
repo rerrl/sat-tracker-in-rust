@@ -10,7 +10,7 @@ interface EncryptionSettingsProps {
 const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
   isEncrypted,
   onEncryptionChange,
-  onClose
+  onClose,
 }) => {
   const [showEncryptForm, setShowEncryptForm] = useState(false);
   const [showChangePasswordForm, setShowChangePasswordForm] = useState(false);
@@ -19,7 +19,9 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
   const [currentPassword, setCurrentPassword] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState<"success" | "error">("success");
+  const [messageType, setMessageType] = useState<"success" | "error">(
+    "success",
+  );
   const [passwordChangeSuccess, setPasswordChangeSuccess] = useState(false);
 
   const showMessage = (msg: string, type: "success" | "error") => {
@@ -30,7 +32,7 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
 
   const handleEncryptDatabase = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (newPassword !== confirmPassword) {
       showMessage("Passwords do not match", "error");
       return;
@@ -49,6 +51,11 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
       setNewPassword("");
       setConfirmPassword("");
       onEncryptionChange();
+
+      // Add app quit after short delay
+      setTimeout(async () => {
+        await TauriService.quitApp();
+      }, 2000);
     } catch (error) {
       showMessage(`Failed to encrypt database: ${error}`, "error");
     } finally {
@@ -58,7 +65,7 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (newPassword !== confirmPassword) {
       showMessage("New passwords do not match", "error");
       return;
@@ -71,13 +78,21 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
 
     setIsProcessing(true);
     try {
-      const result = await TauriService.changeDatabasePassword(currentPassword, newPassword);
+      const result = await TauriService.changeDatabasePassword(
+        currentPassword,
+        newPassword,
+      );
       showMessage(result, "success");
       setPasswordChangeSuccess(true);
       setShowChangePasswordForm(false);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+
+      // Add app quit after short delay
+      setTimeout(async () => {
+        await TauriService.quitApp();
+      }, 2000);
     } catch (error) {
       showMessage(`Failed to change password: ${error}`, "error");
     } finally {
@@ -92,18 +107,21 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
           🔐 Database Encryption
         </h3>
         <p className="text-sm text-[rgba(247,243,227,0.7)]">
-          Status: <span className={isEncrypted ? "text-green-400" : "text-red-400"}>
+          Status:{" "}
+          <span className={isEncrypted ? "text-green-400" : "text-red-400"}>
             {isEncrypted ? "🔒 Encrypted" : "🔓 Not Encrypted"}
           </span>
         </p>
       </div>
 
       {message && (
-        <div className={`p-3 rounded text-sm ${
-          messageType === "success" 
-            ? "bg-green-900 text-green-200 border border-green-700" 
-            : "bg-red-900 text-red-200 border border-red-700"
-        }`}>
+        <div
+          className={`p-3 rounded text-sm ${
+            messageType === "success"
+              ? "bg-green-900 text-green-200 border border-green-700"
+              : "bg-red-900 text-red-200 border border-red-700"
+          }`}
+        >
           {message}
         </div>
       )}
@@ -111,9 +129,17 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
       {!isEncrypted ? (
         <div>
           <p className="text-sm text-[rgba(247,243,227,0.6)] mb-3">
-            Your database is not encrypted. You can add encryption to protect your data.
+            Your database is not encrypted. You can add encryption to protect
+            your data.
           </p>
-          
+
+          <div className="bg-red-900 border border-red-700 p-3 rounded mb-3">
+            <p className="text-red-200 text-sm font-medium">
+              ⚠️ Important: The application will automatically close after
+              successful encryption to ensure changes take effect properly.
+            </p>
+          </div>
+
           {!showEncryptForm ? (
             <button
               onClick={() => setShowEncryptForm(true)}
@@ -138,7 +164,7 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
                   disabled={isProcessing}
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm text-[rgba(247,243,227,0.8)] mb-1">
                   Confirm Password
@@ -183,7 +209,7 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
           <p className="text-sm text-[rgba(247,243,227,0.6)] mb-3">
             Your database is encrypted. You can change your password below.
           </p>
-          
+
           {passwordChangeSuccess && (
             <div className="mb-3">
               <button
@@ -197,7 +223,7 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
               </button>
             </div>
           )}
-          
+
           {!showChangePasswordForm && !passwordChangeSuccess && (
             <div className="flex gap-2">
               <button
@@ -216,9 +242,16 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
               )}
             </div>
           )}
-          
+
           {showChangePasswordForm && (
             <form onSubmit={handleChangePassword} className="space-y-3">
+              <div className="bg-red-900 border border-red-700 p-3 rounded mb-3">
+                <p className="text-red-200 text-sm font-medium">
+                  ⚠️ Important: The application will automatically close after
+                  successful password change to ensure changes take effect
+                  properly.
+                </p>
+              </div>
               <div>
                 <label className="block text-sm text-[rgba(247,243,227,0.8)] mb-1">
                   Current Password
@@ -233,7 +266,7 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
                   disabled={isProcessing}
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm text-[rgba(247,243,227,0.8)] mb-1">
                   New Password
@@ -249,7 +282,7 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
                   disabled={isProcessing}
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm text-[rgba(247,243,227,0.8)] mb-1">
                   Confirm New Password

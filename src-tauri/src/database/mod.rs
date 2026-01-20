@@ -84,24 +84,46 @@ pub async fn init_database_with_password(password: Option<String>) -> Result<Sql
     }
 }
 
-fn get_database_path() -> PathBuf {
+pub fn get_database_path() -> PathBuf {
     #[cfg(debug_assertions)]
     {
         // Development: use project's db folder
         let mut path = std::env::current_dir().unwrap();
         path.push("db");
-        std::fs::create_dir_all(&path).ok(); // Create db folder if it doesn't exist
+        std::fs::create_dir_all(&path).ok();
         path.push("sat_tracker.db");
         path
     }
     
     #[cfg(not(debug_assertions))]
     {
-        // Production: use ~/.sat-tracker-in-rust/
-        let mut path = dirs::home_dir().unwrap_or_else(|| std::env::current_dir().unwrap());
-        path.push(".sat-tracker-in-rust");
-        std::fs::create_dir_all(&path).ok(); // Create directory if it doesn't exist
-        path.push("sat_tracker.db");
-        path
+        // Production: use OS-specific user data directories
+        #[cfg(any(target_os = "linux", target_os = "macos"))]
+        {
+            let home_dir = std::env::var("HOME").unwrap_or_else(|_| "/tmp".to_string());
+            let app_dir = std::path::Path::new(&home_dir).join(".sat-tracker-in-rust");
+            std::fs::create_dir_all(&app_dir).ok();
+            app_dir.join("sat_tracker.db")
+        }
+        
+        #[cfg(target_os = "windows")]
+        {
+            // Use LOCALAPPDATA for per-user data on Windows
+            let local_app_data = std::env::var("LOCALAPPDATA")
+                .unwrap_or_else(|_| std::env::var("USERPROFILE").unwrap_or_else(|_| "C:\\Users\\Default".to_string()));
+            let app_dir = std::path::Path::new(&local_app_data).join("sat-tracker-in-rust");
+            std::fs::create_dir_all(&app_dir).ok();
+            app_dir.join("sat_tracker.db")
+        }
+        
+        #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
+        {
+            // Fallback for other platforms
+            let mut path = dirs::home_dir().unwrap_or_else(|| std::env::current_dir().unwrap());
+            path.push(".sat-tracker-in-rust");
+            std::fs::create_dir_all(&path).ok();
+            path.push("sat_tracker.db");
+            path
+        }
     }
 }

@@ -1,22 +1,24 @@
 {
   "name": "sat-tracker-in-rust",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.1.5",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "build:release": "tauri build",
     "build:mac": "tauri build --target universal-apple-darwin",
-    "build:docker": "docker build -t tauri-release-builder . && docker run --rm -v \"$(pwd)/build-output:/output\" tauri-release-builder sh -c 'mkdir -p /output && cp -r /app/src-tauri/target/release/bundle/appimage/* /output/'",
+    "build:win": "yarn tauri build --target x86_64-pc-windows-gnu",
+    "build:docker": "docker build -t tauri-release-builder . && docker run --rm -v \"$(pwd)/build-output:/output\" -e HOST_UID=$(id -u) -e HOST_GID=$(id -g) tauri-release-builder",
     "preview": "vite preview",
-    "clean": "rm -rf dist target src-tauri/target build-output",
+    "clean:full": "rm -rf dist target node_modules && yarn clean:build",
+    "clean:build": "rm -rf build-output src-tauri/target",
     "start:dev": "tauri dev",
     "start:dev:release": "tauri dev --release",
     "tauri": "tauri",
     "db:drop": "rm -rf src-tauri/db",
     "db:reset": "yarn db:drop && yarn db:seed",
-    "db:seed": "cd src-tauri && cargo run --bin seed",
+    "db:seed": "cd src-tauri && cargo run --bin seed --features dev-tools",
     "version:bump": "./scripts/bump-version.sh"
   },
   "dependencies": {

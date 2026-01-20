@@ -391,6 +391,15 @@ const EventsList: React.FC<EventsListProps> = () => {
           />
         )}
 
+        {/* Empty state message */}
+        {!isCreatingNew && visibleEvents.length === 0 && (
+          <div className="w-full h-full flex items-center justify-center">
+            <p className="text-[rgba(247,243,227,0.6)] text-sm text-center">
+              No Events
+            </p>
+          </div>
+        )}
+
         {visibleEvents.map((event) => (
           <EventItem
             key={event.id}

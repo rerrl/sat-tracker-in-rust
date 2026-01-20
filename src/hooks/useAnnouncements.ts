@@ -4,8 +4,8 @@ import packageJson from "../../package.json";
 
 export const useAnnouncements = () => {
   const staticAnnouncements = [
-    "🎉 Welcome to Sat Tracker - A free, open source, local-first Bitcoin portfolio tracker",
-    "🔒 Your data stays local - no cloud sync, no tracking, complete privacy",
+    "🎉 Welcome to Sat Tracker - A free, open source, local-first Bitcoin acquisition tracker",
+    "🔒 Your data stays local - no cloud sync, no tracking",
     "📡 Only fetches Bitcoin price & app announcements",
   ];
 

@@ -281,6 +281,10 @@ export class TauriService {
     return await invoke("update_menu_for_database_status", { isUnlocked });
   }
 
+  static async quitApp(): Promise<void> {
+    return await invoke("quit_app");
+  }
+
   // Fetch announcements from API
   static async fetchAnnouncements(): Promise<AnnouncementsResponse> {
     return await invoke("fetch_announcements");

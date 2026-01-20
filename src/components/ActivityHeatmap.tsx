@@ -54,11 +54,7 @@ const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ heatmapData }) => {
     
     if (!heatmapData || heatmapData.length === 0) {
       console.log("[ActivityHeatmap] No heatmap data available");
-      return (
-        <div className="p-4 text-center text-[rgba(247,243,227,0.5)]">
-          No activity data available
-        </div>
-      );
+      return null;
     }
 
     // Create legend inline
@@ -78,7 +74,7 @@ const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ heatmapData }) => {
     );
 
     return (
-      <div className="p-4 space-y-6">
+      <div className="space-y-6">
         {heatmapData.map((yearData, yearIndex) => {
           console.log("[ActivityHeatmap] Rendering year", yearData.year, "with", yearData.weeks?.length, "weeks");
           
@@ -140,7 +136,38 @@ const ActivityHeatmap: React.FC<ActivityHeatmapProps> = ({ heatmapData }) => {
   }, [heatmapData]); // Only depend on heatmapData
 
   console.log("[ActivityHeatmap] Returning memoized content");
-  return heatmapContent;
+  
+  if (!heatmapData || heatmapData.length === 0) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-center">
+        <p className="text-[rgba(247,243,227,0.6)] text-sm">
+          No activity data available.
+          <br />
+          <br />
+          Add events to the right, or use File &gt; Import CSV Data to get
+          started.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* Chart Header */}
+      <div className="p-4 pb-2 shrink-0 border-b border-[rgba(247,243,227,0.1)]">
+        <h2 className="text-lg font-semibold text-[#F7F3E3]">
+          Activity Heatmap
+        </h2>
+      </div>
+
+      {/* Chart Area */}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <div className="p-4 w-full h-full">
+          {heatmapContent}
+        </div>
+      </div>
+    </>
+  );
 };
 
 export default React.memo(ActivityHeatmap);

@@ -16,14 +16,15 @@ use commands::menu_tools::{
     encrypt_database, 
     change_database_password, 
     initialize_database_with_password,
-    create_undocumented_lumpsum_transactions
+    create_undocumented_lumpsum_transactions,
+    quit_app
 };
 use commands::overview_tool::get_overview_metrics;
-use tauri::{Emitter, menu::{Menu, MenuItem, Submenu, PredefinedMenuItem}, AppHandle};
+use tauri::{Emitter, menu::{Menu, MenuItem, Submenu, PredefinedMenuItem}, AppHandle, Manager};
 
 // Add these helper functions before the main run() function
 fn create_full_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, Box<dyn std::error::Error>> {
-    let import_item = MenuItem::with_id(app, "import_sat_tracker_v1", "Import Sat Tracker v1 Data", true, None::<&str>)?;
+    // let import_item = MenuItem::with_id(app, "import_sat_tracker_v1", "Import Sat Tracker v1 Data", true, None::<&str>)?;
     let csv_import_item = MenuItem::with_id(app, "import_csv", "Import CSV Data", true, None::<&str>)?;
     let lumpsum_item = MenuItem::with_id(app, "add_undocumented_lumpsum", "Add Undocumented Lumpsum", true, None::<&str>)?;
     let encryption_item = MenuItem::with_id(app, "encryption_settings", "Database Encryption...", true, None::<&str>)?;
@@ -31,7 +32,7 @@ fn create_full_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, Box<dyn std::er
     let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
 
     let file_menu = Submenu::with_items(app, "File", true, &[
-        &import_item,
+        // &import_item,
         &csv_import_item,
         &lumpsum_item,
         &separator,
@@ -66,6 +67,14 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            // When a second instance is launched, focus the existing window
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.set_focus();
+                let _ = window.unminimize();
+            }
+        }))
         .setup(|app| {
             // Set initial minimal menu
             let menu = create_minimal_menu(app.handle()).expect("Failed to create minimal menu");
@@ -122,7 +131,8 @@ pub fn run() {
             get_onchain_fees,
             update_onchain_fee,
             delete_onchain_fee,
-            get_unified_events
+            get_unified_events,
+            quit_app
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
