@@ -13,7 +13,7 @@ Download the latest version from the releases page or on my website.
 
 If you intend to verify the authenticity of the sha256sums file, you can grab my public gpg key below, and you can cross reference the fingerprint from my twitter bio.
 
-[my public gpg key]()
+[my public gpg key](https://dprogram.me/andrew-dprogram-me_public-gpg-key.asc)
 
 [my twitter](https://x.com/BitReverser)
 
