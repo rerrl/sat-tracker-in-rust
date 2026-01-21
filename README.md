@@ -1,5 +1,31 @@
 # Sat Tracker in Rust
 
+<img width="1913" height="1037" alt="image" src="https://github.com/user-attachments/assets/ad5faefa-0db6-4efc-8fb2-17864de97e16" />
+
+<img width="1914" height="1031" alt="image" src="https://github.com/user-attachments/assets/dc7ebca7-f6df-4780-8335-6dbbe8bc6160" />
+
+
+Sat Tracker in Rust is a free and open source bitcoin acquisition tracker. I was buying bitcoin from different exchanges and wanted a way to track how much I've been allocating to my purchases across all exchanges. I used to use a spreadsheet but have since evolved to this. I do plan to add more (premium) analytics that are entirely optional as I intend to keep this core offering free. 
+
+There are no ads, no trackers, and absolutely no data is sent to any servers.  In fact, the only network requests this app makes is to my server (api.dprogram.me) to get the current bitcoin price and app updates (for the banner at the top of the screen).
+
+Download the latest version from the releases page or on my website.
+
+If you intend to verify the authenticity of the sha256sums file, you can grab my public gpg key below, and you can cross reference the fingerprint from my twitter bio.
+
+[my public gpg key]()
+
+[my twitter](https://x.com/BitReverser)
+
+## Features:
+- Live bitcoin price pulled from api.dprogram.me (thank you CoinGecko)
+- Import CSV data from Coinbase, or River
+- Optional DB password encryption
+- Sat holdings chart overtime
+- Activity Heatmap
+- More features coming soon. Let me know what you want to see (email: andrew@dprogram.me)
+
+
 ## Local Development
 
 ### install dependencies and start desktop development
@@ -9,6 +35,7 @@ yarn
 yarn seed
 yarn start:dev
 ```
+
 
 ## Building The App
 
