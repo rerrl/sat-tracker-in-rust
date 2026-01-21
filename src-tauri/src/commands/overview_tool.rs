@@ -78,6 +78,5 @@ pub async fn get_overview_metrics(
         usd_invested_31d_cents,
     };
 
-    println!("Calculated overview metrics: {:?}", overview_metrics);
     Ok(overview_metrics)
 }

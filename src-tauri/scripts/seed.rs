@@ -46,43 +46,69 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut rng = rand::thread_rng();
 
     // Generate a random number of events between 50 and 250
-    let total_events = rng.gen_range(50..=250);
+    // let total_events = rng.gen_range(50..=250);
+    let total_events = 32;
     println!(
         "🎯 Generating {} events (including 5 initial buys)",
         total_events
     );
 
-    // Calculate event distribution (subtract 5 for initial buys)
-    let remaining_events = total_events - 5;
+    // Generate onchain fee count
+    let onchain_fee_count = rng.gen_range(3..=8);
+    
+    // Calculate event distribution (subtract 5 for initial buys and fees)
+    let remaining_events = total_events - 5 - onchain_fee_count;
     let buy_count = (remaining_events as f32 * 0.85) as usize;
     let sell_count = remaining_events - buy_count;
 
     println!(
-        "📊 Distribution: 5 initial buys + {} buys, {} sells",
-        buy_count, sell_count
+        "📊 Distribution: 5 initial buys + {} buys, {} sells, {} fees",
+        buy_count, sell_count, onchain_fee_count
     );
 
-    // Start with $30k Bitcoin price (in cents)
-    let mut current_btc_price_cents = 3000000; // $30k in cents
+    // Start with $10k Bitcoin price (in cents)
+    let mut current_btc_price_cents = 1000000; // $10k in cents
+    let target_btc_price_cents = 12500000; // $125k in cents
+    let total_price_increase = target_btc_price_cents - current_btc_price_cents;
+    let total_events_for_price = total_events as f64;
+    
     println!(
         "₿ Starting BTC price: ${:.2}",
         current_btc_price_cents as f64 / 100.0
     );
 
-    // Create a vector of event types based on distribution
-    let mut event_types = Vec::new();
-    for _ in 0..buy_count {
-        event_types.push("buy");
-    }
-    for _ in 0..sell_count {
-        event_types.push("sell");
-    }
-
     // Provider names for generating unique provider IDs
     let provider_names = ["Coinbase", "Kraken", "Strike", "River"];
 
-    // Shuffle the event types to spread them out randomly
-    event_types.shuffle(&mut rng);
+    // Fee memos for onchain transactions
+    let fee_memos = [
+        "Lightning channel open",
+        "Lightning channel close", 
+        "Cold storage transfer",
+        "Mining pool payout",
+        "DeFi interaction",
+    ];
+
+    // Create a vector of all event types (after initial buys)
+    let mut all_events = Vec::new();
+    
+    // Add buy events
+    for _ in 0..buy_count {
+        all_events.push("buy");
+    }
+    
+    // Add sell events
+    for _ in 0..sell_count {
+        all_events.push("sell");
+    }
+    
+    // Add fee events
+    for _ in 0..onchain_fee_count {
+        all_events.push("fee");
+    }
+
+    // Shuffle all events together
+    all_events.shuffle(&mut rng);
 
     let mut events_created = 0;
 
@@ -94,9 +120,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // First, create 5 initial buy events
     println!("🚀 Creating 5 initial buy events...");
     for _i in 0..5 {
-        // Increase Bitcoin price by $500-$2000 for each event
-        let price_increase = rng.gen_range(50000..=200000); // $500-$2000 in cents
-        current_btc_price_cents += price_increase;
+        // Calculate non-linear price progression
+        let progress = (events_created + 1) as f64 / total_events_for_price;
+        let base_increase = (total_price_increase as f64 * progress.powf(1.5)) / total_events_for_price;
+        
+        // Add some randomness (±20% of base increase)
+        let randomness = rng.gen_range(0.8..=1.2);
+        let price_increase = (base_increase * randomness) as i64;
+        
+        // Ensure we don't exceed target price
+        if current_btc_price_cents + price_increase <= target_btc_price_cents {
+            current_btc_price_cents += price_increase;
+        } else {
+            current_btc_price_cents = target_btc_price_cents;
+        }
 
         // Generate a rounded dollar amount (in hundreds)
         let dollar_amount = rng.gen_range(1..=50) * 100; // $100 to $5000 in $100 increments
@@ -143,14 +180,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         current_date = current_date + Duration::days(days_to_add);
     }
 
-    // Create events in shuffled order
-    for event_type in event_types {
-        // Increase Bitcoin price by $500-$2000 for each event
-        let price_increase = rng.gen_range(50000..=200000); // $500-$2000 in cents
-        current_btc_price_cents += price_increase;
-
+    // Process all events in shuffled order
+    for event_type in all_events {
         match event_type {
             "buy" => {
+                // Calculate non-linear price progression
+                let progress = (events_created + 1) as f64 / total_events_for_price;
+                let base_increase = (total_price_increase as f64 * progress.powf(1.5)) / total_events_for_price;
+                
+                // Add some randomness (±20% of base increase)
+                let randomness = rng.gen_range(0.8..=1.2);
+                let price_increase = (base_increase * randomness) as i64;
+                
+                // Ensure we don't exceed target price
+                if current_btc_price_cents + price_increase <= target_btc_price_cents {
+                    current_btc_price_cents += price_increase;
+                } else {
+                    current_btc_price_cents = target_btc_price_cents;
+                }
+
                 // Generate a rounded dollar amount (in hundreds)
                 let dollar_amount = rng.gen_range(1..=50) * 100; // $100 to $5000 in $100 increments
                 let subtotal_cents = dollar_amount * 100; // Convert to cents
@@ -190,6 +238,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .await?;
             }
             "sell" => {
+                // Calculate non-linear price progression
+                let progress = (events_created + 1) as f64 / total_events_for_price;
+                let base_increase = (total_price_increase as f64 * progress.powf(1.5)) / total_events_for_price;
+                
+                // Add some randomness (±20% of base increase)
+                let randomness = rng.gen_range(0.8..=1.2);
+                let price_increase = (base_increase * randomness) as i64;
+                
+                // Ensure we don't exceed target price
+                if current_btc_price_cents + price_increase <= target_btc_price_cents {
+                    current_btc_price_cents += price_increase;
+                } else {
+                    current_btc_price_cents = target_btc_price_cents;
+                }
+
                 // Generate a rounded dollar amount (in hundreds)
                 let dollar_amount = rng.gen_range(1..=50) * 100; // $100 to $5000 in $100 increments
                 let subtotal_cents = dollar_amount * 100; // Convert to cents
@@ -228,13 +291,44 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .execute(&pool)
                 .await?;
             }
+            "fee" => {
+                let amount_sats = rng.gen_range(1000..=50000); // 1k to 50k sats
+                let memo = if rng.gen_bool(0.6) {
+                    Some(fee_memos.choose(&mut rng).unwrap().to_string())
+                } else {
+                    None
+                };
+                
+                let tx_hash = if rng.gen_bool(0.8) {
+                    // Generate a fake transaction hash
+                    Some(format!("{:064x}", rng.gen::<u64>()))
+                } else {
+                    None
+                };
+                
+                sqlx::query(
+                    "INSERT INTO onchain_fees (id, amount_sats, memo, timestamp, created_at, tx_hash) VALUES (?, ?, ?, ?, ?, ?)"
+                )
+                .bind(Uuid::new_v4().to_string())
+                .bind(amount_sats)
+                .bind(&memo)
+                .bind(current_date)
+                .bind(Utc::now())
+                .bind(&tx_hash)
+                .execute(&pool)
+                .await?;
+            }
             _ => unreachable!(),
         }
 
         events_created += 1;
 
-        // Add 3-5 days to current_date
-        let days_to_add = rng.gen_range(3..=5);
+        // Add time between events (longer gaps for fees)
+        let days_to_add = if event_type == "fee" {
+            rng.gen_range(7..=30)
+        } else {
+            rng.gen_range(3..=5)
+        };
         current_date = current_date + Duration::days(days_to_add);
     }
 
@@ -243,52 +337,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         current_btc_price_cents as f64 / 100.0
     );
 
-    println!("✅ Created {} total exchange transactions", events_created);
-
-    // Generate onchain fee transactions
-    let onchain_fee_count = rng.gen_range(3..=8);
-    println!("⚡ Creating {} onchain fee transactions...", onchain_fee_count);
-
-    let fee_memos = [
-        "Lightning channel open",
-        "Lightning channel close", 
-        "Cold storage transfer",
-        "Mining pool payout",
-        "DeFi interaction",
-    ];
-
-    for _ in 0..onchain_fee_count {
-        let amount_sats = rng.gen_range(1000..=50000); // 1k to 50k sats
-        let memo = if rng.gen_bool(0.6) {
-            Some(fee_memos.choose(&mut rng).unwrap().to_string())
-        } else {
-            None
-        };
-        
-        let tx_hash = if rng.gen_bool(0.8) {
-            // Generate a fake transaction hash
-            Some(format!("{:064x}", rng.gen::<u64>()))
-        } else {
-            None
-        };
-        
-        sqlx::query(
-            "INSERT INTO onchain_fees (id, amount_sats, memo, timestamp, created_at, tx_hash) VALUES (?, ?, ?, ?, ?, ?)"
-        )
-        .bind(Uuid::new_v4().to_string())
-        .bind(amount_sats)
-        .bind(&memo)
-        .bind(current_date)
-        .bind(Utc::now())
-        .bind(&tx_hash)
-        .execute(&pool)
-        .await?;
-        
-        // Add 7-30 days between onchain fee transactions
-        current_date = current_date + Duration::days(rng.gen_range(7..=30));
-    }
-
-    println!("✅ Created {} onchain fee transactions", onchain_fee_count);
+    println!("✅ Created {} total events (exchange transactions and onchain fees)", events_created);
     println!("🎉 Done!");
     Ok(())
 }
