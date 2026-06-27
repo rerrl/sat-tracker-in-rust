@@ -30,5 +30,3 @@ target/
 # Docker build output
 build-output/
 
-# User scripts
-user-scripts/
