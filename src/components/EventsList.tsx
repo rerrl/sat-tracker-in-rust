@@ -1,17 +1,16 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   EditBitcoinTransactionData,
   TauriService,
   UnifiedEvent,
 } from "../services/tauriService";
-import { useUnifiedEvents } from "../hooks/useUnifiedEvents";
 import { invalidateAfterUnifiedEventDataChange } from "../utils/queryInvalidation";
 import { useQueryClient } from "@tanstack/react-query";
+import { useVirtualizer, VirtualItem } from "@tanstack/react-virtual";
+import { useInfiniteEvents } from "../hooks/useInfiniteEvents";
 import EventItem from "./EventItem";
 
-interface EventsListProps {
-  // No more prop drilling - EventsList manages its own state!
-}
+interface EventsListProps {}
 
 const EventsList: React.FC<EventsListProps> = () => {
   // Internal state management
@@ -24,15 +23,44 @@ const EventsList: React.FC<EventsListProps> = () => {
   const [newEventData, setNewEventData] =
     useState<EditBitcoinTransactionData | null>(null);
 
-  // Get events data and mutations
-  const { events, totalCount } = useUnifiedEvents(true);
+  // Infinite scroll data
+  const {
+    events,
+    totalCount,
+    loading,
+    isLoadingMore,
+    hasMore,
+    loadMore,
+    refetch: _refetchEvents,
+  } = useInfiniteEvents(true);
   const queryClient = useQueryClient();
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(0);
-  const pageSize = 50;
+  // Scroll container ref for virtualizer
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Internal event handlers
+  // Virtualizer
+  const rowVirtualizer = useVirtualizer({
+    count: hasMore ? events.length + 1 : events.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => 38,
+    overscan: 5,
+  });
+
+  // Load more when approaching the end of loaded data
+  const virtualItems = rowVirtualizer.getVirtualItems();
+  const lastVirtualIndex =
+    virtualItems.length > 0 ? virtualItems[virtualItems.length - 1].index : 0;
+  useEffect(() => {
+    if (
+      lastVirtualIndex >= events.length - 3 &&
+      hasMore &&
+      !isLoadingMore
+    ) {
+      loadMore();
+    }
+  }, [lastVirtualIndex, events.length, hasMore, isLoadingMore, loadMore]);
+
+  // Internal event handlers (unchanged from original)
   const handleEditEvent = useCallback(
     (event: UnifiedEvent) => {
       if (selectedEventId !== event.id) return;
@@ -41,7 +69,6 @@ const EventsList: React.FC<EventsListProps> = () => {
       setNewEventData(null);
       setEditingEventId(event.id);
 
-      // Handle different event types
       if (event.record_type === "onchain_fee") {
         setEditData({
           type: "Fee",
@@ -100,7 +127,6 @@ const EventsList: React.FC<EventsListProps> = () => {
     if (!editingEventId || !editData) return;
 
     try {
-      // Find the event being edited to determine its type
       const eventToEdit = events.find((event) => event.id === editingEventId);
       if (!eventToEdit) {
         console.error("Event not found for editing");
@@ -108,7 +134,6 @@ const EventsList: React.FC<EventsListProps> = () => {
       }
 
       if (eventToEdit.record_type === "onchain_fee") {
-        // Update onchain fee
         const request = {
           amount_sats:
             typeof editData.amount_sats === "string"
@@ -120,7 +145,6 @@ const EventsList: React.FC<EventsListProps> = () => {
         };
         await TauriService.updateOnchainFee(editingEventId, request);
       } else {
-        // Update exchange transaction
         const request = {
           type: editData.type as "Buy" | "Sell",
           amount_sats:
@@ -142,9 +166,6 @@ const EventsList: React.FC<EventsListProps> = () => {
         await TauriService.updateExchangeTransaction(editingEventId, request);
       }
 
-      console.log(
-        `Successfully updated ${eventToEdit.record_type} with ID: ${editingEventId}`
-      );
       invalidateAfterUnifiedEventDataChange(queryClient);
     } catch (error) {
       console.error("Error updating event:", error);
@@ -157,7 +178,6 @@ const EventsList: React.FC<EventsListProps> = () => {
   const handleDeleteEvent = useCallback(async () => {
     if (!editingEventId) return;
 
-    // Find the event being deleted
     const eventToDelete = events.find((event) => event.id === editingEventId);
     if (!eventToDelete) {
       console.error("Event not found for deletion");
@@ -165,21 +185,15 @@ const EventsList: React.FC<EventsListProps> = () => {
     }
 
     try {
-      // Check the event type and use appropriate delete function
       if (eventToDelete.record_type === "exchange_transaction") {
-        // For buy/sell transactions, use exchange transaction delete
         await TauriService.deleteExchangeTransaction(editingEventId);
       } else if (eventToDelete.record_type === "onchain_fee") {
-        // For fee transactions, use onchain fee delete
         await TauriService.deleteOnchainFee(editingEventId);
       } else {
         console.error("Unknown event type:", eventToDelete.record_type);
         return;
       }
 
-      console.log(
-        `Successfully deleted ${eventToDelete.record_type} with ID: ${editingEventId}`
-      );
       invalidateAfterUnifiedEventDataChange(queryClient);
     } catch (error) {
       console.error("Error deleting event:", error);
@@ -187,7 +201,7 @@ const EventsList: React.FC<EventsListProps> = () => {
       setEditingEventId(null);
       setEditData(null);
     }
-  }, [editingEventId, events]);
+  }, [editingEventId, events, queryClient]);
 
   const handleCancelEdit = useCallback(() => {
     setEditingEventId(null);
@@ -213,7 +227,6 @@ const EventsList: React.FC<EventsListProps> = () => {
 
     try {
       if (newEventData.type === "Fee") {
-        // Create onchain fee
         const request = {
           amount_sats:
             typeof newEventData.amount_sats === "string"
@@ -224,9 +237,7 @@ const EventsList: React.FC<EventsListProps> = () => {
           tx_hash: newEventData.tx_hash || null,
         };
         await TauriService.createOnchainFee(request);
-        console.log("Successfully created onchain fee");
       } else {
-        // Create exchange transaction
         const request = {
           type: newEventData.type as "Buy" | "Sell",
           amount_sats:
@@ -246,7 +257,6 @@ const EventsList: React.FC<EventsListProps> = () => {
           provider_id: newEventData.provider_id,
         };
         await TauriService.createExchangeTransaction(request);
-        console.log("Successfully created exchange transaction");
       }
 
       invalidateAfterUnifiedEventDataChange(queryClient);
@@ -277,7 +287,7 @@ const EventsList: React.FC<EventsListProps> = () => {
     []
   );
 
-  // Handle escape key to close edit/deselect
+  // Handle escape key
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -302,19 +312,86 @@ const EventsList: React.FC<EventsListProps> = () => {
     handleCancelNewEvent,
   ]);
 
-  // Calculate pagination
-  const totalPages = Math.ceil(events.length / pageSize);
-  const startIndex = currentPage * pageSize;
-  const endIndex = Math.min(startIndex + pageSize, events.length);
-  const visibleEvents = events.slice(startIndex, endIndex);
+  const renderRow = (virtualRow: VirtualItem) => {
+    const isLoader = virtualRow.index >= events.length;
 
-  const handlePrevPage = () => {
-    setCurrentPage((prev) => Math.max(0, prev - 1));
+    if (isLoader) {
+      return (
+        <div
+          key={virtualRow.key}
+          data-index={virtualRow.index}
+          ref={rowVirtualizer.measureElement}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            transform: `translateY(${virtualRow.start}px)`,
+          }}
+        >
+          <div className="flex items-center justify-center py-3">
+            <div className="flex items-center gap-2 text-xs text-[rgba(247,243,227,0.5)]">
+              {isLoadingMore ? (
+                <>
+                  <span className="inline-block w-3 h-3 border-2 border-[rgba(247,243,227,0.3)] border-t-[#f7931a] rounded-full animate-spin" />
+                  Loading more events...
+                </>
+              ) : hasMore ? (
+                "Scroll for more"
+              ) : (
+                "All events loaded"
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const event = events[virtualRow.index];
+
+    return (
+      <div
+        key={virtualRow.key}
+        data-index={virtualRow.index}
+        ref={rowVirtualizer.measureElement}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          transform: `translateY(${virtualRow.start}px)`,
+        }}
+      >
+        <EventItem
+          event={event}
+          isEditing={editingEventId === event.id}
+          isSelected={selectedEventId === event.id}
+          isCreating={false}
+          onEdit={() => handleEditEvent(event)}
+          onSelect={() =>
+            handleSelectEvent(selectedEventId === event.id ? null : event.id)
+          }
+          onSave={handleSaveEvent}
+          onDelete={handleDeleteEvent}
+          onCancel={handleCancelEdit}
+          editData={
+            editData || {
+              type: "Buy",
+              amount_sats: 0,
+              subtotal_cents: null,
+              fee_cents: null,
+              memo: null,
+              timestamp: new Date().toISOString(),
+              provider_id: null,
+              tx_hash: null,
+            }
+          }
+          onEditDataChange={handleEditDataChange}
+        />
+      </div>
+    );
   };
 
-  const handleNextPage = () => {
-    setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1));
-  };
   return (
     <div className="h-1/2 flex flex-col">
       {/* Header */}
@@ -324,47 +401,21 @@ const EventsList: React.FC<EventsListProps> = () => {
             <h2 className="text-md font-semibold text-[#F7F3E3]">
               Events ({events.length} of {totalCount})
             </h2>
-            {events.length > pageSize && (
+            {totalCount > events.length && (
               <div className="text-xs text-[rgba(247,243,227,0.6)] mt-1">
-                Showing {startIndex + 1}-{endIndex} of {events.length} loaded
-                events
+                Scroll down to load more
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            {events.length > pageSize && (
-              <div className="flex items-center gap-1 mr-3">
-                <button
-                  onClick={handlePrevPage}
-                  disabled={currentPage === 0}
-                  className="bg-[rgba(247,243,227,0.1)] hover:bg-[rgba(247,243,227,0.2)] disabled:opacity-50 disabled:cursor-not-allowed text-[#F7F3E3] px-2 py-1 text-xs rounded"
-                >
-                  ←
-                </button>
-                <span className="text-xs text-[rgba(247,243,227,0.6)] px-2">
-                  {currentPage + 1} / {totalPages}
-                </span>
-                <button
-                  onClick={handleNextPage}
-                  disabled={currentPage === totalPages - 1}
-                  className="bg-[rgba(247,243,227,0.1)] hover:bg-[rgba(247,243,227,0.2)] disabled:opacity-50 disabled:cursor-not-allowed text-[#F7F3E3] px-2 py-1 text-xs rounded"
-                >
-                  →
-                </button>
-              </div>
-            )}
-            <button
-              onClick={handleAddNewEvent}
-              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-xs rounded"
-            >
-              Add Event
-            </button>
-          </div>
+          <button
+            onClick={handleAddNewEvent}
+            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-xs rounded"
+          >
+            Add Event
+          </button>
         </div>
         {/* Column Headers */}
-        <div
-          className={`events-grid mt-2 text-xs font-medium text-[rgba(247,243,227,0.6)]`}
-        >
+        <div className="events-grid mt-2 text-xs font-medium text-[rgba(247,243,227,0.6)]">
           <div>Date</div>
           <div>Type</div>
           <div>Amount</div>
@@ -374,9 +425,9 @@ const EventsList: React.FC<EventsListProps> = () => {
         </div>
       </div>
 
-      {/* Events List - Scrollable */}
-      <div className="flex-1 overflow-y-auto">
-        {/* New Event Row using EventItem */}
+      {/* Virtualized Events List */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+        {/* New Event Row */}
         {isCreatingNew && newEventData && (
           <EventItem
             event={null}
@@ -391,54 +442,28 @@ const EventsList: React.FC<EventsListProps> = () => {
           />
         )}
 
-        {/* Empty state message */}
-        {!isCreatingNew && visibleEvents.length === 0 && (
+        {/* Virtualized rows */}
+        {events.length > 0 ? (
+          <div
+            style={{
+              height: rowVirtualizer.getTotalSize(),
+              position: "relative",
+              width: "100%",
+            }}
+          >
+            {rowVirtualizer.getVirtualItems().map(renderRow)}
+          </div>
+        ) : !loading ? (
           <div className="w-full h-full flex items-center justify-center">
             <p className="text-[rgba(247,243,227,0.6)] text-sm text-center">
               No Events
             </p>
           </div>
-        )}
-
-        {visibleEvents.map((event) => (
-          <EventItem
-            key={event.id}
-            event={event}
-            isEditing={editingEventId === event.id}
-            isSelected={selectedEventId === event.id}
-            isCreating={false}
-            onEdit={() => handleEditEvent(event)}
-            onSelect={() =>
-              handleSelectEvent(selectedEventId === event.id ? null : event.id)
-            }
-            onSave={handleSaveEvent}
-            onDelete={handleDeleteEvent}
-            onCancel={handleCancelEdit}
-            editData={
-              editData ||
-              newEventData || {
-                type: "Buy",
-                amount_sats: 0,
-                subtotal_cents: null,
-                fee_cents: null,
-                memo: null,
-                timestamp: new Date().toISOString(),
-                provider_id: null,
-                tx_hash: null,
-              }
-            }
-            onEditDataChange={handleEditDataChange}
-          />
-        ))}
-
-        {visibleEvents.length > 0 && (
-          <div className="text-center py-4">
-            <div className="text-xs text-[rgba(247,243,227,0.5)]">
-              {events.length > pageSize
-                ? `Page ${currentPage + 1} of ${totalPages} • ${
-                    events.length
-                  } total events loaded`
-                : "All events loaded"}
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="flex items-center gap-2 text-xs text-[rgba(247,243,227,0.5)]">
+              <span className="inline-block w-3 h-3 border-2 border-[rgba(247,243,227,0.3)] border-t-[#f7931a] rounded-full animate-spin" />
+              Loading events...
             </div>
           </div>
         )}
