@@ -43,35 +43,10 @@ const ActivityToolAnalytics: React.FC = () => {
     },
   ];
 
-  const activityPremiumCards = [
-    {
-      title: "Satoshi Maximizer",
-      value: "+18.7%",
-      subtitle: "more sats possible",
-      description:
-        "Discover which days you could have bought to maximize your stack using historical price data",
-    },
-    {
-      title: "Cycle Position Analysis",
-      value: "Early Bull",
-      subtitle: "market phase timing",
-      description:
-        "Where your buys fall within Bitcoin's 4-year halving cycles using historical price patterns",
-    },
-    {
-      title: "Opportunity Cost",
-      value: "$3,247",
-      subtitle: "vs weekly DCA",
-      description:
-        "How much more value you could have gained with consistent weekly buys at historical prices",
-    },
-  ];
-
   return (
     <AnalyticsSection
       sectionTitle="Activity Insights"
       metrics={activityAnalyticsMetrics}
-      premiumCards={activityPremiumCards}
     />
   );
 };

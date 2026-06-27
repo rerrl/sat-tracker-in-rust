@@ -57,35 +57,10 @@ const OverviewToolAnalytics: React.FC = () => {
     },
   ];
 
-  const overviewPremiumCards = [
-    {
-      title: "Peak Performance",
-      value: "$127,340",
-      subtitle: "portfolio ATH value",
-      description:
-        "Your portfolio's highest USD value using historical Bitcoin prices",
-    },
-    {
-      title: "Market Timing Score",
-      value: "73/100",
-      subtitle: "vs perfect timing",
-      description:
-        "How well you timed the market compared to buying at historical lows",
-    },
-    {
-      title: "Dollar Cost Average Score",
-      value: "8.4/10",
-      subtitle: "vs lump sum timing",
-      description:
-        "How your DCA strategy performed vs investing everything at historical optimal times",
-    },
-  ];
-
   return (
     <AnalyticsSection
       sectionTitle="Portfolio Insights"
       metrics={overviewAnalyticsMetrics}
-      premiumCards={overviewPremiumCards}
     />
   );
 };
