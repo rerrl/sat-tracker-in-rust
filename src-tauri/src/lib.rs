@@ -5,7 +5,7 @@ mod database;
 use commands::exchange_transaction::{create_exchange_transaction, get_exchange_transactions, update_exchange_transaction, delete_exchange_transaction};
 use commands::onchain_fee::{create_onchain_fee, get_onchain_fees, update_onchain_fee, delete_onchain_fee};
 use commands::unified_events::get_unified_events;
-use commands::api::{fetch_bitcoin_price, fetch_announcements};
+use commands::api::{fetch_bitcoin_price};
 use commands::activity_tool::get_activity_metrics;
 use commands::menu_tools::{
     import_sat_tracker_v1_data, 
@@ -117,7 +117,6 @@ pub fn run() {
             import_sat_tracker_v1_data,
             create_undocumented_lumpsum_transactions,
             fetch_bitcoin_price,
-            fetch_announcements,
             check_database_status,
             validate_database_password,
             encrypt_database,

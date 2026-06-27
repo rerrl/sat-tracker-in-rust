@@ -1,7 +1,4 @@
 import React, { useEffect } from "react";
-import Announcements from "./Announcements";
-import { openUrl } from "@tauri-apps/plugin-opener";
-import { useAnnouncements } from "../hooks/useAnnouncements";
 import packageJson from "../../package.json";
 
 interface AppHeaderProps {
@@ -17,7 +14,6 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   showToolDropdown,
   setShowToolDropdown,
 }) => {
-  const { isUpdateAvailable, latestVersion } = useAnnouncements();
   // Close tool dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -51,30 +47,10 @@ const AppHeader: React.FC<AppHeaderProps> = ({
             v{packageJson.version}
           </div>
         </div>
-
-        <div className="flex-1 min-w-0 max-w-none">
-          <Announcements />
-        </div>
       </div>
 
       {/* Right side - Update Button and Tool Selector */}
       <div className="px-6 py-3 flex items-center gap-3 shrink-0">
-        {/* Update Available Button - Only show if update is available */}
-        {isUpdateAvailable && (
-          <button
-            className="text-xs text-[#F7F3E3] bg-[rgba(247,147,26,0.2)] border border-[rgba(247,147,26,0.3)] px-2 py-1 rounded hover:bg-[rgba(247,147,26,0.3)] flex items-center gap-1 cursor-pointer"
-            onClick={async () => {
-              try {
-                await openUrl("https://dprogram.me/tools/sat-tracker");
-              } catch (error) {
-                console.error("Failed to open link:", error);
-              }
-            }}
-          >
-            <span className="text-[10px]">🔄</span>
-            Update Available {latestVersion && `(v${latestVersion})`}
-          </button>
-        )}
 
         {/* Tool Selector Dropdown */}
         <div className="relative tool-dropdown">

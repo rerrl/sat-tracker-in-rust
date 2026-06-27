@@ -399,7 +399,7 @@ const EventsList: React.FC<EventsListProps> = () => {
         <div className="flex justify-between items-center">
           <div>
             <h2 className="text-md font-semibold text-[#F7F3E3]">
-              Events ({events.length} of {totalCount})
+              {totalCount} Events
             </h2>
             {totalCount > events.length && (
               <div className="text-xs text-[rgba(247,243,227,0.6)] mt-1">
