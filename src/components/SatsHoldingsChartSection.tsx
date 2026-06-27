@@ -1,46 +1,60 @@
-import React from "react";
+import React, { useState } from "react";
 import SatsHoldingsChart from "./SatsHoldingsChart";
 
-interface SatsHoldingsChartSectionProps {
-  // No props needed - chart will get data via hook
-}
+type TimeRange = "1M" | "3M" | "6M" | "1Y" | "ALL";
 
-const SatsHoldingsChartSection: React.FC<
-  SatsHoldingsChartSectionProps
-> = () => {
-  return (
-    <>
-      {/* Chart Header */}
-      <div className="p-4 pb-2 shrink-0 border-b border-[rgba(247,243,227,0.1)]">
-        <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-[#F7F3E3]">
-            Sats Holdings Over Time
-          </h2>
-          <div className="relative group">
-            <span className="absolute right-full mr-2 top-1/2 -translate-y-1/2 text-xs bg-gradient-to-r from-[#f7931a] to-[#61dafb] text-black px-2 py-0.5 rounded font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              PREMIUM
-            </span>
-            <button
-              disabled
-              className="text-xs text-[rgba(247,243,227,0.6)] bg-[rgba(247,243,227,0.1)] border border-[rgba(247,243,227,0.2)] px-3 py-1 rounded cursor-not-allowed opacity-60 flex items-center gap-2"
-            >
-              <div className="w-3 h-3 border border-[rgba(247,243,227,0.4)] rounded-sm bg-[rgba(247,243,227,0.05)] flex items-center justify-center">
-                {/* Empty checkbox - would show checkmark when enabled */}
-              </div>
-              <span>Show USD Overlay</span>
-            </button>
+const TIME_RANGES: { label: string; value: TimeRange; days: number | null }[] =
+  [
+    { label: "1M", value: "1M", days: 30 },
+    { label: "3M", value: "3M", days: 90 },
+    { label: "6M", value: "6M", days: 180 },
+    { label: "1Y", value: "1Y", days: 365 },
+    { label: "ALL", value: "ALL", days: null },
+  ];
+
+interface SatsHoldingsChartSectionProps {}
+
+const SatsHoldingsChartSection: React.FC<SatsHoldingsChartSectionProps> =
+  () => {
+    const [timeRange, setTimeRange] = useState<TimeRange>("3M");
+
+    const activeRange = TIME_RANGES.find((r) => r.value === timeRange)!;
+
+    return (
+      <>
+        {/* Chart Header */}
+        <div className="p-4 pb-2 shrink-0 border-b border-[rgba(247,243,227,0.1)]">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold text-[#F7F3E3]">
+              Sats Holdings Over Time
+            </h2>
+            {/* Time range pills */}
+            <div className="flex gap-1 bg-[rgba(247,243,227,0.04)] rounded-lg p-0.5">
+              {TIME_RANGES.map(({ label, value }) => (
+                <button
+                  key={value}
+                  onClick={() => setTimeRange(value)}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all duration-150 ${
+                    timeRange === value
+                      ? "bg-[#f7931a] text-black shadow-sm"
+                      : "text-[rgba(247,243,227,0.5)] hover:text-[#F7F3E3] hover:bg-[rgba(247,243,227,0.08)]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Chart Area */}
-      <div className="flex-1 p-4 min-h-0 overflow-hidden">
-        <div className="w-full h-full">
-          <SatsHoldingsChart />
+        {/* Chart Area */}
+        <div className="flex-1 p-4 min-h-0 overflow-hidden">
+          <div className="w-full h-full">
+            <SatsHoldingsChart days={activeRange.days} />
+          </div>
         </div>
-      </div>
-    </>
-  );
-};
+      </>
+    );
+  };
 
 export default SatsHoldingsChartSection;

@@ -7,12 +7,12 @@ import {
   LineElement,
   Title,
   Tooltip,
-  Legend,
   Filler,
+  ChartData,
+  ChartOptions,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import { useUnifiedEvents } from "../hooks/useUnifiedEvents";
-import { UnifiedEvent } from "../services/tauriService";
 
 ChartJS.register(
   CategoryScale,
@@ -21,11 +21,17 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend,
   Filler
 );
 
-export default function SatsHoldingsChart() {
+interface SatsHoldingsChartProps {
+  /** Number of days to show, or null for all data */
+  days?: number | null;
+}
+
+export default function SatsHoldingsChart({
+  days = 90,
+}: SatsHoldingsChartProps) {
   const chartRef = useRef<any>(null);
 
   // Get events data using the hook
@@ -49,12 +55,9 @@ export default function SatsHoldingsChart() {
     };
   }, []);
 
-  const chartData = useMemo(() => {
+  const chartData: ChartData<"line"> = useMemo(() => {
     if (!events || events.length === 0) {
-      return {
-        labels: [],
-        datasets: [],
-      };
+      return { labels: [], datasets: [] };
     }
 
     // Sort events by date (oldest first)
@@ -65,40 +68,48 @@ export default function SatsHoldingsChart() {
 
     // Calculate running sats balance
     let runningBalance = 0;
-    const dataPoints: Array<{
-      date: Date;
-      balance: number;
-      event: UnifiedEvent | null;
-    }> = sortedEvents.map((event) => {
-      // Apply the correct sign based on event type
-      let balanceChange = 0;
-      if (event.transaction_type === "buy") {
-        balanceChange = event.amount_sats; // Positive - adds to balance
-      } else if (
-        event.transaction_type === "sell" ||
-        event.transaction_type === "fee"
-      ) {
-        balanceChange = -event.amount_sats; // Negative - subtracts from balance
-      }
+    const dataPoints: Array<{ date: Date; balance: number }> =
+      sortedEvents.map((event) => {
+        let balanceChange = 0;
+        if (event.transaction_type === "buy") {
+          balanceChange = event.amount_sats;
+        } else if (
+          event.transaction_type === "sell" ||
+          event.transaction_type === "fee"
+        ) {
+          balanceChange = -event.amount_sats;
+        }
+        runningBalance += balanceChange;
+        return { date: new Date(event.timestamp), balance: runningBalance };
+      });
 
-      runningBalance += balanceChange;
-      return {
-        date: new Date(event.timestamp),
-        balance: runningBalance,
-        event: event,
-      };
-    });
-
-    // Add current point (today) with same balance
+    // Add current point (today) with same balance so line reaches the edge
     if (dataPoints.length > 0) {
       dataPoints.push({
         date: new Date(),
         balance: runningBalance,
-        event: null,
       });
     }
 
-    const labels = dataPoints.map((point) =>
+    // Apply time range filter
+    const cutoff =
+      days != null
+        ? new Date(Date.now() - days * 24 * 60 * 60 * 1000)
+        : null;
+
+    let filtered = dataPoints;
+    if (cutoff) {
+      // Include the point just before the cutoff so the line starts anchored
+      const beforeCutoff = dataPoints.filter((p) => p.date < cutoff);
+      const inWindow = dataPoints.filter((p) => p.date >= cutoff);
+      if (beforeCutoff.length > 0) {
+        filtered = [beforeCutoff[beforeCutoff.length - 1], ...inWindow];
+      } else {
+        filtered = inWindow;
+      }
+    }
+
+    const labels = filtered.map((point) =>
       point.date.toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
@@ -106,7 +117,7 @@ export default function SatsHoldingsChart() {
       })
     );
 
-    const data = dataPoints.map((point) => point.balance);
+    const data = filtered.map((point) => point.balance);
 
     return {
       labels,
@@ -115,23 +126,40 @@ export default function SatsHoldingsChart() {
           label: "Sats Holdings",
           data,
           borderColor: "#f7931a",
-          backgroundColor: "rgba(247, 147, 26, 0.05)",
-          borderWidth: 1.5,
+          backgroundColor: (ctx: any) => {
+            if (!ctx.chart.chartArea) return "rgba(247, 147, 26, 0.08)";
+            const { ctx: canvasCtx, chartArea } = ctx.chart;
+            const gradient = canvasCtx.createLinearGradient(
+              0,
+              chartArea.top,
+              0,
+              chartArea.bottom
+            );
+            gradient.addColorStop(0, "rgba(247, 147, 26, 0.18)");
+            gradient.addColorStop(0.5, "rgba(247, 147, 26, 0.06)");
+            gradient.addColorStop(1, "rgba(247, 147, 26, 0.01)");
+            return gradient;
+          },
+          borderWidth: 2.5,
           fill: true,
-          tension: 0.2,
-          pointBackgroundColor: "#f7931a",
-          pointBorderColor: "#2A2633",
-          pointBorderWidth: 1,
-          pointRadius: 2,
-          pointHoverRadius: 4,
+          tension: 0.4,
+          pointRadius: 0,
+          pointHoverRadius: 5,
+          pointHoverBackgroundColor: "#f7931a",
+          pointHoverBorderColor: "#F7F3E3",
+          pointHoverBorderWidth: 2.5,
         },
       ],
     };
-  }, [events]);
+  }, [events, days]);
 
-  const chartOptions = {
+  const chartOptions: ChartOptions<"line"> = {
     responsive: true,
     maintainAspectRatio: false,
+    animation: {
+      duration: 400,
+      easing: "easeOutQuart",
+    },
     plugins: {
       legend: {
         display: false,
@@ -140,16 +168,32 @@ export default function SatsHoldingsChart() {
         display: false,
       },
       tooltip: {
-        backgroundColor: "rgba(42, 38, 51, 0.95)",
-        titleColor: "#F7F3E3",
-        bodyColor: "#F7F3E3",
-        borderColor: "rgba(247, 243, 227, 0.3)",
+        backgroundColor: "#1C1A26",
+        titleColor: "rgba(247, 243, 227, 0.7)",
+        bodyColor: "#f7931a",
+        borderColor: "rgba(247, 147, 26, 0.25)",
         borderWidth: 1,
-        cornerRadius: 4,
+        cornerRadius: 6,
+        padding: { x: 12, y: 8 },
         displayColors: false,
+        titleFont: {
+          size: 11,
+          family: "'Inter', system-ui, sans-serif",
+        },
+        bodyFont: {
+          size: 14,
+          family: "'Inter', system-ui, sans-serif",
+          weight: "bold",
+        },
         callbacks: {
-          label: function (context: any) {
-            return `Sats: ${context.parsed.y.toLocaleString()}`;
+          title: (items) => {
+            if (items.length === 0) return "";
+            return items[0].label;
+          },
+          label: (context) => {
+            const val = context.parsed.y;
+            if (val == null) return "";
+            return `${val.toLocaleString()} sats`;
           },
         },
       },
@@ -158,50 +202,63 @@ export default function SatsHoldingsChart() {
       x: {
         display: true,
         grid: {
-          color: "rgba(247, 243, 227, 0.08)",
-          lineWidth: 1,
+          color: "rgba(247, 243, 227, 0.05)",
+          drawOnChartArea: true,
+          drawTicks: false,
         },
         border: {
-          color: "rgba(247, 243, 227, 0.2)",
+          display: false,
         },
         ticks: {
-          color: "rgba(247, 243, 227, 0.5)",
+          color: "rgba(247, 243, 227, 0.3)",
           maxTicksLimit: 6,
           font: {
             size: 10,
+            family: "'Inter', system-ui, sans-serif",
           },
+          padding: 8,
         },
       },
       y: {
         display: true,
+        position: "right",
         grid: {
-          color: "rgba(247, 243, 227, 0.08)",
-          lineWidth: 1,
+          color: "rgba(247, 243, 227, 0.05)",
+          drawOnChartArea: true,
+          drawTicks: false,
         },
         border: {
-          color: "rgba(247, 243, 227, 0.2)",
+          display: false,
         },
         ticks: {
-          color: "rgba(247, 243, 227, 0.5)",
+          color: "rgba(247, 243, 227, 0.3)",
           font: {
             size: 10,
+            family: "'Inter', system-ui, sans-serif",
           },
+          padding: 8,
+          maxTicksLimit: 5,
           callback: function (value: any) {
-            return value.toLocaleString() + " sats";
+            return value.toLocaleString();
           },
         },
       },
     },
     interaction: {
       intersect: false,
-      mode: "index" as const,
+      mode: "index",
     },
     elements: {
       point: {
         hoverBackgroundColor: "#f7931a",
         hoverBorderColor: "#F7F3E3",
-        hoverBorderWidth: 2,
+        hoverBorderWidth: 2.5,
       },
+    },
+    // Draw a vertical crosshair line on hover
+    onHover: (_event: any, chartElements: any[], chart: any) => {
+      const canvas = chart.canvas;
+      canvas.style.cursor = chartElements.length > 0 ? "crosshair" : "default";
     },
   };
 
@@ -223,7 +280,7 @@ export default function SatsHoldingsChart() {
     <div className="w-full h-full">
       <Line
         ref={chartRef}
-        key={events.length + events.map((e) => e.id).join(",")}
+        key={`sats-chart-${days ?? "all"}-${events.length}`}
         data={chartData}
         options={chartOptions}
       />
