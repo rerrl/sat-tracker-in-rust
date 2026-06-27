@@ -89,3 +89,10 @@ the built installer is now located at:
 
 When installed on a windows machine, the db that stores all the data is located at:
 `C:\Users\<username>\AppData\Local\sat-tracker-in-rust\sat_tracker.db`
+
+## Development
+local machine install new release
+Make sure the packager version is set properly: `./user-scripts/bump-package-version.sh`
+Clear the dist folder
+Build the app: `yarn build:docker`
+Install the app locally: `./user-scripts/install-local.sh`

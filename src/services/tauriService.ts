@@ -285,11 +285,6 @@ export class TauriService {
     return await invoke("quit_app");
   }
 
-  // Fetch announcements from API
-  static async fetchAnnouncements(): Promise<AnnouncementsResponse> {
-    return await invoke("fetch_announcements");
-  }
-
   // Get activity metrics
   static async getActivityMetrics(): Promise<ActivityMetrics> {
     console.log("Fetching activity metrics");
