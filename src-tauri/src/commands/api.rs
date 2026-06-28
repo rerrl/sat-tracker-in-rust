@@ -29,12 +29,6 @@ pub struct BitcoinPriceResponse {
     pub error: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct AnnouncementsResponse {
-    pub latest_version: String,
-    pub announcements: Vec<String>,
-}
-
 #[tauri::command]
 pub async fn fetch_bitcoin_price() -> Result<BitcoinPriceResponse, String> {
     let client = reqwest::Client::builder()
