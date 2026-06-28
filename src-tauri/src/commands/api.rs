@@ -61,8 +61,33 @@ pub async fn fetch_bitcoin_price() -> Result<BitcoinPriceResponse, String> {
     Ok(price_data)
 }
 
+fn deserialize_id_as_string<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de;
+    struct IdStringVisitor;
+    impl<'de> de::Visitor<'de> for IdStringVisitor {
+        type Value = String;
+        fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            f.write_str("a string or integer")
+        }
+        fn visit_str<E: de::Error>(self, v: &str) -> Result<String, E> {
+            Ok(v.to_string())
+        }
+        fn visit_i64<E: de::Error>(self, v: i64) -> Result<String, E> {
+            Ok(v.to_string())
+        }
+        fn visit_u64<E: de::Error>(self, v: u64) -> Result<String, E> {
+            Ok(v.to_string())
+        }
+    }
+    deserializer.deserialize_any(IdStringVisitor)
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BitcoinHistoricalPriceData {
+    #[serde(deserialize_with = "deserialize_id_as_string")]
     pub id: String,
     #[serde(rename = "priceUsd")]
     pub price_usd: f64,
