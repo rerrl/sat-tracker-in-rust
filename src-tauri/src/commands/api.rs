@@ -85,11 +85,38 @@ where
     deserializer.deserialize_any(IdStringVisitor)
 }
 
+fn deserialize_f64<'de, D>(deserializer: D) -> Result<f64, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    use serde::de;
+    struct F64Visitor;
+    impl<'de> de::Visitor<'de> for F64Visitor {
+        type Value = f64;
+        fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+            f.write_str("a number or string")
+        }
+        fn visit_f64<E: de::Error>(self, v: f64) -> Result<f64, E> {
+            Ok(v)
+        }
+        fn visit_i64<E: de::Error>(self, v: i64) -> Result<f64, E> {
+            Ok(v as f64)
+        }
+        fn visit_u64<E: de::Error>(self, v: u64) -> Result<f64, E> {
+            Ok(v as f64)
+        }
+        fn visit_str<E: de::Error>(self, v: &str) -> Result<f64, E> {
+            v.parse::<f64>().map_err(de::Error::custom)
+        }
+    }
+    deserializer.deserialize_any(F64Visitor)
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BitcoinHistoricalPriceData {
     #[serde(deserialize_with = "deserialize_id_as_string")]
     pub id: String,
-    #[serde(rename = "priceUsd")]
+    #[serde(alias = "priceUsd", deserialize_with = "deserialize_f64")]
     pub price_usd: f64,
     pub datetime: String,
     #[serde(rename = "createdAt")]
