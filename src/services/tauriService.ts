@@ -188,6 +188,14 @@ export interface CsvPreview {
   total_rows_in_file: number;
 }
 
+export interface BitcoinHistoricalPriceData {
+  id: string;
+  priceUsd: number;
+  datetime: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export class TauriService {
   // Create a new bitcoin transaction
   static async createExchangeTransaction(
@@ -292,6 +300,11 @@ export class TauriService {
 
   static async getApiKey(): Promise<string | null> {
     return await invoke("get_api_key");
+  }
+
+  // Fetch Bitcoin historical prices
+  static async fetchBitcoinHistoricalPrices(): Promise<BitcoinHistoricalPriceData[]> {
+    return await invoke("fetch_bitcoin_historical_prices");
   }
 
   // Get activity metrics

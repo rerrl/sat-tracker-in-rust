@@ -1,3 +1,7 @@
+use sqlx::Row;
+use sqlx::SqlitePool;
+use tauri::{command, State};
+
 use serde::{Deserialize, Serialize};
 
 fn get_api_host() -> &'static str {
@@ -55,5 +59,66 @@ pub async fn fetch_bitcoin_price() -> Result<BitcoinPriceResponse, String> {
     println!("{:?}", price_data);
 
     Ok(price_data)
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct BitcoinHistoricalPriceData {
+    pub id: String,
+    #[serde(rename = "priceUsd")]
+    pub price_usd: f64,
+    pub datetime: String,
+    #[serde(rename = "createdAt")]
+    pub created_at: String,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: String,
+}
+
+#[command]
+pub async fn fetch_bitcoin_historical_prices(
+    pool: State<'_, SqlitePool>,
+) -> Result<Vec<BitcoinHistoricalPriceData>, String> {
+    // Read the API key from the config table
+    let api_key: String = sqlx::query("SELECT value FROM config WHERE key = 'dprogram_api_key'")
+        .fetch_optional(pool.inner())
+        .await
+        .map_err(|e| format!("Failed to read API key from config: {}", e))?
+        .map(|r| r.get("value"))
+        .ok_or_else(|| "No DProgram API key found in config. Add one via File → Add API Key...".to_string())?;
+
+    println!("🔑 Retrieved API key from config, fetching historical Bitcoin prices...");
+
+    let client = reqwest::Client::builder()
+        .user_agent(format!("SatTracker/{}", env!("CARGO_PKG_VERSION")))
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
+
+    let url = format!("{}/api/proxy/bitcoin/price", get_api_host());
+    let response = client
+        .get(&url)
+        .header("x-api-key", &api_key)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to fetch historical Bitcoin prices: {}", e))?;
+
+    if !response.status().is_success() {
+        // Try to parse the error body
+        let error_body: serde_json::Value = response.json().await.unwrap_or_default();
+        let message = error_body
+            .get("message")
+            .and_then(|m| m.as_str())
+            .unwrap_or("Unknown error");
+        return Err(format!("HTTP {}: {}", response.status(), message));
+    }
+
+    let prices: Vec<BitcoinHistoricalPriceData> = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse historical price response: {}", e))?;
+
+    println!("✅ Fetched {} historical Bitcoin price records", prices.len());
+    println!("   First record: {:?}", prices.first());
+    println!("   Last record:  {:?}", prices.last());
+
+    Ok(prices)
 }
 
