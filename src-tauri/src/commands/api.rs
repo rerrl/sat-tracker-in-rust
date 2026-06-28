@@ -101,13 +101,14 @@ pub async fn fetch_bitcoin_historical_prices(
         .map_err(|e| format!("Failed to fetch historical Bitcoin prices: {}", e))?;
 
     if !response.status().is_success() {
+        let status = response.status();
         // Try to parse the error body
         let error_body: serde_json::Value = response.json().await.unwrap_or_default();
         let message = error_body
             .get("message")
             .and_then(|m| m.as_str())
             .unwrap_or("Unknown error");
-        return Err(format!("HTTP {}: {}", response.status(), message));
+        return Err(format!("HTTP {}: {}", status, message));
     }
 
     let prices: Vec<BitcoinHistoricalPriceData> = response
