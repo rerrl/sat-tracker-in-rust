@@ -7,6 +7,7 @@ import LumpsumModal from "./components/LumpsumModal";
 import PasswordPromptModal from "./components/PasswordPromptModal";
 import EncryptionSettings from "./components/EncryptionSettings";
 import CsvImportModal from "./components/CsvImportModal";
+import ApiKeyModal from "./components/ApiKeyModal";
 import Modal from "./components/Modal";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
@@ -28,6 +29,7 @@ function App() {
   const [showLumpsumModal, setShowLumpsumModal] = useState(false);
   const [showEncryptionSettings, setShowEncryptionSettings] = useState(false);
   const [showCsvImportModal, setShowCsvImportModal] = useState(false);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -202,6 +204,10 @@ function App() {
         await listen("menu-import-csv", () => {
           setShowCsvImportModal(true);
         });
+
+        await listen("menu-add-api-key", () => {
+          setShowApiKeyModal(true);
+        });
       };
 
       setupMenuListeners().catch(console.error);
@@ -265,6 +271,11 @@ function App() {
 
           alert(`Successfully imported ${events.length} events`);
         }}
+      />
+
+      <ApiKeyModal
+        isOpen={showApiKeyModal}
+        onClose={() => setShowApiKeyModal(false)}
       />
 
       {showEncryptionSettings && (

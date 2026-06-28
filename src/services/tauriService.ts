@@ -285,6 +285,15 @@ export class TauriService {
     return await invoke("quit_app");
   }
 
+  // API Key configuration
+  static async saveApiKey(apiKey: string): Promise<string> {
+    return await invoke("save_api_key", { apiKey });
+  }
+
+  static async getApiKey(): Promise<string | null> {
+    return await invoke("get_api_key");
+  }
+
   // Get activity metrics
   static async getActivityMetrics(): Promise<ActivityMetrics> {
     console.log("Fetching activity metrics");
