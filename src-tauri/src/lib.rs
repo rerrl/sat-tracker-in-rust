@@ -5,7 +5,7 @@ mod database;
 use commands::exchange_transaction::{create_exchange_transaction, get_exchange_transactions, update_exchange_transaction, delete_exchange_transaction};
 use commands::onchain_fee::{create_onchain_fee, get_onchain_fees, update_onchain_fee, delete_onchain_fee};
 use commands::unified_events::get_unified_events;
-use commands::api::{fetch_bitcoin_price};
+use commands::api::{fetch_bitcoin_price, fetch_bitcoin_historical_prices};
 use commands::activity_tool::get_activity_metrics;
 use commands::menu_tools::{
     import_sat_tracker_v1_data, 
@@ -20,6 +20,7 @@ use commands::menu_tools::{
     quit_app
 };
 use commands::overview_tool::get_overview_metrics;
+use commands::config::{save_api_key, get_api_key};
 use tauri::{Emitter, menu::{Menu, MenuItem, Submenu, PredefinedMenuItem}, AppHandle, Manager};
 
 // Add these helper functions before the main run() function
@@ -28,6 +29,7 @@ fn create_full_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, Box<dyn std::er
     let csv_import_item = MenuItem::with_id(app, "import_csv", "Import CSV Data", true, None::<&str>)?;
     let lumpsum_item = MenuItem::with_id(app, "add_undocumented_lumpsum", "Add Undocumented Lumpsum", true, None::<&str>)?;
     let encryption_item = MenuItem::with_id(app, "encryption_settings", "Database Encryption...", true, None::<&str>)?;
+    let api_key_item = MenuItem::with_id(app, "add_api_key", "Add API Key...", true, None::<&str>)?;
     let separator = PredefinedMenuItem::separator(app)?;
     let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
 
@@ -37,6 +39,7 @@ fn create_full_menu(app: &AppHandle) -> Result<Menu<tauri::Wry>, Box<dyn std::er
         &lumpsum_item,
         &separator,
         &encryption_item,
+        &api_key_item,
         &separator,
         &quit_item,
     ])?;
@@ -102,6 +105,9 @@ pub fn run() {
                 "encryption_settings" => {
                     app.emit("menu-encryption-settings", ()).unwrap();
                 }
+                "add_api_key" => {
+                    app.emit("menu-add-api-key", ()).unwrap();
+                }
                 "quit" => {
                     app.exit(0);
                 }
@@ -117,6 +123,7 @@ pub fn run() {
             import_sat_tracker_v1_data,
             create_undocumented_lumpsum_transactions,
             fetch_bitcoin_price,
+            fetch_bitcoin_historical_prices,
             check_database_status,
             validate_database_password,
             encrypt_database,
@@ -131,7 +138,9 @@ pub fn run() {
             update_onchain_fee,
             delete_onchain_fee,
             get_unified_events,
-            quit_app
+            quit_app,
+            save_api_key,
+            get_api_key
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

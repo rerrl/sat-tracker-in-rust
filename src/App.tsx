@@ -7,6 +7,7 @@ import LumpsumModal from "./components/LumpsumModal";
 import PasswordPromptModal from "./components/PasswordPromptModal";
 import EncryptionSettings from "./components/EncryptionSettings";
 import CsvImportModal from "./components/CsvImportModal";
+import ApiKeyModal from "./components/ApiKeyModal";
 import Modal from "./components/Modal";
 import { listen } from "@tauri-apps/api/event";
 import "./App.css";
@@ -28,6 +29,7 @@ function App() {
   const [showLumpsumModal, setShowLumpsumModal] = useState(false);
   const [showEncryptionSettings, setShowEncryptionSettings] = useState(false);
   const [showCsvImportModal, setShowCsvImportModal] = useState(false);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -175,6 +177,18 @@ function App() {
     if (isDatabaseInitialized) {
       TauriService.updateMenuForDatabaseStatus(true).catch(console.error);
 
+      // Fetch historical Bitcoin prices on startup
+      TauriService.fetchBitcoinHistoricalPrices()
+        .then((data) => {
+          const sorted = [...data].sort(
+            (a, b) => b.datetime.localeCompare(a.datetime)
+          );
+          console.log("📈 Historical Bitcoin prices (newest first):", sorted);
+        })
+        .catch((err) =>
+          console.error("❌ Failed to fetch historical Bitcoin prices:", err)
+        );
+
       const setupMenuListeners = async () => {
         await listen("menu-import-v1", async () => {
           try {
@@ -201,6 +215,10 @@ function App() {
 
         await listen("menu-import-csv", () => {
           setShowCsvImportModal(true);
+        });
+
+        await listen("menu-add-api-key", () => {
+          setShowApiKeyModal(true);
         });
       };
 
@@ -265,6 +283,11 @@ function App() {
 
           alert(`Successfully imported ${events.length} events`);
         }}
+      />
+
+      <ApiKeyModal
+        isOpen={showApiKeyModal}
+        onClose={() => setShowApiKeyModal(false)}
       />
 
       {showEncryptionSettings && (
