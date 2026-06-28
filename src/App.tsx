@@ -179,9 +179,12 @@ function App() {
 
       // Fetch historical Bitcoin prices on startup
       TauriService.fetchBitcoinHistoricalPrices()
-        .then((data) =>
-          console.log("📈 Historical Bitcoin prices:", data)
-        )
+        .then((data) => {
+          const sorted = [...data].sort(
+            (a, b) => b.datetime.localeCompare(a.datetime)
+          );
+          console.log("📈 Historical Bitcoin prices (newest first):", sorted);
+        })
         .catch((err) =>
           console.error("❌ Failed to fetch historical Bitcoin prices:", err)
         );
