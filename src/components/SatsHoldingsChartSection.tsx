@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import SatsHoldingsChart from "./SatsHoldingsChart";
+import PortfolioValueChart from "./PortfolioValueChart";
 
 type TimeRange = "1M" | "3M" | "6M" | "1Y" | "ALL";
+type ChartView = "sats" | "usd";
 
 const TIME_RANGES: { label: string; value: TimeRange; days: number | null }[] =
   [
@@ -17,6 +19,7 @@ interface SatsHoldingsChartSectionProps {}
 const SatsHoldingsChartSection: React.FC<SatsHoldingsChartSectionProps> =
   () => {
     const [timeRange, setTimeRange] = useState<TimeRange>("3M");
+    const [chartView, setChartView] = useState<ChartView>("sats");
 
     const activeRange = TIME_RANGES.find((r) => r.value === timeRange)!;
 
@@ -26,23 +29,51 @@ const SatsHoldingsChartSection: React.FC<SatsHoldingsChartSectionProps> =
         <div className="p-4 pb-2 shrink-0 border-b border-[rgba(247,243,227,0.1)]">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold text-[#F7F3E3]">
-              Sats Holdings Over Time
+              {chartView === "sats"
+                ? "Sats Holdings Over Time"
+                : "Portfolio Value Over Time"}
             </h2>
-            {/* Time range pills */}
-            <div className="flex gap-1 bg-[rgba(247,243,227,0.04)] rounded-lg p-0.5">
-              {TIME_RANGES.map(({ label, value }) => (
+            {/* View toggle + Time range pills */}
+            <div className="flex items-center gap-2">
+              {/* View toggle */}
+              <div className="flex bg-[rgba(247,243,227,0.04)] rounded-lg p-0.5">
                 <button
-                  key={value}
-                  onClick={() => setTimeRange(value)}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all duration-150 ${
-                    timeRange === value
+                  onClick={() => setChartView("sats")}
+                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all duration-150 ${
+                    chartView === "sats"
                       ? "bg-[#f7931a] text-black shadow-sm"
                       : "text-[rgba(247,243,227,0.5)] hover:text-[#F7F3E3] hover:bg-[rgba(247,243,227,0.08)]"
                   }`}
                 >
-                  {label}
+                  Sats
                 </button>
-              ))}
+                <button
+                  onClick={() => setChartView("usd")}
+                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all duration-150 ${
+                    chartView === "usd"
+                      ? "bg-[#22c55e] text-black shadow-sm"
+                      : "text-[rgba(247,243,227,0.5)] hover:text-[#F7F3E3] hover:bg-[rgba(247,243,227,0.08)]"
+                  }`}
+                >
+                  USD
+                </button>
+              </div>
+              {/* Time range pills */}
+              <div className="flex bg-[rgba(247,243,227,0.04)] rounded-lg p-0.5">
+                {TIME_RANGES.map(({ label, value }) => (
+                  <button
+                    key={value}
+                    onClick={() => setTimeRange(value)}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all duration-150 ${
+                      timeRange === value
+                        ? "bg-[#f7931a] text-black shadow-sm"
+                        : "text-[rgba(247,243,227,0.5)] hover:text-[#F7F3E3] hover:bg-[rgba(247,243,227,0.08)]"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -50,7 +81,11 @@ const SatsHoldingsChartSection: React.FC<SatsHoldingsChartSectionProps> =
         {/* Chart Area */}
         <div className="flex-1 p-4 min-h-0 overflow-hidden">
           <div className="w-full h-full">
-            <SatsHoldingsChart days={activeRange.days} />
+            {chartView === "sats" ? (
+              <SatsHoldingsChart days={activeRange.days} />
+            ) : (
+              <PortfolioValueChart days={activeRange.days} />
+            )}
           </div>
         </div>
       </>

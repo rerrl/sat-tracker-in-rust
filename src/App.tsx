@@ -177,18 +177,7 @@ function App() {
     if (isDatabaseInitialized) {
       TauriService.updateMenuForDatabaseStatus(true).catch(console.error);
 
-      // Fetch historical Bitcoin prices on startup
-      TauriService.fetchBitcoinHistoricalPrices()
-        .then((data) => {
-          const sorted = [...data].sort(
-            (a, b) => b.datetime.localeCompare(a.datetime)
-          );
-          console.log("📈 Historical Bitcoin prices (newest first):", sorted);
-        })
-        .catch((err) =>
-          console.error("❌ Failed to fetch historical Bitcoin prices:", err)
-        );
-
+      // Set up menu event listeners once database is initialized
       const setupMenuListeners = async () => {
         await listen("menu-import-v1", async () => {
           try {

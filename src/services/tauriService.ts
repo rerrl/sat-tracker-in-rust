@@ -190,7 +190,7 @@ export interface CsvPreview {
 
 export interface BitcoinHistoricalPriceData {
   id: string;
-  priceUsd: number;
+  price_usd: number;
   datetime: string;
   createdAt: string;
   updatedAt: string;
