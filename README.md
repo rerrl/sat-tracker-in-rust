@@ -92,7 +92,7 @@ When installed on a windows machine, the db that stores all the data is located 
 
 ## Development
 local machine install new release
-- Clear the dist folder
+- Clear the build output directory: `rm -rf build-output`
 - Make sure the packager version is set properly: `./user-scripts/bump-package-version.sh`
 - Build the app: `yarn build:docker`
 - Install the app locally: `./user-scripts/install-local.sh`
