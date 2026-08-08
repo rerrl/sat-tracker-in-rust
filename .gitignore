@@ -30,3 +30,4 @@ target/
 # Docker build output
 build-output/
 
+.aider*
