@@ -14,6 +14,7 @@ import {
 import { Line } from "react-chartjs-2";
 import { useUnifiedEvents } from "../hooks/useUnifiedEvents";
 import { useBitcoinHistoricalPrices } from "../hooks/useBitcoinHistoricalPrices";
+import { useBitcoinPrice } from "../hooks/useBitcoinPrice";
 
 ChartJS.register(
   CategoryScale,
@@ -37,6 +38,7 @@ export default function PortfolioValueChart({
 
   const { events } = useUnifiedEvents(true);
   const { prices, loading: pricesLoading } = useBitcoinHistoricalPrices();
+  const { price: currentPrice } = useBitcoinPrice();
 
   // Force chart resize when container changes
   useEffect(() => {
@@ -109,6 +111,30 @@ export default function PortfolioValueChart({
       });
     }
 
+    // Append a live "today" point using the current BTC price so the chart
+    // reflects the present value instead of waiting for the week to close.
+    if (currentPrice != null) {
+      // Advance through any events after the last historical price date
+      while (eventIdx < sortedEvents.length) {
+        const event = sortedEvents[eventIdx];
+        if (event.transaction_type === "buy") {
+          runningBalance += event.amount_sats;
+        } else if (
+          event.transaction_type === "sell" ||
+          event.transaction_type === "fee"
+        ) {
+          runningBalance -= event.amount_sats;
+        }
+        eventIdx++;
+      }
+
+      dataPoints.push({
+        date: new Date(),
+        value: (runningBalance / 100_000_000) * currentPrice,
+        sats: runningBalance,
+      });
+    }
+
     if (dataPoints.length === 0) {
       return { labels: [], datasets: [] };
     }
@@ -172,7 +198,7 @@ export default function PortfolioValueChart({
         },
       ],
     };
-  }, [events, prices, days]);
+  }, [events, prices, days, currentPrice]);
 
   const chartOptions: ChartOptions<"line"> = {
     responsive: true,

@@ -9,11 +9,7 @@ Sat Tracker in Rust is a free and open source bitcoin acquisition tracker. I was
 
 There are no ads, no trackers, and absolutely no data is sent to any servers.  In fact, the only network requests this app makes is to my server (api.dprogram.me) to get the current bitcoin price and app updates (for the banner at the top of the screen).
 
-Download the latest version from the releases page or on my website.
-
-If you intend to verify the authenticity of the sha256sums file, you can grab my public gpg key below, and you can cross reference the fingerprint from my twitter bio.
-
-[my public gpg key]()
+Download the latest version from the releases page.
 
 [my twitter](https://x.com/BitReverser)
 

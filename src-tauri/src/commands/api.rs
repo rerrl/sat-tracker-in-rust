@@ -9,6 +9,7 @@ fn get_api_host() -> &'static str {
     {
         // Development: use localhost
         "http://localhost:3000"
+        // "https://dprogram.me"
     }
     
     #[cfg(not(debug_assertions))]
