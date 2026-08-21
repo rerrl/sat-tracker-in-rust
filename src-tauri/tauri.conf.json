@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "sat-tracker-in-rust",
+  "productName": "Sat Tracker",
   "version": "0.1.9",
   "identifier": "com.sat-tracker-in-rust",
   "build": {

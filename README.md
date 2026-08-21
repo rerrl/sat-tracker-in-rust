@@ -35,7 +35,22 @@ yarn start:dev
 
 ## Building The App
 
-### Linux AppImage
+### Linux
+
+App data is stored in:
+`~/.sat-tracker-in-rust/sat_tracker.db`
+
+#### Fedora
+```bash
+yarn run clean:build   ## (optional) clear your build files
+yarn run build:release ## build the project
+
+# From the root of the project
+cd src-tauri/target/release/bundle/rpm/
+sudo dnf install ./sat-tracker-in-rust-x.y.z-1.x86_64.rpm
+```
+
+#### AppImage
 
 The AppImage is built using Docker with Ubuntu 22.04 LTS as the base to ensure compatibility with LTS distributions. This approach was necessary because:
 
@@ -52,17 +67,6 @@ yarn build:docker
 ```
 
 This will build the AppImage and copy it to the `build-output` directory in the project root.
-
-If you want to skip the Docker build and build the AppImage natively, you can run the following command:
-
-```bash
-yarn build:release
-```
-
-This will build the AppImage and copy it to the default output directory (`src-tauri/target/release/bundle/appimage`).
-
-In any case, all data is stored in:
-`~/.sat-tracker-in-rust/sat_tracker.db`
 
 ### MacOS:
 
@@ -86,9 +90,6 @@ the built installer is now located at:
 When installed on a windows machine, the db that stores all the data is located at:
 `C:\Users\<username>\AppData\Local\sat-tracker-in-rust\sat_tracker.db`
 
-## Development
-local machine install new release
-- Clear the build output directory: `rm -rf build-output`
-- Make sure the packager version is set properly: `./user-scripts/bump-package-version.sh`
-- Build the app: `yarn build:docker`
-- Install the app locally: `./user-scripts/install-local.sh`
+### Scripts
+
+- Easily bump the package version and commit: `./user-scripts/bump-package-version.sh`
