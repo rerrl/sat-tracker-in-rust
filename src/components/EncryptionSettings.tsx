@@ -7,6 +7,8 @@ interface EncryptionSettingsProps {
   onClose?: () => void; // Optional callback to close the settings modal
 }
 
+const minPasswordLength = 4;
+
 const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
   isEncrypted,
   onEncryptionChange,
@@ -38,8 +40,8 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
       return;
     }
 
-    if (newPassword.length < 8) {
-      showMessage("Password must be at least 8 characters", "error");
+    if (newPassword.length < minPasswordLength) {
+      showMessage(`Password must be at least ${minPasswordLength} characters`, "error");
       return;
     }
 
@@ -71,8 +73,8 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
       return;
     }
 
-    if (newPassword.length < 8) {
-      showMessage("Password must be at least 8 characters", "error");
+    if (newPassword.length < minPasswordLength) {
+      showMessage(`Password must be at least ${minPasswordLength} characters`, "error");
       return;
     }
 
@@ -158,9 +160,9 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-3 py-2 rounded text-sm"
-                  placeholder="Enter new password (min 8 characters)"
+                  placeholder={`Enter new password (min ${minPasswordLength} characters)`}
                   required
-                  minLength={8}
+                  minLength={minPasswordLength}
                   disabled={isProcessing}
                 />
               </div>
@@ -276,9 +278,9 @@ const EncryptionSettings: React.FC<EncryptionSettingsProps> = ({
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="w-full bg-[#090C08] border border-[rgba(247,243,227,0.3)] text-[#F7F3E3] px-3 py-2 rounded text-sm"
-                  placeholder="Enter new password (min 8 characters)"
+                  placeholder={`Enter new password (min ${minPasswordLength} characters)`}
                   required
-                  minLength={8}
+                  minLength={minPasswordLength}
                   disabled={isProcessing}
                 />
               </div>
